@@ -100,7 +100,7 @@ backend/scripts/record_scenarios.py
 backend/tests/            # retrieval_eval.yaml, 판정 표 테스트, guard 테스트, S5 회귀
 frontend/src/
   styles/(tokens.css, base.css)  components/  pages/(RoleSelect, Dashboard, Check, Learn)  api.ts
-data/                     # profiles.json, team_summary.json, substances.json, products.json, dro_countries.json, demo_codes.json, llm_cache/  (access_codes.json, raw/는 gitignore)
+data/                     # model_params.json, demo_examples.json, team_summary.json(데모 전용), substances.json, products.json, dro_countries.json, demo_codes.json, llm_cache/  (access_codes.json, raw/는 gitignore)
 knowledge/                # wada/ kada/ adel/ globaldro/ *.md (frontmatter), rules.yaml, synonyms.yaml
 e2e/                      # Playwright: S1~S5 → docs/figures/
 docs/reference/ docs/design/
