@@ -260,3 +260,17 @@ def test_pilot_mode_refuses_short_secret():
     r = subprocess.run([sys.executable, "-c", "import app.main"], env=env, capture_output=True, text=True,
                        cwd=Path(__file__).resolve().parents[1])
     assert r.returncode != 0 and "32자 이상" in r.stderr
+
+
+def test_pilot_gate_checks_list_expiry(monkeypatch):
+    from datetime import date
+
+    from app import main
+
+    monkeypatch.setattr(main.substances, "unreviewed", lambda: [])
+    monkeypatch.setattr(main.rag, "unreviewed", lambda: [])
+    secret = "x" * 32
+    expires = main.substances.list_expires()
+    assert main.pilot_problems(expires, secret) == []
+    after = date.fromordinal(expires.toordinal() + 1)
+    assert any("유효기간" in p for p in main.pilot_problems(after, secret))

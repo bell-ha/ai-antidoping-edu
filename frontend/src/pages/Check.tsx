@@ -1,4 +1,4 @@
-import { ArrowRight, ExternalLink, MessageCircle, TriangleAlert } from "lucide-react";
+import { ArrowRight, ExternalLink, Info, MessageCircle, Pill, TriangleAlert } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import { api, type CheckResult, type Timing } from "../api";
@@ -47,19 +47,25 @@ export function Check() {
   };
 
   const showCodes = who.role === "support"; // 선수지원인력에게는 조항 코드 (DESIGN.md 6절)
+  const kada = result?.links[0];
 
   return (
     <>
-      <section className="surface">
-        <h1 className="heading">AI 약물 확인</h1>
-        <form className="stack" style={{ gap: 16 }} onSubmit={submit}>
+      <div className="page-head">
+        <h1 className="title">약물·보충제 확인</h1>
+        <p className="muted">먹기 전에 금지목록 기준으로 확인할 점과 공식 확인 절차를 알려드려요.</p>
+      </div>
+
+      <div className="grid">
+        <form className="card span-5 sticky" onSubmit={submit}>
+          <h2 className="heading">AI 약물 확인</h2>
           <div className="field">
             <label className="label" htmlFor="q">
               제품명 또는 성분명
             </label>
             <input id="q" className="input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="예: 감기약, 슈도에페드린" autoComplete="off" />
           </div>
-          <div className="grid-2">
+          <div className="fields-2">
             <div className="field">
               <label className="label" htmlFor="country">
                 구매 국가
@@ -78,72 +84,99 @@ export function Check() {
           </button>
           {error && <p className="error">{error}</p>}
         </form>
-      </section>
 
-      {result && (
-        <section className="surface" aria-live="polite">
-          <div className="stack">
-            <p className="caption">
-              “{result.query}” · {result.list_version} 금지목록 기준
-            </p>
-            <StatusBadge status={result.status} />
-          </div>
+        <div className="span-7">
+          {!result ? (
+            <div className="empty">
+              <Pill size={28} style={{ marginBottom: 8 }} />
+              <p>제품명이나 성분명을 입력하면 확인 절차를 보여드려요.</p>
+            </div>
+          ) : (
+            <section className="card" aria-live="polite" data-figure="check-result">
+              {/* 안전 문구와 실제로 눌러야 할 KADA 링크를 위에 둔다 (DESIGN.md 7절) */}
+              <div className="stack">
+                <p className="caption">
+                  “{result.query}” · {result.list_version} 금지목록 기준
+                </p>
+                <StatusBadge status={result.status} />
+              </div>
 
-          {result.ingredients.length > 0 && (
-            <div className="box">
-              <p className="label" style={{ marginBottom: 8 }}>
-                {result.matched_kind === "category" ? "이 제품군에서 주의할 성분" : "성분"}
-              </p>
-              {result.ingredients.map((i) => (
-                <div key={i.name_en} className="ingredient">
-                  <div className="stack" style={{ gap: 2 }}>
-                    <strong>
-                      {i.name_ko}
-                      {showCodes && i.wada_class && <span className="caption"> · {i.wada_class}</span>}
-                    </strong>
-                    {result.matched_kind !== "substance" && <StatusBadge status={i.status} small />}
-                    {i.note && <span className="caption">{i.note}</span>}
-                    {result.matched_kind === "category" && (
-                      <button className="btn-sub" style={{ alignSelf: "flex-start", height: 32, marginTop: 4 }} onClick={() => { setQuery(i.name_ko); run(i.name_ko); }}>
-                        이 성분으로 확인
-                      </button>
-                    )}
-                  </div>
+              <div className="notice notice-neutral">
+                <Info size={18} />
+                <span>
+                  이 결과는 참고용입니다. 복용 전 반드시{" "}
+                  {kada ? (
+                    <a href={kada.url} target="_blank" rel="noreferrer">
+                      {kada.label}
+                    </a>
+                  ) : (
+                    "KADA 금지약물 검색"
+                  )}
+                  이나 팀 닥터에게 확인하세요.
+                </span>
+              </div>
+
+              {result.supplement_warning && (
+                <div className="notice notice-caution">
+                  <TriangleAlert size={18} />
+                  <span>보충제는 성분표에 없는 금지물질이 섞여 있을 수 있어요. 성분과 관계없이 주의가 필요해요.</span>
                 </div>
-              ))}
-            </div>
+              )}
+
+              {result.ingredients.length > 0 && (
+                <div>
+                  <p className="label" style={{ marginBottom: 6 }}>
+                    {result.matched_kind === "category" ? "이 제품군에서 주의할 성분" : "성분"}
+                  </p>
+                  {result.ingredients.map((i) => (
+                    <div key={i.name_en} className="ingredient">
+                      <strong>
+                        {i.name_ko}
+                        {showCodes && i.wada_class && <span className="caption"> · {i.wada_class}</span>}
+                      </strong>
+                      {result.matched_kind !== "substance" && <StatusBadge status={i.status} small />}
+                      {i.note && <span className="caption">{i.note}</span>}
+                      {result.matched_kind === "category" && (
+                        <button
+                          type="button"
+                          className="btn-sub small"
+                          style={{ alignSelf: "flex-start" }}
+                          onClick={() => {
+                            setQuery(i.name_ko);
+                            run(i.name_ko);
+                          }}
+                        >
+                          이 성분으로 확인
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="stack">
+                <p className="label">확인 절차</p>
+                <ol className="steps">
+                  {result.steps.map((s) => (
+                    <li key={s}>{s}</li>
+                  ))}
+                </ol>
+              </div>
+
+              <div className="row wrap">
+                {result.links.map((l) => (
+                  <a key={l.url} className="btn-sub" href={l.url} target="_blank" rel="noreferrer">
+                    {l.label} <ExternalLink size={14} />
+                  </a>
+                ))}
+                <button type="button" className="btn-sub" onClick={() => navigate("/learn", { state: { check: result } })}>
+                  <MessageCircle size={16} /> AI에게 더 묻기
+                </button>
+              </div>
+            </section>
           )}
-
-          <div className="stack">
-            <p className="label">확인 절차</p>
-            <ol className="steps">
-              {result.steps.map((s) => (
-                <li key={s}>{s}</li>
-              ))}
-            </ol>
-          </div>
-
-          {result.supplement_warning && (
-            <div className="notice notice-caution">
-              <TriangleAlert size={18} />
-              <span>보충제는 성분표에 없는 금지물질이 섞여 있을 수 있어요. 성분과 관계없이 주의가 필요해요.</span>
-            </div>
-          )}
-
-          <div className="row wrap">
-            {result.links.map((l) => (
-              <a key={l.url} className="btn-sub" href={l.url} target="_blank" rel="noreferrer">
-                {l.label} <ExternalLink size={14} />
-              </a>
-            ))}
-            <button className="btn-sub" onClick={() => navigate("/learn", { state: { check: result } })}>
-              <MessageCircle size={16} /> AI에게 더 묻기
-            </button>
-          </div>
-
-          <p className="caption">이 결과는 참고용입니다. 복용 전 반드시 KADA 의약품 검색 또는 팀 닥터에게 확인하세요.</p>
-        </section>
-      )}
+        </div>
+      </div>
     </>
   );
 }

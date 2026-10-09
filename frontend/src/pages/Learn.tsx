@@ -1,8 +1,8 @@
 import { CircleHelp, ExternalLink, Send, Stethoscope } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useLocation } from "react-router";
-import { api, type ChatMessage, type ChatResponse, type CheckResult, type Citation } from "../api";
-import { Sheet } from "../components/Sheet";
+import { api, type AthleteProfile, type ChatMessage, type ChatResponse, type CheckResult, type Citation } from "../api";
+import { Dialog } from "../components/Dialog";
 import { useSession } from "../session";
 
 const SOURCE_LABEL: Record<Citation["source"], string> = { WADA: "WADA", KADA: "KADA", ADEL: "ADEL", GlobalDRO: "Global DRO" };
@@ -30,17 +30,17 @@ export function Learn() {
   const [check] = useState<CheckResult | undefined>(initial?.check);
   const [pending, setPending] = useState(false);
   const [source, setSource] = useState<Citation | null>(null);
+  const [profile, setProfile] = useState<AthleteProfile | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
-  const [personal, setPersonal] = useState<string[]>([]);
 
   // 선수는 본인 추천 교육의 질문을 앞에 둔다
   useEffect(() => {
-    if (who.role === "athlete") api.me().then((p) => setPersonal(p.recommendations.map((r) => r.suggested_question)), () => {});
+    if (who.role === "athlete") api.me().then(setProfile, () => {});
   }, [who.role]);
-  const suggestions = [...new Set([...personal, ...SUGGESTED[who.role]])];
+  const suggestions = [...new Set([...(profile?.recommendations.map((r) => r.suggested_question) ?? []), ...SUGGESTED[who.role]])];
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ block: "end" });
+    if (turns.length) endRef.current?.scrollIntoView({ block: "nearest" });
   }, [turns]);
 
   const send = (question: string) => {
@@ -67,47 +67,73 @@ export function Learn() {
 
   return (
     <>
-      <section className="surface">
-        <h1 className="heading">AI 맞춤형 교육</h1>
-        <div className="chips-scroll">
-          {suggestions.map((q) => (
-            <button key={q} className="chip" onClick={() => send(q)} disabled={pending}>
-              {q}
-            </button>
-          ))}
-        </div>
-      </section>
+      <div className="page-head">
+        <h1 className="title">AI 맞춤형 교육</h1>
+        <p className="muted">WADA·KADA 공식 자료에 근거해 답하고, 답마다 출처를 보여드려요.</p>
+      </div>
 
-      {turns.map((t, i) => (
-        <div key={i} className="stack" style={{ gap: 12 }}>
-          <p className="bubble-user">{t.question}</p>
-          {t.response && <Answer r={t.response} onSource={setSource} />}
-          {t.error && <p className="error">{t.error}</p>}
-          {!t.response && !t.error && <p className="caption">답변을 만들고 있어요…</p>}
-        </div>
-      ))}
-      <div ref={endRef} style={{ height: 76 }} />
+      <div className="grid">
+        <aside className="span-4 stack-lg">
+          {profile && (
+            <section className="card">
+              <h2 className="heading">내 교육 프로파일</h2>
+              <div className="row wrap">
+                {profile.tags.map((t, i) => (
+                  <span key={t} className="chip chip-app">
+                    {profile.tag_labels[i] ?? t}
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
+          <section className="stack">
+            <h2 className="label">추천 질문</h2>
+            <div className="suggest-list">
+              {suggestions.map((q) => (
+                <button key={q} className="suggest" onClick={() => send(q)} disabled={pending}>
+                  {q}
+                </button>
+              ))}
+            </div>
+          </section>
+        </aside>
 
-      <div className="composer">
-        <p className="caption">이름, 소속, 연락처를 입력하지 마세요.</p>
-        <form onSubmit={submit}>
-          <input className="input" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="반도핑에 대해 물어보세요" aria-label="질문" />
-          <button className="icon-btn" disabled={!draft.trim() || pending} aria-label="보내기">
-            <Send size={20} />
-          </button>
-        </form>
+        <section className="card chat span-8" data-figure="chat">
+          <div className="chat-log">
+            {turns.length === 0 && <p className="chat-empty">추천 질문을 누르거나 아래에 질문을 입력해 보세요.</p>}
+            {turns.map((t, i) => (
+              <div key={i} className="stack" style={{ gap: 12 }}>
+                <p className="bubble-user">{t.question}</p>
+                {t.response && <Answer r={t.response} onSource={setSource} />}
+                {t.error && <p className="error">{t.error}</p>}
+                {!t.response && !t.error && <p className="caption">답변을 만들고 있어요…</p>}
+              </div>
+            ))}
+            <div ref={endRef} />
+          </div>
+
+          <div className="composer">
+            <p className="caption">이름, 소속, 연락처를 입력하지 마세요.</p>
+            <form onSubmit={submit}>
+              <input className="input" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="반도핑에 대해 물어보세요" aria-label="질문" />
+              <button className="icon-btn" disabled={!draft.trim() || pending} aria-label="보내기">
+                <Send size={18} />
+              </button>
+            </form>
+          </div>
+        </section>
       </div>
 
       {source && (
-        <Sheet onClose={() => setSource(null)}>
-          <span className="chip chip-source" style={{ alignSelf: "flex-start" }}>
+        <Dialog onClose={() => setSource(null)}>
+          <span className="chip-source" style={{ alignSelf: "flex-start" }}>
             <b>{SOURCE_LABEL[source.source]}</b>
           </span>
           <h2 className="heading">{source.title}</h2>
           <a className="btn btn-block" href={source.url} target="_blank" rel="noreferrer">
             원문 보기 <ExternalLink size={18} />
           </a>
-        </Sheet>
+        </Dialog>
       )}
     </>
   );
@@ -115,7 +141,7 @@ export function Learn() {
 
 function Answer({ r, onSource }: { r: ChatResponse; onSource: (c: Citation) => void }) {
   return (
-    <section className="surface" style={{ gap: 12 }}>
+    <div className="answer-block">
       {/* 고정 응답·서버 문구는 본문에 이미 안내가 있으므로 배너를 붙이지 않는다 */}
       {r.kind === "answer" && r.refer_to_expert && (
         <div className="notice notice-caution">
@@ -133,12 +159,13 @@ function Answer({ r, onSource }: { r: ChatResponse; onSource: (c: Citation) => v
       {r.citations.length > 0 && (
         <div className="row wrap">
           {r.citations.map((c) => (
-            <button key={c.chunk_id} className="chip chip-source" onClick={() => onSource(c)}>
-              <b>{SOURCE_LABEL[c.source]}</b> {c.title}
+            <button key={c.chunk_id} className="chip-source" onClick={() => onSource(c)}>
+              <b>{SOURCE_LABEL[c.source]}</b>
+              {c.title}
             </button>
           ))}
         </div>
       )}
-    </section>
+    </div>
   );
 }

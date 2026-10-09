@@ -13,7 +13,7 @@ const STATUS: Record<CheckStatus, { label: string; icon: LucideIcon }> = {
 export function StatusBadge({ status, small }: { status: CheckStatus; small?: boolean }) {
   const { label, icon: Icon } = STATUS[status];
   return (
-    <span className={`status st-${status}`} style={small ? { minHeight: 28, fontSize: 13, padding: "2px 10px" } : undefined}>
+    <span className={`status st-${status}${small ? " small" : ""}`}>
       <Icon size={small ? 14 : 16} />
       {label}
     </span>

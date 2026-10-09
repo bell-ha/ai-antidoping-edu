@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -6,12 +8,20 @@ from starlette.middleware.sessions import SessionMiddleware
 from app import config, rag, substances
 from app.api import routes, session
 
-# 시범 모드(DEMO_MODE=0) 시작 관문 (§10 G2)
-if not config.DEMO_MODE:
-    if config.SESSION_SECRET == config.DEV_SECRET or len(config.SESSION_SECRET) < 32:
-        raise RuntimeError("DEMO_MODE=0에서는 SESSION_SECRET을 32자 이상 무작위 값으로 설정해야 합니다.")
+def pilot_problems(today: date, secret: str) -> list[str]:
+    """시범 모드(DEMO_MODE=0) 시작 관문 (§10 G2·G3). 하나라도 있으면 서버가 뜨지 않는다."""
+    problems = []
+    if secret == config.DEV_SECRET or len(secret) < 32:
+        problems.append("SESSION_SECRET을 32자 이상 무작위 값으로 설정해야 합니다.")
     if pending := substances.unreviewed() + rag.unreviewed():
-        raise RuntimeError(f"연구진 검토 전 항목 {len(pending)}개 (reviewed: false): {pending[:5]} …")
+        problems.append(f"연구진 검토 전 항목 {len(pending)}개 (reviewed: false): {pending[:5]} …")
+    if today > (expires := substances.list_expires()):
+        problems.append(f"금지목록 유효기간이 {expires}에 끝났습니다. 새 금지목록으로 조회표와 코퍼스를 갱신하세요.")
+    return problems
+
+
+if not config.DEMO_MODE and (problems := pilot_problems(date.today(), config.SESSION_SECRET)):
+    raise RuntimeError("시범 모드 시작 불가:\n- " + "\n- ".join(problems))
 
 app = FastAPI(title="AI 반도핑 맞춤형 교육")
 app.add_middleware(
