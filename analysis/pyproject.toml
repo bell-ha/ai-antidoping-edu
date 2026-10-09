@@ -1,0 +1,10 @@
+[project]
+name = "antidoping-edu-analysis"
+version = "0.1.0"
+description = "오프라인 경기력 분석: 합성 데이터 → 예측 → 교육 프로파일 → data/*.json (D2)"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=2.0",
+    "pyyaml>=6.0",
+]
+# D4: LSTM으로 교체할 때 torch 추가. D6: xgboost·shap은 P1 착수 때 결정.

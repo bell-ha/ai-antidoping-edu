@@ -1,0 +1,16 @@
+# 로컬 데모: docker compose up --build → http://localhost:8100 (PORT로 변경 가능)
+# 키 없이 돈다(LLM_MODE=mock). 실제 답변은 .env에 ANTHROPIC_API_KEY를 넣고 LLM_MODE=live.
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8100}:8000"
+    environment:
+      LLM_MODE: ${LLM_MODE:-mock}
+      DEMO_MODE: ${DEMO_MODE:-1}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-sonnet-5-5}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      SESSION_SECRET: ${SESSION_SECRET:-dev-only-secret-change-me}
+    volumes:
+      - ./data/llm_cache:/app/data/llm_cache  # record 결과를 레포에 남긴다

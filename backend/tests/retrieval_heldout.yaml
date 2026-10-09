@@ -1,0 +1,47 @@
+# 검색 hold-out 평가 (D14 보완). 37이 retrieval_eval.yaml·synonyms.yaml을 쓰지 않고 독립적으로 만든 질문.
+# 기대 청크는 섹션 제목만 보고 정했다.
+# 규칙: 이 파일의 실패를 보고 synonyms.yaml이나 코퍼스를 고치지 않는다. 고치면 hold-out이 아니게 된다.
+# 숫자는 retrieval_eval(튜닝용)과 따로 보고한다. 2026-10-08 첫 측정 recall@4 = 0.80 (16/20).
+# 2026-10-08 수정 후 0.85 (17/20) — 엄격책임 동의어는 이 파일의 실패 1번("실수로 금지약물 먹으면")과
+#   retrieval_eval 실패가 같은 공백임을 보고 추가함. 이 문항은 hold-out 오염 가능성이 있다.
+# 논문의 독립 수치는 첫 측정 0.80을 쓴다.
+- q: 단백질 쉐이크도 조심해야 해?
+  expect: [supplement-contamination#s1]
+- q: 운동 끝나고 먹는 회복 보충제 괜찮을까?
+  expect: [recovery-health#s3, supplement-contamination#s1]
+- q: 실수로 금지약물 먹으면 처벌 받아?
+  expect: [anti-doping-basics#s1, supplement-contamination#s2]
+- q: 도핑 규정 위반에는 어떤 것들이 있어?
+  expect: [anti-doping-basics#s2]
+- q: 천식 흡입기 써도 돼?
+  expect: [prohibited-list-overview#s3, medication-check-procedure#s4, tue-guide#s1]
+- q: 다이어트 보조제에 금지 성분 들어있을 수 있어?
+  expect: [weight-control-substances#s2]
+- q: 일본에서 산 감기약 확인하는 방법
+  expect: [international-competition-prep#s1]
+- q: Global DRO에서 검색되면 다 믿어도 돼?
+  expect: [international-competition-prep#s2]
+- q: 검사원이 갑자기 찾아오면 어떻게 해야 해?
+  expect: [testing-procedure#s1]
+- q: 검사 거부하면 어떻게 돼?
+  expect: [testing-procedure#s1, anti-doping-basics#s2]
+- q: 18살 미만 선수는 뭐가 달라?
+  expect: [anti-doping-basics#s4, testing-procedure#s5]
+- q: 어디에 있는지 매일 보고해야 해?
+  expect: [whereabouts#s1, whereabouts#s2]
+- q: TUE 신청할 때 어떤 서류가 필요해?
+  expect: [tue-guide#s4]
+- q: 관절에 스테로이드 주사 맞으면 문제 돼?
+  expect: [recovery-health#s2]
+- q: 팀 동료가 약하는 걸 봤는데 어디 말해?
+  expect: [speak-up#s1]
+- q: 제보하면 내 이름 알려져?
+  expect: [speak-up#s2]
+- q: 혈압약에 이뇨제 들어 있을 수 있어?
+  expect: [diuretics-masking#s2]
+- q: 도핑 교육은 어디서 받을 수 있어?
+  expect: [anti-doping-basics#s5]
+- q: 모니터링 물질은 금지야?
+  expect: [prohibited-list-overview#s4]
+- q: 경기 끝나고 나서 먹는 건 상관없어?
+  expect: [prohibited-list-overview#s2, prohibited-list-overview#s1]

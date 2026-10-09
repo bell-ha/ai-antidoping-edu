@@ -1,0 +1,29 @@
+# 교육 프로파일 규칙 (D5, D6, D8). 근거: docs/reference/fig-app-education-flow.png 표.
+# analysis/profile.py가 읽는다. 임계값을 바꾸면 export.py가 페르소나별 태그를 다시 검사한다.
+
+version: 2026
+weight_class_system: IWF-2018   # D22
+
+thresholds:
+  residual_z_up: 2.0            # 최근 기록이 예측보다 이만큼(σ) 높으면 rapid_improvement
+  residual_z_down: -2.0         # 이만큼 낮으면 decline
+  body_weight_change_pct: 5.0   # 최근 12개월 체중 변화율(%)
+  weight_class_window_months: 18
+  high_level_window_months: 12
+  # D8: 동일 성별·체급·연령대 안의 백분위가 이 구간이면 high_level 추천 안에서 순서만 바꾼다.
+  # 백분위 값은 어떤 출력에도 남기지 않는다.
+  emphasis_percentile: [75, 90]
+
+# 표의 행 순서 = 태그 판정 순서
+tags:
+  rapid_improvement:
+    contents: [prohibited-list-overview, supplement-contamination]
+  decline:
+    contents: [recovery-health, medication-check-procedure]
+  weight_change:
+    contents: [weight-control-substances, diuretics-masking]
+  high_level:
+    contents: [testing-procedure, whereabouts, international-competition-prep, prohibited-list-overview]
+    emphasis_first: prohibited-list-overview   # D8
+  baseline:
+    contents: [anti-doping-basics]

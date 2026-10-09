@@ -1,0 +1,12 @@
+**/node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+frontend/dist
+e2e
+docs
+data/raw
+data/access_codes.json
+logs
+.git
+.env

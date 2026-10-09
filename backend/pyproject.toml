@@ -1,0 +1,19 @@
+[project]
+name = "antidoping-edu-backend"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "pydantic>=2.9",
+    "itsdangerous>=2.2",  # SessionMiddleware 서명 쿠키 (D23)
+    "anthropic>=1.12",
+    "rank-bm25>=0.2.2",   # 46 요청 (D13)
+    "pyyaml>=6.0",        # 46 요청 (rules.yaml, synonyms.yaml)
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "httpx>=0.27"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

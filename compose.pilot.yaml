@@ -1,0 +1,39 @@
+# 시범 적용(§10) override. 학교 서버에서:
+#   docker compose -f compose.yaml -f compose.pilot.yaml up -d --build
+# 필수 값이 빠지면 compose가 실패한다(데모 설정으로 뜨는 사고 방지).
+#
+# 실제 데이터는 이미지에 넣지 않고 서버 경로에서 읽기 전용으로 덮어쓴다(재식별 가능한 개인정보, §10 P-7).
+#   analysis: python3 export.py --out /srv/adedu/data   → profiles.json, team_summary.json
+#   연구진이 발급한 접근 코드: /srv/adedu/data/access_codes.json
+# 시작 관문: reviewed:false 항목이 하나라도 있으면 서버가 시작을 거부한다(G2).
+# 리버스 프록시(nginx 등)가 HTTPS를 처리하고, FORWARDED_ALLOW_IPS에 프록시 IP를 넣는다. 워커는 1개.
+services:
+  app:
+    environment:
+      DEMO_MODE: "0"
+      LLM_MODE: live
+      COOKIE_SECURE: "1"
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET을 설정하세요 (32자 이상 무작위)}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:?ANTHROPIC_API_KEY를 설정하세요}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:?CLAUDE_MODEL을 명시하세요}
+      FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:?리버스 프록시 IP를 설정하세요}
+    ports: !override
+      - "127.0.0.1:${PORT:-8100}:8000"  # 프록시만 접근
+    volumes: !override
+      # llm_cache 볼륨은 쓰지 않는다(시범은 live). 리눅스에서 호스트 디렉터리 소유자가 uid 10001이 아니면 쓰기 실패.
+      # create_host_path: false — 파일이 없으면 빈 폴더를 만들지 않고 바로 실패한다.
+      - type: bind
+        source: ${PILOT_DATA:?실제 데이터 폴더 PILOT_DATA를 설정하세요}/profiles.json
+        target: /app/data/profiles.json
+        read_only: true
+        bind: { create_host_path: false }
+      - type: bind
+        source: ${PILOT_DATA}/team_summary.json
+        target: /app/data/team_summary.json
+        read_only: true
+        bind: { create_host_path: false }
+      - type: bind
+        source: ${PILOT_DATA}/access_codes.json
+        target: /app/data/access_codes.json
+        read_only: true
+        bind: { create_host_path: false }

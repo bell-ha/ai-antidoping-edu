@@ -1,0 +1,426 @@
+{
+  "list_version": "2026",
+  "list_effective": "2026-01-01",
+  "list_expires": "2026-12-31",
+  "_comment": "WADA 2026 금지목록 기준. 모든 항목은 연구진 검토 전(reviewed:false). 2027 목록은 2027-01-01 발효(G3).",
+  "substances": {
+    "pseudoephedrine": {
+      "name_ko": "슈도에페드린",
+      "name_en": "pseudoephedrine",
+      "aliases": [],
+      "status": "THRESHOLD",
+      "wada_class": "S6.B",
+      "note": "경기기간 중 소변 150 µg/mL 초과 시 위반. 이뇨제와 함께 검출되면 양과 관계없이 위반.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "ephedrine": {
+      "name_ko": "에페드린",
+      "name_en": "ephedrine",
+      "aliases": [],
+      "status": "THRESHOLD",
+      "wada_class": "S6.B",
+      "note": "경기기간 중 소변 10 µg/mL 초과 시 위반. 이뇨제와 함께 검출되면 양과 관계없이 위반.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "methylephedrine": {
+      "name_ko": "메틸에페드린",
+      "name_en": "methylephedrine",
+      "aliases": [
+        "dl-메틸에페드린"
+      ],
+      "status": "THRESHOLD",
+      "wada_class": "S6.B",
+      "note": "경기기간 중 소변 10 µg/mL 초과 시 위반. 이뇨제와 함께 검출되면 양과 관계없이 위반.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "cathine": {
+      "name_ko": "카틴",
+      "name_en": "cathine",
+      "aliases": [
+        "노르슈도에페드린"
+      ],
+      "status": "THRESHOLD",
+      "wada_class": "S6.B",
+      "note": "경기기간 중 소변 5 µg/mL 초과 시 위반.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "methylhexaneamine": {
+      "name_ko": "메틸헥산아민",
+      "name_en": "methylhexaneamine",
+      "aliases": [
+        "DMAA",
+        "1,3-DMAA",
+        "디엠에이에이"
+      ],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S6.B",
+      "note": "보충제 성분표에 'DMAA'로 표기되기도 함.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "sibutramine": {
+      "name_ko": "시부트라민",
+      "name_en": "sibutramine",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S6.B",
+      "note": null,
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "amphetamine": {
+      "name_ko": "암페타민",
+      "name_en": "amfetamine",
+      "aliases": [
+        "amphetamine"
+      ],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S6.A",
+      "note": null,
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "methylphenidate": {
+      "name_ko": "메틸페니데이트",
+      "name_en": "methylphenidate",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S6.B",
+      "note": "ADHD 치료제 성분. 치료가 필요하면 TUE 대상인지 확인.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "modafinil": {
+      "name_ko": "모다피닐",
+      "name_en": "modafinil",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S6.A",
+      "note": null,
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "tramadol": {
+      "name_ko": "트라마돌",
+      "name_en": "tramadol",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S7",
+      "note": null,
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "morphine": {
+      "name_ko": "모르핀",
+      "name_en": "morphine",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S7",
+      "note": null,
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "thc": {
+      "name_ko": "THC(대마)",
+      "name_en": "tetrahydrocannabinol",
+      "aliases": [
+        "대마",
+        "대마초",
+        "cannabis",
+        "마리화나"
+      ],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S8",
+      "note": "남용물질(Substance of Abuse)로 분류됨.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "prednisolone": {
+      "name_ko": "프레드니솔론",
+      "name_en": "prednisolone",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S9",
+      "note": "경기기간 중 주사·경구·직장 투여가 금지. 흡입·국소 사용은 허가 용량 안에서 가능. 경구 복용은 경기 3일 전까지 중단 권고(휴약 기간).",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026_list_explanatory_note_en_final_september_2025.pdf",
+      "reviewed": false
+    },
+    "dexamethasone": {
+      "name_ko": "덱사메타손",
+      "name_en": "dexamethasone",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S9",
+      "note": "경기기간 중 주사·경구·직장 투여가 금지. 흡입·국소 사용은 허가 용량 안에서 가능. 경구 복용은 경기 3일 전까지 중단 권고(휴약 기간).",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026_list_explanatory_note_en_final_september_2025.pdf",
+      "reviewed": false
+    },
+    "salbutamol": {
+      "name_ko": "살부타몰",
+      "name_en": "salbutamol",
+      "aliases": [
+        "알부테롤",
+        "albuterol"
+      ],
+      "status": "THRESHOLD",
+      "wada_class": "S3",
+      "note": "흡입은 24시간 1600 µg, 8시간 600 µg 이내만 허용. 소변 1000 ng/mL 초과는 위반 의심 결과. 상시 적용.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "formoterol": {
+      "name_ko": "포르모테롤",
+      "name_en": "formoterol",
+      "aliases": [],
+      "status": "THRESHOLD",
+      "wada_class": "S3",
+      "note": "흡입은 24시간 54 µg, 12시간 36 µg 이내만 허용. 소변 40 ng/mL 초과는 위반 의심 결과. 상시 적용.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "terbutaline": {
+      "name_ko": "터부탈린",
+      "name_en": "terbutaline",
+      "aliases": [],
+      "status": "PROHIBITED",
+      "wada_class": "S3",
+      "note": "허용 용량 예외가 없어 치료가 필요하면 TUE가 필요.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "higenamine": {
+      "name_ko": "히게나민",
+      "name_en": "higenamine",
+      "aliases": [],
+      "status": "PROHIBITED",
+      "wada_class": "S3",
+      "note": null,
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "clenbuterol": {
+      "name_ko": "클렌부테롤",
+      "name_en": "clenbuterol",
+      "aliases": [],
+      "status": "PROHIBITED",
+      "wada_class": "S1.2",
+      "note": null,
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "nandrolone": {
+      "name_ko": "난드롤론",
+      "name_en": "nandrolone",
+      "aliases": [],
+      "status": "PROHIBITED",
+      "wada_class": "S1.1",
+      "note": null,
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "stanozolol": {
+      "name_ko": "스타노졸롤",
+      "name_en": "stanozolol",
+      "aliases": [],
+      "status": "PROHIBITED",
+      "wada_class": "S1.1",
+      "note": null,
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "testosterone": {
+      "name_ko": "테스토스테론",
+      "name_en": "testosterone",
+      "aliases": [],
+      "status": "PROHIBITED",
+      "wada_class": "S1.1",
+      "note": "외부에서 투여한 경우 금지.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "dhea": {
+      "name_ko": "DHEA",
+      "name_en": "prasterone (DHEA)",
+      "aliases": [
+        "프라스테론",
+        "디에이치이에이"
+      ],
+      "status": "PROHIBITED",
+      "wada_class": "S1.1",
+      "note": null,
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "enobosarm": {
+      "name_ko": "에노보삼(오스타린)",
+      "name_en": "enobosarm (ostarine)",
+      "aliases": [
+        "오스타린",
+        "ostarine",
+        "SARM",
+        "SARMs"
+      ],
+      "status": "PROHIBITED",
+      "wada_class": "S1.2",
+      "note": "SARM(선택적 안드로겐 수용체 조절제).",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "meldonium": {
+      "name_ko": "멜도니움",
+      "name_en": "meldonium",
+      "aliases": [],
+      "status": "PROHIBITED",
+      "wada_class": "S4.4",
+      "note": null,
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "epo": {
+      "name_ko": "에리스로포이에틴(EPO)",
+      "name_en": "erythropoietin",
+      "aliases": [
+        "EPO",
+        "에리스로포이에틴"
+      ],
+      "status": "PROHIBITED",
+      "wada_class": "S2.1",
+      "note": null,
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "furosemide": {
+      "name_ko": "푸로세미드",
+      "name_en": "furosemide",
+      "aliases": [],
+      "status": "PROHIBITED",
+      "wada_class": "S5",
+      "note": "이뇨제. 체중조절 목적 사용도 위반.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "hydrochlorothiazide": {
+      "name_ko": "히드로클로로티아지드",
+      "name_en": "hydrochlorothiazide",
+      "aliases": [
+        "하이드로클로로티아자이드",
+        "HCTZ"
+      ],
+      "status": "PROHIBITED",
+      "wada_class": "S5",
+      "note": "이뇨제.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "acetazolamide": {
+      "name_ko": "아세타졸아미드",
+      "name_en": "acetazolamide",
+      "aliases": [],
+      "status": "PROHIBITED",
+      "wada_class": "S5",
+      "note": "눈에 쓰는 탄산탈수효소 억제제(도르졸아미드·브린졸아미드 점안)는 예외.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "caffeine": {
+      "name_ko": "카페인",
+      "name_en": "caffeine",
+      "aliases": [],
+      "status": "NOT_LISTED_VERIFY",
+      "wada_class": null,
+      "note": "금지목록이 아니라 모니터링 프로그램 대상(경기기간 중).",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026_list_monitoring_program_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "phenylephrine": {
+      "name_ko": "페닐에프린",
+      "name_en": "phenylephrine",
+      "aliases": [],
+      "status": "NOT_LISTED_VERIFY",
+      "wada_class": null,
+      "note": "금지목록이 아니라 모니터링 프로그램 대상(경기기간 중).",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026_list_monitoring_program_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "cbd": {
+      "name_ko": "칸나비디올(CBD)",
+      "name_en": "cannabidiol",
+      "aliases": [
+        "CBD",
+        "씨비디"
+      ],
+      "status": "NOT_LISTED_VERIFY",
+      "wada_class": null,
+      "note": "CBD 자체는 S8의 예외. 대마 추출 CBD 제품에는 THC가 섞여 있을 수 있음.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "propranolol": {
+      "name_ko": "프로프라놀롤",
+      "name_en": "propranolol",
+      "aliases": [],
+      "status": "NOT_LISTED_VERIFY",
+      "wada_class": null,
+      "note": "베타차단제(P1)는 양궁·사격 등 지정 종목에서만 금지이며 역도는 해당하지 않음.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "paracetamol": {
+      "name_ko": "아세트아미노펜",
+      "name_en": "paracetamol",
+      "aliases": [
+        "파라세타몰",
+        "acetaminophen"
+      ],
+      "status": "NOT_LISTED_VERIFY",
+      "wada_class": null,
+      "note": null,
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "ibuprofen": {
+      "name_ko": "이부프로펜",
+      "name_en": "ibuprofen",
+      "aliases": [],
+      "status": "NOT_LISTED_VERIFY",
+      "wada_class": null,
+      "note": null,
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "cetirizine": {
+      "name_ko": "세티리진",
+      "name_en": "cetirizine",
+      "aliases": [],
+      "status": "NOT_LISTED_VERIFY",
+      "wada_class": null,
+      "note": null,
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "loratadine": {
+      "name_ko": "로라타딘",
+      "name_en": "loratadine",
+      "aliases": [],
+      "status": "NOT_LISTED_VERIFY",
+      "wada_class": null,
+      "note": null,
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "creatine": {
+      "name_ko": "크레아틴",
+      "name_en": "creatine",
+      "aliases": [],
+      "status": "NOT_LISTED_VERIFY",
+      "wada_class": null,
+      "note": "성분 자체는 금지목록에 없지만 보충제 제품은 오염 위험이 있음.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    }
+  }
+}

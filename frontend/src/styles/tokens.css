@@ -1,0 +1,51 @@
+/* DESIGN.md 3~5절 값 그대로. 바꾸면 DESIGN.md도 같이 고친다. */
+:root {
+  --bg: #f2f4f6;
+  --surface: #ffffff;
+  --surface-sub: #f4f5f7;
+  --line: #e3e5e8;
+
+  --text: #191b1f;
+  --text-sub: #5b616b;
+  --text-faint: #666c75;
+
+  --primary: #17181a;
+  --primary-text: #ffffff;
+
+  --app-tint: #edf3fc;
+  --app-line: #c7d7f2;
+  --app-ink: #2f5bb7;
+  --know-tint: #eaf6f1;
+  --know-line: #bfe3d3;
+  --know-ink: #1f7a57;
+
+  /* 판정 상태 (고정) */
+  --st-prohibited: #b3261e;
+  --st-prohibited-bg: #fdecea;
+  --st-incomp: #9a4a00;
+  --st-incomp-bg: #fff1e5;
+  --st-threshold: #7f5300;
+  --st-threshold-bg: #fff6db;
+  --st-neutral: #4a5563;
+  --st-neutral-bg: #eef0f3;
+
+  --radius-surface: 24px;
+  --radius-box: 16px;
+  --radius-pill: 999px;
+
+  --app-width: 430px;
+  --gutter: 16px;
+  --topbar: 56px;
+  --tabbar: 64px;
+
+  --fs-title: 22px;
+  --lh-title: 30px;
+  --fs-heading: 18px;
+  --lh-heading: 26px;
+  --fs-body: 15px;
+  --lh-body: 24px;
+  --fs-label: 14px;
+  --lh-label: 20px;
+  --fs-caption: 12px;
+  --lh-caption: 18px;
+}

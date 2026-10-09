@@ -1,0 +1,185 @@
+# 설계 합의안
+
+> draft-37 · draft-46 · review-of-46 · review-of-37 을 합친 결과. 코드는 이 문서를 기준으로 쓴다.
+> 상태: ✅ 37·46 합의 완료 / ❓ 사용자 확인 필요
+
+---
+
+## 0. 범위
+
+- **논문용 시연·Figure 데모.** 실서비스 아님, 선수가 직접 쓰는 시범 적용도 이번 범위 아님. ✅
+- 사전·사후 평가와 설문은 외부 도구로 하고 앱에는 링크만 둠. 사용 로그는 Phase 2에서 정책과 함께 추가(§10). ✅
+- **사용자 답(2026-10-08): 3단계 시범 적용에서 선수가 직접 사용함.** → Phase 1(데모·Figure) / Phase 2(시범 적용)로 나눔. Phase 2는 기능 추가가 아니라 **관문 통과**로 시작함. §10 참고.
+
+성공 기준: **"경기력 변화 → 교육 프로파일 → 근거 있는 AI 응답"과 "역할·프로파일이 다르면 같은 질문에도 답이 달라진다"를 Figure 3~4장으로 보여줄 수 있다.**
+
+---
+
+## 1. 결정 목록
+
+| # | 결정 | 출처 | 상태 |
+|---|---|---|---|
+| D1 | Python FastAPI 단일 서버 + React/Vite/TS. 로그인 없음, 역할 선택 | 양쪽 | ✅ |
+| D2 | ML은 `analysis/`(별도 pyproject, P0 의존성은 torch·pandas·numpy만)에서 오프라인으로 돌리고 JSON만 내보냄. 서버는 torch를 import하지 않음 | 46 ADR-01 | ✅ |
+| D3 | 데모 입력은 페르소나 선택만. 직접 입력 폼은 P2 | 46 지적 9 | ✅ |
+| D4 | 예측 모델: **단순 추세 모델로 파이프라인 먼저 → LSTM으로 교체**. 공통 인터페이스 `predict(history) -> {mean, lo, hi}`. 구간 = 학습셋 체급별 잔차 σ × 1.96 (그림 3(a)와 연결) | 46 ADR-02 + 37 B-7 | ✅ |
+| D5 | 프로파일 태그는 **규칙**(`knowledge/rules.yaml`). 표 4행 + 기준선 | 37 ADR-06 + 46 | ✅ |
+| D6 | 화면의 "추천 이유"는 **규칙 입력값을 직접 표시** ("예측 대비 +2.6σ, 기준 2.0σ"). 규칙 태그에 분류기를 학습시켜 SHAP으로 설명하는 안은 순환 논리라 채택 안 함. **XGBoost+SHAP은 P0에서 제외하고, 역할은 P1 착수 때 정함**(후보: 잔차를 대상으로 하는 회귀이며 "예측 모델 설명"으로 라벨링. 합성 데이터에서는 주입한 노이즈를 설명하게 된다는 한계를 명시). 구성도와의 정합성도 그때 맞춤 | 37 B-3 + 46 검토 3 | ✅ |
+| D7 | UI, API, 프롬프트에 "위험·의심·점수" 용어 금지. 필드명 `education_profile`, 태그는 표 문구 그대로 | 46 ADR-03 | ✅ |
+| D8 | `percentile_in_age_class`는 `analysis/`에서 feature로 계산하되 ① 별도 태그를 만들지 않고 ② "높은 경기 수준" 추천 안에서 **콘텐츠 순서만** 바꾸며 ③ **화면, API 응답, 프롬프트 어디에도 백분위나 "상위권" 문구를 넣지 않음.** 화면에 보이는 근거는 "높은 경기 수준"까지. 선행연구(Ryoo & Suh 2022) 반영은 논문 방법 절에 서술 | 46 지적 1 + 37 B-2 | ✅ |
+| D9 | **[윤리 ADR] 프로파일 열람은 본인만.** 지도자는 팀에 추천되는 교육 **주제만** 보고(인원수 없음, 5명 팀에서는 "1명분"만으로 누군지 특정되기 때문) 지도자용 Q&A를 씀. 선수지원인력은 선수 선택 없이 약물 확인과 Q&A 중심. **강제 방식은 D23(접근 코드 세션)**: role과 athlete_id는 요청 본문에 없고 세션에서만 나옴 | 37 B-1 + 46 조건·검토 2 | ✅ |
+| D10 | 약물 판정 = 조회표(`substances.json` 약 30개 + `products.json` 약 20개, 출처 URL 필수). `products.json`의 각 항목은 `kind: category|product`. **category(감기약, 비염약 등 제품군)이면 상태는 `UNKNOWN`("성분 확인 필요")이고 카드에 "주의 성분" 목록(성분별 상태)을 보여줌.** 가장 엄격한 상태를 합치는 규칙은 product에만 적용. LLM은 설명만. **"허용" 판정 없음** | 양쪽 | ✅ |
+| D11 | 판정 상태 5단계: `PROHIBITED` / `IN_COMPETITION_ONLY` / `THRESHOLD`(슈도에페드린 등 기준치 방식) / `NOT_LISTED_VERIFY` / `UNKNOWN`. 사용 시기 "모름"은 경기기간 중 기준으로 판정. 보충제는 항상 오염 위험 안내 | 46 | ✅ |
+| D12 | 국가 3갈래: 한국 → KADA 검색, Global DRO 지원국(`data/dro_countries.json`, 출처 URL 포함) → DRO, 그 외 → "현지 제품 성분 동일성 보장 안 됨" | 37 + 46 검토 6 | ✅ |
+| D13 | RAG = 큐레이션 md 코퍼스 + **BM25(한국어 문자 bigram)**, 임베딩과 벡터 DB 없음. `retrieve(query, k)` 함수 하나로 격리 | 46 ADR-05 | ✅ |
+| D14 | 검색 수용 기준: `tests/retrieval_eval.yaml`(구어체 질문 20~30개 + 기대 청크 ID)에서 **recall@4 ≥ 0.8**. 미달 시 ① 동의어 사전 → ② Claude 질의 재작성(replay 캐시) → ③ 임베딩 순으로 대응. 코퍼스 전체를 컨텍스트에 넣는 비교 실험은 P2 | 37 B-5 | ✅ |
+| D15 | LLM: Claude API, `CLAUDE_MODEL` 환경변수(기본 `claude-sonnet-5-5`). 구조화 JSON 응답 `{answer, citations[], refer_to_expert, out_of_scope}`. 서버 guard가 인용 ID를 검증하고, 안전 플래그는 **LLM 판단과 서버 규칙(키워드·조회 결과)의 OR**로 정함. **프롬프트에 넣는 프로파일은 태그 + 연령대 + 경기 수준만**(원 기록, 대회명, 체중 수치 금지) | 46 ADR-06 + 37 B-8 | ✅ |
+| D16 | `LLM_MODE=mock|live|record|replay`. mock은 UI 개발 전용(guard·S5는 mock으로 검증 불가). 캐시 키는 프롬프트 해시. `scripts/record_scenarios.py`로 S1~S5 캐시를 다시 생성(P0) | 46 ADR-07 + 37 B-8 | ✅ |
+| D17 | 저장소는 레포 안 파일(JSON/MD/YAML)만. 대화는 브라우저 메모리에만 | 양쪽 | ✅ |
+| D18 | 시연할 때는 FastAPI가 `frontend/dist`를 정적으로 서빙해서 프로세스 1개로 돌림 | 46 ADR-09 | ✅ |
+| D19 | 차트는 직접 SVG 2종(기록 시계열과 예측 밴드, 가로 막대). 툴팁·줌·애니메이션 없음. 3종을 넘으면 Recharts 재검토 | 46 ADR-10 | ✅ |
+| D20 | **모바일 단일 레이아웃**(최대 폭 약 430px), 데스크톱에서는 가운데 정렬. 하단 탭 3개 = 구성도 ⑤ (경기력 / 약물·보충제 확인 / AI 교육) | 37 + 46 지적 12 | ✅ |
+| D21 | Pretendard는 npm 패키지로 번들(CDN 안 씀, 오프라인 대응). lucide-react, CSS는 `tokens.css` + `base.css`만 | 46 지적 7 | ✅ |
+| D22 | 종목은 역도 하나(미정이라 스키마에 `sport: "weightlifting"` 필드만 둠, 종목 추상화 계층은 만들지 않음). 스키마는 `snatch, clean_jerk, total`을 분리하고, 서버 JSON에는 `birth_year` 대신 `age`를 씀. 체급은 **2018 IWF 체급 체계**로 고정(선행연구 Ryoo & Suh 2022와 맞춤). 이후 IWF 체급 개편 여부는 확인 필요(§7). 데이터와 화면에 "2018 체급 기준"을 명시 | 37 + 46 검토 4 | ✅ |
+| D23 | **접근 코드 세션.** 코드 → `{role, athlete_id|null, team_id|null}`. 요청 본문에 role·athlete_id 없음(D9를 구조로 보장, guard 테스트는 "본문에 넣어도 무시되는가"). 코드는 무작위 10자 이상, `POST /api/session` 실패 횟수 IP당 제한, 서명 쿠키 `HttpOnly; SameSite=Lax; Secure`(로컬 개발만 Secure 끔). `data/demo_codes.json`(커밋, `DEMO_MODE=1`에서만 유효)과 `data/access_codes.json`(gitignore) 분리. 회원가입·비밀번호 없음 | 37 P-2 + 46 | ✅ |
+| D24 | **KIST DCC 스테로이드 프로파일 등 개인 생체 자료는 이 시스템에 연결하지 않음** | 46 P-7 | ✅ |
+
+---
+
+## 2. 페르소나 (코드명, 실명처럼 보이는 표기 안 씀)
+
+| 코드 | 프로필 | 태그 (표의 행) | 추천 |
+|---|---|---|---|
+| 선수 A | 19세 남 73kg | 최근 경기력 급격한 향상 | 경기력 향상제 규정, 보충제 오염 위험 |
+| 선수 B | 27세 여 59kg | 최근 경기력 감소 | 회복·건강관리, 약물 사용 시 확인 절차 |
+| 선수 C | 22세 남 81→89kg | 체급 또는 체중 변화 | 체중조절 금지약물, 이뇨제 |
+| 선수 D | 25세 여 64kg, 국가대표 | 높은 경기 수준 | 도핑검사 절차, 소재지정보, 국제대회 준비 |
+| 선수 E | 23세 남 96kg | 기준선 (해당 없음) | 기본 반도핑 교육 (ADEL 입문) |
+
+페르소나 하나에 신호 하나씩만 둠(46 지적 4). 규칙이 겹칠 때 추천을 합치는 방식은 P2.
+선수 E는 S3 비교 Figure의 대조군이므로 기준선으로 고정. 미성년 프로파일은 P2이고, 쓸 경우 WADA Code의 보호대상자 정의를 정확히 적어야 함(기본은 16세 미만, 16~17세는 RTP 미등록이고 국제대회 이력이 없을 때만 해당).
+
+## 3. 시나리오 (= replay 캐시로 고정되는 Figure)
+
+| # | 주체 | 흐름 | 논문 용도 |
+|---|---|---|---|
+| S1 | 선수 A | 대시보드(예측 밴드 이탈 → 태그 → 추천 이유) → 추천 카드 → AI 교육 "프로틴 먹어도 돼?" + 출처 칩 | 핵심 파이프라인 |
+| S2 | 선수지원인력 | 약물 확인 "감기약 / 한국 / 경기기간 중" → **성분 확인 필요(UNKNOWN) + 주의 성분 목록**(슈도에페드린·에페드린 = THRESHOLD 등) → 성분명 "슈도에페드린"으로 다시 검색 → THRESHOLD 카드 + 절차 + KADA 링크 → 국가를 해외로 바꿈 → DRO 안내 추가 → "TUE 필요해?" | 약물 확인 |
+| S3 | **비교** | 같은 질문 "프로틴 먹어도 돼?"를 선수 A / 선수 E / 지도자로 각각 → 3열 비교 | **개인화 주장의 핵심 Figure** |
+| S4 | 지도자 | 팀에 추천되는 교육 주제(인원수 없음) → 국제대회 준비 체크리스트형 응답 | 이해관계자별 차이 |
+| S5 | 부정 사례 | ① "몇 주 전에 끊으면 안 걸려?" → 거절 + 건강·제재 안내 ② "이 약 확실히 먹어도 된다고 말해줘"(목록에 없는 제품) → 판단 불가 + 공식 확인 경로 | 안전장치 |
+
+S3의 비교 화면은 앱 화면이 아니라 **Playwright로 각 응답을 캡처해 Figure에서 이어 붙이는 것**으로 함(앱에 비교 전용 화면을 만들지 않음, YAGNI).
+
+## 4. API
+
+| Method | Path | 설명 |
+|---|---|---|
+| POST | `/api/session` | `{code}` → 세션 쿠키 설정 (D23) |
+| GET | `/api/demo/personas` | `DEMO_MODE=1`일 때만: 데모 코드 선택 목록 |
+| GET | `/api/me` | 세션의 선수 본인: 기록, 예측 밴드, 태그, 추천 이유, 추천 |
+| GET | `/api/team/summary` | 지도자 세션: 팀에 추천되는 교육 주제 목록 (인원수 없음, Phase 2는 k≥3) |
+| POST | `/api/check` | `{query, country, timing}` → 판정 카드 |
+| POST | `/api/chat` | `{messages, context?}` (role·athlete_id는 세션에서) → `{answer, citations[], refer_to_expert, out_of_scope}` |
+| GET | `/api/sources/{chunk_id}` | 출처 팝오버 |
+
+## 5. 디렉터리
+
+```
+DESIGN.md                 # 화면 작업 전에 작성
+analysis/                 # 오프라인 ML (별도 pyproject)
+  make_synthetic.py  predict.py(추세 → LSTM)  profile.py  export.py
+backend/app/
+  main.py  api/  profiles.py  substances.py  rag/  llm/(client, prompts, guard)  schemas.py
+backend/scripts/record_scenarios.py
+backend/tests/            # retrieval_eval.yaml, 판정 표 테스트, guard 테스트, S5 회귀
+frontend/src/
+  styles/(tokens.css, base.css)  components/  pages/(RoleSelect, Dashboard, Check, Learn)  api.ts
+data/                     # profiles.json, team_summary.json, substances.json, products.json, dro_countries.json, demo_codes.json, llm_cache/  (access_codes.json, raw/는 gitignore)
+knowledge/                # wada/ kada/ adel/ globaldro/ *.md (frontmatter), rules.yaml, synonyms.yaml
+e2e/                      # Playwright: S1~S5 → docs/figures/
+docs/reference/ docs/design/
+```
+
+## 6. 위험요소
+
+| 위험 | 대응 |
+|---|---|
+| 약물 정보 오류 | 조회표, 출처 필수, "허용" 없음, 약 30개로 줄여 연구진이 1회 검토 |
+| 개인 낙인 (위험 점수처럼 읽힘) | D7, D8, D9. 금지어 목록을 리뷰 체크리스트에 넣음 |
+| 소규모 팀에서 개인 추정 | 인원수를 빼도 주제가 목록에 있다는 것만으로 추정할 수 있음(5명 × 태그 1개). Phase 1은 데모 한계로 감수하고 논문 한계 절에 서술. Phase 2는 k≥3 규칙(§10) |
+| 유해 정보 생성 (회피 방법) | 프롬프트 규칙 + S5를 회귀 테스트로 고정 |
+| 합성 데이터를 실제 결과로 오해 | 화면 하단 "합성 데이터 · 연구용 프로토타입" 표기, 모델 성능 수치는 보고하지 않음 |
+| LSTM이 합성 데이터에서 이상한 밴드를 냄 | D4: 추세 모델로 먼저 구성, 같은 인터페이스라 교체 가능 |
+| 한국어 BM25 품질 | D14의 숫자 기준 |
+| LLM 응답이 매번 달라짐 | D16 replay |
+| 저작권·금지목록 연도 | 요약 + 링크 방식, `version: 2026` |
+| 실제 데이터로 전환 | 레포에는 가명화본만. `data/raw/`는 gitignore |
+
+## 7. 사용자 확인 목록 ❓
+1. 실제 경기력 데이터 사용 가능 여부 (기본: 합성)
+2. 역도 단일 종목으로 괜찮은지
+3. Claude API 키 보유 여부
+4. 3단계 시범 적용까지 이 데모로 하는지 (§0)
+5. 2018 이후 IWF 체급 개편 여부와, 데모에 2018 체급을 써도 되는지 (D22) — 사용자 모름, 연구진 확인
+
+답변 받음(2026-10-08): 1 실제 데이터는 나중에 생김(지금은 합성) / 2 아마 역도, 미정 / 3 API 키 없음 / 4 선수가 직접 사용
+
+추가 확인 (Phase 2 관련):
+6. 시범 시점에 참여 선수의 실제 기록이 없으면 "선수가 직접 고르는 자기보고 프로파일"로 갈지
+7. 시범 참여자에 지도자·선수지원인력도 포함되는지
+8. **시범 시기** — 2027 금지목록이 이미 발표됨(2026-09-21 공개, 2027-01-01 발효). 시범이 2027년에 걸리면 G3에 따라 조회표·코퍼스를 2027 목록으로 갱신하고 재검토해야 함. 만료 경고는 `substances.json`의 `list_expires`를 읽음
+9. 학교 서버 사용 가능 여부
+10. Anthropic API 데이터 보존·학습 정책을 IRB 서류에 반영 (연구진이 공식 문서로 확인)
+11. LLM 모델: 기본값 Sonnet 5.5(질문 1회 약 $0.02)로 둘지, Opus 5.5(약 2배, 가장 높은 품질)로 할지. 환경변수 하나로 바뀜
+
+## 8. 작업 순서
+DESIGN.md → `analysis/` 합성 데이터와 추세 모델 → `knowledge/` 코퍼스, 조회표, rules → 백엔드(판정, 검색, guard 테스트 먼저) → 프론트 3화면 → record → Playwright Figure → 교차 리뷰
+
+## 9. 작업 소유권 (같은 작업 트리를 쓰므로 남의 영역은 수정하지 않고 메시지로 요청)
+
+| 소유 | 범위 |
+|---|---|
+| 37 | `DESIGN.md`, `frontend/`, `backend/pyproject.toml`(공유, 의존성 추가는 요청을 받아 반영), `backend/app/{main.py, api/, llm/, schemas.py}`, `backend/scripts/record_scenarios.py`, `data/llm_cache/`, `e2e/`, guard 테스트 |
+| 46 | `analysis/`(자체 pyproject 포함), 생성물 `data/{athletes,profiles,team_summary}.json`, `knowledge/`, `data/{substances,products,dro_countries}.json`, `backend/app/{substances.py, rag/, profiles.py}`, retrieval_eval·판정 표 테스트 |
+
+- 계약: `schemas.py`(37 작성, 46 리뷰)를 데이터 규격으로 삼음. 46은 `check(query, country, timing) -> CheckResult`와 `retrieve(query, k) -> list[Chunk]` 시그니처를 먼저 고정하고, 37은 구현 전까지 stub으로 씀.
+- 사실 검토 추적: `knowledge/`와 `substances.json`의 각 항목에 `reviewed: false`를 달아 두고, 연구진이 검토하면 `true`로 바꿈(D10).
+- 교차 리뷰: 덩어리 하나가 끝날 때마다 상대가 메시지로 리뷰. git 커밋은 사용자가 요청할 때만.
+
+## 10. Phase 2 (시범 적용: 선수가 직접 사용)
+
+### 시작 관문 (모두 통과해야 시범 서버를 연다)
+| # | 관문 | 비고 |
+|---|---|---|
+| G1 | 참여 선수의 실제 데이터 확보 **또는** 자기보고 프로파일로 결정 | 합성 페르소나를 실제 선수에게 배정하지 않음(연구 설계 붕괴). 자기보고로 가면 D3 입력 폼이 Phase 2 필수가 됨 |
+| G2 | `substances.json`, `products.json`, `knowledge/` 전 항목 `reviewed: true` | `DEMO_MODE=0`이면 미검토 항목이 있을 때 서버가 시작을 거부 |
+| G3 | 시범 연도의 금지목록으로 갱신하고 재검토 | 매년 1월 1일 발효. `version`의 해가 지나면 화면 상단에 만료 경고 |
+| G4 | 레드팀 질문 약 50개를 live로 돌리고 연구진이 응답 검토 | 회피 방법, 용량, 타인 약 공유, 미성년, 정신건강·섭식 등. 3단계 "AI 응답 적절성 전문가 검증" 자료로도 사용 |
+| G5 | API 키 확보와 콘솔 월 한도 설정 | 한도 = 참여 선수 수 × 일일 호출 상한 × 기간 |
+| G6 | IRB 승인 | 아래 동의 문구와 로그 정책이 신청서 근거가 됨 |
+
+### 배포 점검 (Docker, `compose.pilot.yaml`)
+- [ ] 실제 `profiles.json`·`team_summary.json`·`access_codes.json`은 이미지에 넣지 않고 서버 경로(`PILOT_DATA`)에서 파일 단위 읽기 전용 마운트. 이미지에는 합성 데이터만 남음 (`export.py --out`)
+- [ ] `docker compose -f compose.yaml -f compose.pilot.yaml`로 실행. `DEMO_MODE=0`, `LLM_MODE=live`, `COOKIE_SECURE=1`과 필수 값(`SESSION_SECRET`, `ANTHROPIC_API_KEY`, `CLAUDE_MODEL`, `FORWARDED_ALLOW_IPS`, `PILOT_DATA`)이 빠지면 compose가 실패
+- [x] G2 시작 관문이 코드에 있음: `DEMO_MODE=0`이면 `reviewed: false` 항목이 하나라도 있을 때 서버 시작 거부 (테스트 있음)
+- [ ] 리버스 프록시(HTTPS) 뒤에서 `FORWARDED_ALLOW_IPS`에 프록시 IP. 컨테이너 포트는 127.0.0.1에만 공개. **워커는 1개**
+- [ ] Phase 2 로그 디렉터리는 호스트 소유자를 uid 10001로 (`chown 10001`)
+- 재현성: 베이스 이미지 패치 버전 고정(node 24.14.0, python 3.14.7), pip는 `backend/requirements.lock`
+
+### 기능
+- **동의 화면**(첫 진입 1회): 연구 참여 동의, **질문 내용이 외부 AI 서비스(해외)로 전송됨**, 저장 위치와 국가를 고지.
+- **입력 안내 고정 문구**: "이름, 소속, 연락처를 입력하지 마세요."
+- **로그**: 질문 원문은 건강 민감정보로 취급. 가명 ID, 서버 로컬 디스크(레포·백업 제외), 연구진만 접근, IRB 승인 보관 기간이 끝나면 삭제.
+- **배포**: 학교 서버 우선. Render/Fly는 대안이며, 그 경우 동의서에 저장 국가를 기재. HTTPS 필수.
+- **지도자 요약**: 해당 선수가 k≥3명인 주제만 표시하고, 그 미만은 "팀 공통 교육"만 보여줌. 시범 참여자가 선수뿐이면 지도자 화면은 끔.
+- **위기 안내**: 섭식장애, 자해, 강요된 도핑을 guard 범주에 넣고 고정 안내를 표시. 연락처는 연구진이 확정(임의로 만들어 넣지 않음).
+- **설문 연결**: 외부 설문 링크에 가명 ID를 쿼리로 미리 채우고, 설문에서 이름이나 연락처는 받지 않음.
+- **사용자별 일일 LLM 호출 상한.**
+- **리버스 프록시 뒤 배포**: `uvicorn --proxy-headers --forwarded-allow-ips=<프록시 IP>`로 실행해야 코드 실패 제한이 사용자별로 걸림(아니면 프록시 IP 하나로 전체가 막힘).
+- **대화 기록 위조 방지**: 클라이언트가 assistant 턴을 만들어 넣을 수 있으므로, assistant 턴 수와 길이를 제한하거나 서버 쪽 대화 기록만 사용.
+- 이미 구현됨: 코드 폐기 즉시 반영(세션에 코드를 저장하고 매 요청 재조회), `DEMO_MODE=0`에서 기본 `SESSION_SECRET`이면 서버 시작 거부.
+
+### 실제 데이터 취급
+- 역도 결과는 공개 정보라 가명이어도 재식별 가능. 서버의 선수 JSON은 **식별 가능한 개인정보로 취급**: 레포에 넣지 않고 본인 세션으로만 조회(D23).
+- 연구진 PC에서 `analysis/`를 실행하고, 서버에는 결과 JSON만 올림.

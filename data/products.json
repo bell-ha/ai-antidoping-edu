@@ -1,0 +1,290 @@
+{
+  "_comment": "제품명·제품군 → 성분. category는 항상 UNKNOWN(주의 성분). 모든 항목 reviewed:false.",
+  "products": {
+    "감기약": {
+      "kind": "category",
+      "aliases": [
+        "종합감기약",
+        "감기시럽",
+        "콧물감기약",
+        "기침약"
+      ],
+      "ingredients": [
+        "pseudoephedrine",
+        "methylephedrine",
+        "ephedrine"
+      ],
+      "supplement": false,
+      "note": null,
+      "links": [],
+      "reviewed": false
+    },
+    "비염약": {
+      "kind": "category",
+      "aliases": [
+        "코감기약",
+        "코막힘약"
+      ],
+      "ingredients": [
+        "pseudoephedrine",
+        "ephedrine"
+      ],
+      "supplement": false,
+      "note": null,
+      "links": [],
+      "reviewed": false
+    },
+    "한약": {
+      "kind": "category",
+      "aliases": [
+        "한방약",
+        "보약",
+        "생약"
+      ],
+      "ingredients": [
+        "ephedrine",
+        "methylephedrine",
+        "pseudoephedrine"
+      ],
+      "supplement": false,
+      "note": "KADA는 한약·생약 성분의 금지 여부를 판정하지 않으므로 한의사와 상담해야 함.",
+      "links": [
+        {
+          "label": "KADA 한약 안내",
+          "url": "https://www.kada-ad.or.kr/kada?where=drug/drug_chinese_medic"
+        }
+      ],
+      "reviewed": false
+    },
+    "마황": {
+      "kind": "category",
+      "aliases": [
+        "ephedra",
+        "에페드라"
+      ],
+      "ingredients": [
+        "ephedrine",
+        "methylephedrine",
+        "pseudoephedrine"
+      ],
+      "supplement": false,
+      "note": "에페드린 계열 성분을 포함할 수 있는 약재. 함량은 제품마다 다름.",
+      "links": [
+        {
+          "label": "KADA 한약 안내",
+          "url": "https://www.kada-ad.or.kr/kada?where=drug/drug_chinese_medic"
+        }
+      ],
+      "reviewed": false
+    },
+    "다이어트보조제": {
+      "kind": "category",
+      "aliases": [
+        "다이어트약",
+        "살빼는약",
+        "체중감량제",
+        "다이어트보충제"
+      ],
+      "ingredients": [
+        "sibutramine",
+        "methylhexaneamine",
+        "higenamine",
+        "furosemide",
+        "hydrochlorothiazide"
+      ],
+      "supplement": true,
+      "note": null,
+      "links": [],
+      "reviewed": false
+    },
+    "부스터": {
+      "kind": "category",
+      "aliases": [
+        "프리워크아웃",
+        "운동전보충제",
+        "근육보충제"
+      ],
+      "ingredients": [
+        "methylhexaneamine",
+        "higenamine",
+        "enobosarm",
+        "dhea"
+      ],
+      "supplement": true,
+      "note": null,
+      "links": [],
+      "reviewed": false
+    },
+    "프로틴": {
+      "kind": "category",
+      "aliases": [
+        "프로틴보충제",
+        "단백질보충제",
+        "웨이프로틴",
+        "단백질파우더"
+      ],
+      "ingredients": [],
+      "supplement": true,
+      "note": null,
+      "links": [],
+      "reviewed": false
+    },
+    "크레아틴보충제": {
+      "kind": "product",
+      "aliases": [
+        "크레아틴파우더"
+      ],
+      "ingredients": [
+        "creatine"
+      ],
+      "supplement": true,
+      "note": null,
+      "links": [],
+      "reviewed": false
+    },
+    "천식흡입기": {
+      "kind": "category",
+      "aliases": [
+        "흡입기",
+        "천식약"
+      ],
+      "ingredients": [
+        "salbutamol",
+        "formoterol",
+        "terbutaline"
+      ],
+      "supplement": false,
+      "note": null,
+      "links": [],
+      "reviewed": false
+    },
+    "ADHD약": {
+      "kind": "category",
+      "aliases": [
+        "ADHD치료제",
+        "주의력결핍치료제"
+      ],
+      "ingredients": [
+        "methylphenidate",
+        "amphetamine"
+      ],
+      "supplement": false,
+      "note": null,
+      "links": [],
+      "reviewed": false
+    },
+    "진통제": {
+      "kind": "category",
+      "aliases": [
+        "마약성진통제"
+      ],
+      "ingredients": [
+        "tramadol",
+        "morphine"
+      ],
+      "supplement": false,
+      "note": null,
+      "links": [],
+      "reviewed": false
+    },
+    "이뇨제": {
+      "kind": "category",
+      "aliases": [
+        "붓기약",
+        "부종약"
+      ],
+      "ingredients": [
+        "furosemide",
+        "hydrochlorothiazide",
+        "acetazolamide"
+      ],
+      "supplement": false,
+      "note": null,
+      "links": [],
+      "reviewed": false
+    },
+    "스테로이드": {
+      "kind": "category",
+      "aliases": [
+        "스테로이드제",
+        "스테로이드약"
+      ],
+      "ingredients": [
+        "prednisolone",
+        "dexamethasone",
+        "nandrolone",
+        "testosterone",
+        "stanozolol"
+      ],
+      "supplement": false,
+      "note": "'스테로이드'는 염증 치료용(S9)과 단백동화(S1)를 모두 가리킬 수 있어 성분 확인이 필요함.",
+      "links": [],
+      "reviewed": false
+    },
+    "타이레놀": {
+      "kind": "product",
+      "aliases": [
+        "tylenol"
+      ],
+      "ingredients": [
+        "paracetamol"
+      ],
+      "supplement": false,
+      "note": "같은 이름의 감기약·복합제 제품은 성분이 다르므로 제품명 전체로 확인.",
+      "links": [],
+      "reviewed": false
+    },
+    "벤토린": {
+      "kind": "product",
+      "aliases": [
+        "ventolin"
+      ],
+      "ingredients": [
+        "salbutamol"
+      ],
+      "supplement": false,
+      "note": null,
+      "links": [],
+      "reviewed": false
+    },
+    "콘서타": {
+      "kind": "product",
+      "aliases": [
+        "concerta"
+      ],
+      "ingredients": [
+        "methylphenidate"
+      ],
+      "supplement": false,
+      "note": null,
+      "links": [],
+      "reviewed": false
+    },
+    "라식스": {
+      "kind": "product",
+      "aliases": [
+        "lasix"
+      ],
+      "ingredients": [
+        "furosemide"
+      ],
+      "supplement": false,
+      "note": null,
+      "links": [],
+      "reviewed": false
+    },
+    "지르텍": {
+      "kind": "product",
+      "aliases": [
+        "zyrtec"
+      ],
+      "ingredients": [
+        "cetirizine"
+      ],
+      "supplement": false,
+      "note": null,
+      "links": [],
+      "reviewed": false
+    }
+  }
+}

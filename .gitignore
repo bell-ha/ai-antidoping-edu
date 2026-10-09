@@ -1,0 +1,17 @@
+# 실제 데이터와 접근 코드 (D23, §10)
+data/raw/
+data/access_codes.json
+logs/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Node
+node_modules/
+frontend/dist/
+
+.env
+.DS_Store
