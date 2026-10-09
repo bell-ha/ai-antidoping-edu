@@ -10,7 +10,8 @@ const BASE = process.env.BASE_URL ?? "http://127.0.0.1:8000";
 const OUT = new URL("../docs/figures/", import.meta.url).pathname;
 const VIEWPORTS = { desktop: { width: 1280, height: 800 }, mobile: { width: 390, height: 844 } };
 // Figure 캡처 때만 테두리를 진하게 (#E5E7EB는 흑백 인쇄에서 사라짐). 앱 토큰은 그대로.
-const PRINT_CSS = ".card{border-color:#9CA3AF!important} .chip-source,.card-soft{outline:1px solid #C4C8CE}";
+// 고정 메뉴는 요소가 뷰포트보다 길어 스크롤 캡처될 때 카드 위에 겹쳐 찍히므로 흐름 안으로 되돌린다
+const PRINT_CSS = ".card{border-color:#9CA3AF!important} .chip-source,.card-soft{outline:1px solid #C4C8CE} .nav{position:static!important}";
 
 for (const dir of ["screens/desktop", "screens/mobile", "paper"]) mkdirSync(OUT + dir, { recursive: true });
 
@@ -73,11 +74,35 @@ async function open(code, viewport) {
   return page;
 }
 
+// 직접 입력(D25): 예시 채우기 → 계산. 페이지를 새로 열면 프로파일이 사라지므로 이후 이동은 메뉴 클릭으로
+async function computeExample(p) {
+  await p.click("button:has-text('예시 채우기')");
+  await p.waitForFunction(() => document.querySelector("#age")?.value);
+  await p.click("button:has-text('교육 프로파일 만들기')");
+  await p.waitForSelector("[data-figure='chart'] svg");
+}
+
 // 시나리오: 각 단계 후 화면을 찍고, figures에 적힌 요소는 논문용으로 따로 찍는다
 const SCENARIOS = [
   { name: "00-start", code: null, path: "/" },
-  { name: "01-athlete-a-performance", code: "demo-athlete-a", path: "/performance", figures: { chart: "S1-chart-A", profile: "S1-profile-A" } },
-  { name: "02-athlete-c-performance", code: "demo-athlete-c", path: "/performance", figures: { chart: "chart-C-weight-class" } },
+  { name: "01a-athlete-input-empty", code: "demo-athlete-a", path: "/performance" },
+  {
+    name: "01b-athlete-input-warning",
+    code: "demo-athlete-a",
+    path: "/performance",
+    act: async (p) => {
+      await p.click("button:has-text('예시 채우기')");
+      await p.waitForFunction(() => document.querySelector("#age")?.value);
+      // 마지막 기록의 용상에 오타(+100)를 넣으면 급변 경고가 떠야 한다 (D25 ④)
+      const last = p.locator("input[aria-label$='번째 용상']").last();
+      await last.fill(String(Number(await last.inputValue()) + 100));
+      await p.click("button:has-text('교육 프로파일 만들기')");
+      await p.waitForSelector(".notice-caution");
+    },
+    figures: { input: "S1-input-warning" },
+  },
+  { name: "01-athlete-a-performance", code: "demo-athlete-a", path: "/performance", act: computeExample, figures: { input: "S1-input-A", chart: "S1-chart-A", profile: "S1-profile-A" } },
+  { name: "02-athlete-c-performance", code: "demo-athlete-c", path: "/performance", act: computeExample, figures: { chart: "chart-C-weight-class" } },
   {
     name: "03-support-check",
     code: "demo-support",
@@ -104,8 +129,10 @@ const SCENARIOS = [
   {
     name: "04-athlete-learn",
     code: "demo-athlete-a",
-    path: "/learn",
+    path: "/performance",
     act: async (p) => {
+      await computeExample(p);
+      await p.click(".nav-link:has-text('AI 교육')");
       await p.click(".suggest >> nth=0");
       await p.waitForSelector(".answer");
     },
@@ -133,6 +160,8 @@ for (const s of SCENARIOS) {
     if (s.act) await s.act(page);
     await settle(page);
     await textCheck(page, `${vpName}/${s.name}`);
+    // 스크롤된 상태로 전체 캡처하면 sticky 메뉴가 중간에 찍힌다 → 맨 위로
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
     await page.screenshot({ path: `${OUT}screens/${vpName}/${s.name}.png`, fullPage: true });
 
     if (vpName === "desktop" && s.figures) {

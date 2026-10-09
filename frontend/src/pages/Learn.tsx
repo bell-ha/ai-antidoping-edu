@@ -1,7 +1,7 @@
 import { CircleHelp, ExternalLink, Send, Stethoscope } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useLocation } from "react-router";
-import { api, type AthleteProfile, type ChatMessage, type ChatResponse, type CheckResult, type Citation } from "../api";
+import { api, type ChatMessage, type ChatResponse, type CheckResult, type Citation } from "../api";
 import { Dialog } from "../components/Dialog";
 import { useSession } from "../session";
 
@@ -22,7 +22,7 @@ interface Turn {
 type LearnState = { question?: string; check?: CheckResult } | null;
 
 export function Learn() {
-  const { who } = useSession();
+  const { who, profile } = useSession();
   const location = useLocation();
   const initial = location.state as LearnState;
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -30,13 +30,9 @@ export function Learn() {
   const [check] = useState<CheckResult | undefined>(initial?.check);
   const [pending, setPending] = useState(false);
   const [source, setSource] = useState<Citation | null>(null);
-  const [profile, setProfile] = useState<AthleteProfile | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
-  // 선수는 본인 추천 교육의 질문을 앞에 둔다
-  useEffect(() => {
-    if (who.role === "athlete") api.me().then(setProfile, () => {});
-  }, [who.role]);
+  // 선수가 프로파일을 만들었으면 본인 추천 교육의 질문을 앞에 둔다
   const suggestions = [...new Set([...(profile?.recommendations.map((r) => r.suggested_question) ?? []), ...SUGGESTED[who.role]])];
 
   useEffect(() => {

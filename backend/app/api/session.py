@@ -62,6 +62,7 @@ def login(body: SessionRequest, request: Request) -> SessionInfo:
     if info is None:
         _failures[ip].append(time.monotonic())
         raise HTTPException(401, "코드를 확인하세요.")
+    request.session.clear()  # 이전 사용자의 계산된 프로파일이 남지 않게
     request.session["code"] = body.code.strip()
     return info
 

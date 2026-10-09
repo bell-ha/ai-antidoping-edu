@@ -6,7 +6,9 @@ D7: 사람에게 붙는 평가 용어 금지(DESIGN.md 6절). D8: 순위 관련 
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from datetime import date
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 Role = Literal["athlete", "coach", "support"]
 Sport = Literal["weightlifting"]  # D22: 종목 추상화 계층은 만들지 않음
@@ -35,8 +37,7 @@ class DemoPersona(BaseModel):
 
 
 # ---------- 선수 프로파일 ----------
-# 저장 형태(ProfileRecord, data/profiles.json)는 analysis/export.py가 쓰고,
-# API 형태(AthleteProfile)는 profiles.py가 content_id를 카탈로그로 풀어서 만든다.
+# 선수가 입력한 기록으로 profiling.compute()가 만든다(D25). 저장하지 않는다.
 
 ProfileTag = Literal["rapid_improvement", "decline", "weight_change", "high_level", "baseline"]
 
@@ -64,22 +65,6 @@ class Reason(BaseModel):
     text: str
 
 
-class ProfileRecord(BaseModel):
-    """data/profiles.json의 한 항목. 순위 관련 값은 넣지 않음 (D8을 구조로 보장)."""
-    athlete_id: str
-    sport: Sport = "weightlifting"
-    sex: Literal["M", "F"]
-    age: int  # birth_year 대신 (§10)
-    age_band: str  # 프롬프트에는 이것만 (D15)
-    weight_class: int
-    competition_level: CompetitionLevel
-    records: list[RecordPoint]
-    forecast: list[ForecastPoint]
-    tags: list[ProfileTag]
-    reasons: list[Reason]
-    recommendations: list[str]  # content_id, 순서는 export가 정함
-
-
 class TeamSummaryRecord(BaseModel):
     """data/team_summary.json. 카탈로그 고정 순서, 인원수 없음 (D9)."""
     team_id: str
@@ -95,7 +80,7 @@ class Recommendation(BaseModel):
 
 
 class AthleteProfile(BaseModel):
-    """GET /api/me. 본인 세션으로만 조회 (D9, D23)."""
+    """POST /api/profile/compute 결과. 선수 본인 세션에서만 만들어진다 (D9, D25)."""
     athlete_id: str
     sport: Sport
     sex: Literal["M", "F"]
@@ -108,6 +93,53 @@ class AthleteProfile(BaseModel):
     tag_labels: list[str] = []  # tags와 같은 순서. 표시명 출처는 knowledge/catalog.yaml 하나
     reasons: list[Reason]
     recommendations: list[Recommendation]
+
+
+# ---------- 직접 입력 (D25) ----------
+
+class RecordInput(BaseModel):
+    """선수가 입력하는 대회 1회. 체급(성별+계체 체중)과 합계는 서버가 도출한다."""
+    date: str = Field(pattern=r"^\d{4}-(0[1-9]|1[0-2])$")  # "YYYY-MM"
+    competition_level: CompetitionLevel
+    body_weight: float = Field(ge=30, le=200)
+    snatch: int = Field(ge=1, le=300)
+    clean_jerk: int = Field(ge=1, le=300)
+
+
+class ComputeRequest(BaseModel):
+    """POST /api/profile/compute. 입력은 서버에 저장하지 않는다."""
+    sex: Literal["M", "F"]
+    age: int = Field(ge=10, le=80)  # 가장 최근 대회 때의 나이
+    records: list[RecordInput] = Field(min_length=3, max_length=10)
+    confirmed: bool = False  # 경고를 사용자가 확인했는지
+
+    @model_validator(mode="after")
+    def _dates(self) -> "ComputeRequest":
+        dates = [r.date for r in self.records]
+        if dates != sorted(dates):
+            raise ValueError("대회 기록은 오래된 것부터 날짜순으로 입력해 주세요.")
+        if dates[-1] > date.today().strftime("%Y-%m"):
+            raise ValueError("아직 오지 않은 달의 기록은 입력할 수 없어요.")
+        return self
+
+
+class PromptProfile(BaseModel):
+    """세션에 저장하고 프롬프트에 넣는 것만 (D15, D25). 원 기록은 넣지 않는다."""
+    tags: list[ProfileTag]
+    age_band: str
+    competition_level: CompetitionLevel
+
+
+class InputWarning(BaseModel):
+    row: int | None = None  # records 인덱스
+    field: str | None = None
+    code: Literal["ratio", "jump"]
+    message: str
+
+
+class ComputeResponse(BaseModel):
+    profile: AthleteProfile | None  # 경고가 있고 confirmed=false면 None
+    warnings: list[InputWarning]
 
 
 class TeamSummary(BaseModel):

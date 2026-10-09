@@ -1,73 +1,56 @@
-"""경기력 예측 (D4). 지금은 단순 추세 모델이고, 나중에 LSTM으로 교체한다.
+"""모집단 파라미터 학습 (D4). 추론은 backend/app/profiling.py가 하고, 여기서는 그 추론에 쓸 숫자만 만든다.
 
-인터페이스는 교체 후에도 같다:
-    model = TrendModel.fit(background)
-    model.predict(athlete, upto) -> Prediction(mean, lo, hi, sigma)
+  fit(background) -> model_params.json에 들어갈 dict
+    curves     : 성별 연령 곡선(체급 기준 합계 대비 비율, 2차식 계수)
+    class_peak : 체급별 기준 합계 — 합성 데이터 생성기의 값(실제 기록 아님)
+    sigma      : 성별·체급별 한 걸음 앞 예측 잔차의 표준편차 (그림 3(a) "체급별 잔차 분포")
+    source     : "synthetic" | "real" — 합성이면 시범 모드에서 서버가 시작을 거부한다(D26)
 
-추세 모델 = 성별 연령 곡선(기준 합계 대비 비율, 2차식) + 선수 개인 오프셋(직전 최대 4개 대회 잔차 평균).
-예측 구간 = 학습셋 체급별 한 걸음 앞 예측 잔차의 σ × 1.96 (그림 3(a) "체급별 잔차 분포"와 연결).
+LSTM으로 바꿀 때는 이 파일과 profiling.mean_prediction을 함께 교체한다(인터페이스는 같게).
 """
 
 from collections import defaultdict
-from dataclasses import dataclass
 
 import numpy as np
 
-from make_synthetic import CLASS_PEAK, Athlete
+from app.profiling import TOP_CLASS, Record, ages, mean_prediction
+from make_synthetic import CLASS_PEAK, CLASSES, Athlete
 
 Z95 = 1.96
 MIN_HISTORY = 2
 OFFSET_WINDOW = 4
 
 
-@dataclass
-class Prediction:
-    mean: float
-    lo: float
-    hi: float
-    sigma: float
+def to_records(a: Athlete) -> list[Record]:
+    return [Record(r.date, r.competition_level, r.weight_class, r.body_weight, r.snatch, r.clean_jerk)
+            for r in a.records]
 
 
-class TrendModel:
-    def __init__(self, curves: dict[str, np.ndarray]):
-        self.curves = curves
-        self.sigma: dict[tuple[str, int], float] = {}
+def fit(athletes: list[Athlete], source: str) -> dict:
+    assert TOP_CLASS in CLASSES["M"] and TOP_CLASS in CLASSES["F"]
+    by_sex = defaultdict(lambda: ([], []))
+    for a in athletes:
+        for r in a.records:
+            xs, ys = by_sex[a.sex]
+            xs.append(a.age_at(r.year))
+            ys.append(r.total / CLASS_PEAK[a.sex][r.weight_class])
+    params = {
+        "source": source,
+        "weight_class_system": "IWF-2018",
+        "classes": CLASSES,
+        "class_peak": {sex: {str(c): v for c, v in peaks.items()} for sex, peaks in CLASS_PEAK.items()},
+        "curves": {sex: [float(c) for c in np.polyfit(xs, ys, 2)] for sex, (xs, ys) in sorted(by_sex.items())},
+        "z95": Z95,
+        "min_history": MIN_HISTORY,
+        "offset_window": OFFSET_WINDOW,
+    }
 
-    @classmethod
-    def fit(cls, athletes: list[Athlete]) -> "TrendModel":
-        by_sex = defaultdict(lambda: ([], []))
-        for a in athletes:
-            for r in a.records:
-                ages, ratios = by_sex[a.sex]
-                ages.append(a.age_at(r.year))
-                ratios.append(r.total / CLASS_PEAK[a.sex][r.weight_class])
-        model = cls({sex: np.polyfit(ages, ratios, 2) for sex, (ages, ratios) in by_sex.items()})
-
-        residuals = defaultdict(list)
-        for a in athletes:
-            for i in range(MIN_HISTORY, len(a.records)):
-                r = a.records[i]
-                residuals[(a.sex, r.weight_class)].append(r.total - model._mean(a, i))
-        model.sigma = {key: float(np.std(v)) for key, v in residuals.items()}
-        return model
-
-    def _ratio(self, sex: str, age: float) -> float:
-        return float(np.polyval(self.curves[sex], age))
-
-    def _mean(self, a: Athlete, upto: int, year: int | None = None, weight_class: int | None = None) -> float:
-        """records[:upto]만 보고 records[upto](또는 지정한 다음 대회)의 합계를 예측."""
-        history = a.records[max(0, upto - OFFSET_WINDOW):upto]
-        offset = np.mean([r.total / CLASS_PEAK[a.sex][r.weight_class] - self._ratio(a.sex, a.age_at(r.year))
-                          for r in history])
-        target = a.records[upto] if upto < len(a.records) else None
-        year = year if year is not None else target.year
-        weight_class = weight_class if weight_class is not None else target.weight_class
-        return (self._ratio(a.sex, a.age_at(year)) + offset) * CLASS_PEAK[a.sex][weight_class]
-
-    def predict(self, a: Athlete, upto: int, year: int | None = None, weight_class: int | None = None) -> Prediction:
-        if upto < MIN_HISTORY:
-            raise ValueError("예측에는 대회 기록이 최소 2개 필요합니다")
-        mean = self._mean(a, upto, year, weight_class)
-        wc = weight_class if weight_class is not None else a.records[min(upto, len(a.records) - 1)].weight_class
-        sigma = self.sigma[(a.sex, wc)]
-        return Prediction(mean, mean - Z95 * sigma, mean + Z95 * sigma, sigma)
+    residuals = defaultdict(list)
+    for a in athletes:
+        records = to_records(a)
+        record_ages = ages(a.age_at(a.records[-1].year), records)
+        for i in range(MIN_HISTORY, len(records)):
+            residuals[f"{a.sex}{records[i].weight_class}"].append(
+                records[i].total - mean_prediction(a.sex, records, record_ages, i, params))
+    params["sigma"] = {key: round(float(np.std(v)), 3) for key, v in sorted(residuals.items())}
+    return params

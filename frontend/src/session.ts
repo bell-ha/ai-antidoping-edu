@@ -1,10 +1,13 @@
 import { createContext, useContext } from "react";
-import type { Role, SessionInfo } from "./api";
+import type { AthleteProfile, Role, SessionInfo } from "./api";
 
 export interface SessionState {
   who: SessionInfo;
   demo: boolean;
   logout: () => void;
+  // 직접 입력으로 계산한 프로파일. 브라우저 메모리에만 있고 새로고침하면 사라진다 (D25)
+  profile: AthleteProfile | null;
+  setProfile: (p: AthleteProfile | null) => void;
 }
 
 export const SessionContext = createContext<SessionState | null>(null);
@@ -29,3 +32,8 @@ export const HOME_BY_ROLE: Record<Role, string> = {
   coach: "/team",
   support: "/check",
 };
+
+export function weightClassLabel(sex: "M" | "F", wc: number): string {
+  if (wc === 999) return sex === "M" ? "+109kg급" : "+87kg급"; // 2018 IWF 최상위 체급
+  return `${wc}kg급`;
+}

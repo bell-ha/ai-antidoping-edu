@@ -3,7 +3,7 @@
 프로파일은 태그 표시명·연령대·경기 수준만 넣는다. 원 기록, 대회명, 체중 수치는 넣지 않는다.
 """
 
-from app.schemas import CheckResult, Chunk, ProfileRecord, Role
+from app.schemas import CheckResult, Chunk, PromptProfile, Role
 
 RULES = """당신은 반도핑 예방교육 도우미입니다. 아래 규칙을 지키세요.
 
@@ -24,7 +24,7 @@ ROLE_TONE: dict[Role, str] = {
 LEVEL_KO = {"junior": "주니어", "national": "국내 대회", "international": "국제 대회"}
 
 
-def system_prompt(role: Role, profile: ProfileRecord | None, tag_labels: list[str]) -> str:
+def system_prompt(role: Role, profile: PromptProfile | None, tag_labels: list[str]) -> str:
     parts = [RULES, ROLE_TONE[role]]
     if profile is not None:
         parts.append(

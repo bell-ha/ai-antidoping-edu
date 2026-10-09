@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router";
-import { api, type SessionInfo } from "./api";
+import { api, type AthleteProfile, type SessionInfo } from "./api";
 import { Shell } from "./components/Shell";
 import { HOME_BY_ROLE, SessionContext, TABS_BY_ROLE } from "./session";
 import { Check } from "./pages/Check";
@@ -12,6 +12,7 @@ import { Team } from "./pages/Team";
 export default function App() {
   const [who, setWho] = useState<SessionInfo | null | undefined>(undefined);
   const [demo, setDemo] = useState(false);
+  const [profile, setProfile] = useState<AthleteProfile | null>(null);
 
   useEffect(() => {
     api.whoami().then(setWho, () => setWho(null));
@@ -19,6 +20,7 @@ export default function App() {
   }, []);
 
   const logout = useCallback(() => {
+    setProfile(null);
     api.logout().finally(() => setWho(null));
   }, []);
 
@@ -27,7 +29,7 @@ export default function App() {
 
   const tabs = TABS_BY_ROLE[who.role];
   return (
-    <SessionContext.Provider value={{ who, demo, logout }}>
+    <SessionContext.Provider value={{ who, demo, logout, profile, setProfile }}>
       <Routes>
         <Route element={<Shell />}>
           {tabs.includes("performance") && <Route path="/performance" element={<Performance />} />}

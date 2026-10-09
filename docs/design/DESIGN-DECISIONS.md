@@ -21,7 +21,7 @@
 |---|---|---|---|
 | D1 | Python FastAPI 단일 서버 + React/Vite/TS. 로그인 없음, 역할 선택 | 양쪽 | ✅ |
 | D2 | ML은 `analysis/`(별도 pyproject, P0 의존성은 torch·pandas·numpy만)에서 오프라인으로 돌리고 JSON만 내보냄. 서버는 torch를 import하지 않음 | 46 ADR-01 | ✅ |
-| D3 | 데모 입력은 페르소나 선택만. 직접 입력 폼은 P2 | 46 지적 9 | ✅ |
+| D3 | **선수가 최근 경기 기록을 직접 입력하는 것이 기본 흐름**(2026-10-09 사용자 요구, 구성도 ①). 페르소나 A~E는 "예시 채우기"로 같은 경로를 탐. ~~페르소나 선택만, 입력 폼 P2~~ | 사용자 요구 + D25 | ✅ |
 | D4 | 예측 모델: **단순 추세 모델로 파이프라인 먼저 → LSTM으로 교체**. 공통 인터페이스 `predict(history) -> {mean, lo, hi}`. 구간 = 학습셋 체급별 잔차 σ × 1.96 (그림 3(a)와 연결) | 46 ADR-02 + 37 B-7 | ✅ |
 | D5 | 프로파일 태그는 **규칙**(`knowledge/rules.yaml`). 표 4행 + 기준선 | 37 ADR-06 + 46 | ✅ |
 | D6 | 화면의 "추천 이유"는 **규칙 입력값을 직접 표시** ("예측 대비 +2.6σ, 기준 2.0σ"). 규칙 태그에 분류기를 학습시켜 SHAP으로 설명하는 안은 순환 논리라 채택 안 함. **XGBoost+SHAP은 P0에서 제외하고, 역할은 P1 착수 때 정함**(후보: 잔차를 대상으로 하는 회귀이며 "예측 모델 설명"으로 라벨링. 합성 데이터에서는 주입한 노이즈를 설명하게 된다는 한계를 명시). 구성도와의 정합성도 그때 맞춤 | 37 B-3 + 46 검토 3 | ✅ |
@@ -43,6 +43,8 @@
 | D22 | 종목은 역도 하나(미정이라 스키마에 `sport: "weightlifting"` 필드만 둠, 종목 추상화 계층은 만들지 않음). 스키마는 `snatch, clean_jerk, total`을 분리하고, 서버 JSON에는 `birth_year` 대신 `age`를 씀. 체급은 **2018 IWF 체급 체계**로 고정(선행연구 Ryoo & Suh 2022와 맞춤). 이후 IWF 체급 개편 여부는 확인 필요(§7). 데이터와 화면에 "2018 체급 기준"을 명시 | 37 + 46 검토 4 | ✅ |
 | D23 | **접근 코드 세션.** 코드 → `{role, athlete_id|null, team_id|null}`. 요청 본문에 role·athlete_id 없음(D9를 구조로 보장, guard 테스트는 "본문에 넣어도 무시되는가"). 코드는 무작위 10자 이상, `POST /api/session` 실패 횟수 IP당 제한, 서명 쿠키 `HttpOnly; SameSite=Lax; Secure`(로컬 개발만 Secure 끔). `data/demo_codes.json`(커밋, `DEMO_MODE=1`에서만 유효)과 `data/access_codes.json`(gitignore) 분리. 회원가입·비밀번호 없음 | 37 P-2 + 46 | ✅ |
 | D24 | **KIST DCC 스테로이드 프로파일 등 개인 생체 자료는 이 시스템에 연결하지 않음** | 46 P-7 | ✅ |
+| D25 | **직접 입력 경로** (37 초안 + 46 반박 1~7). ① 입력: 성별, 나이, 대회별 {년-월, 대회 수준, 계체 체중, 인상, 용상}. 합계 자동, **체급은 성별+계체 체중으로 도출**(모순 입력 방지). 기본 5행·최소 3행·최대 10행. ② 추론은 `backend/app/profiling.py`(46 소유, 순수 파이썬, torch 없음)가 `data/model_params.json`(analysis가 학습해 export, `source` 필드)로 실행. analysis/export.py도 같은 모듈을 써서 코드 중복 없음. ③ 규칙의 "최근 N개월" 기준은 **입력된 마지막 대회 날짜**(서버 시계 아님 → Figure 재현성). 미래 날짜는 422. ④ 검증: 날짜 오름차순·체중 30~200·인상<합계는 422, 인상/합계 비율 0.35~0.55 밖이나 직전 대비 ±25% 넘는 변화는 **경고 → 사용자가 확인해야 계산**(오타 하나가 태그를 만드는 것 방지, D7). ⑤ 입력 경로는 D8 백분위 재정렬을 끔(합성 분포 기준이라). ⑥ **선수 역할에만** 열림(D9). ⑦ 입력 기록은 서버에 저장하지 않음. 세션에는 프롬프트용 필드(tags, age_band, competition_level)만, 화면용 전체 프로파일은 브라우저 메모리에만(새로고침하면 다시 입력). /api/me 폐지 | 37 + 46 | ✅ |
+| D26 | **모델 파라미터 출처 관문**: `model_params.json`의 `source`가 `synthetic`이면 `DEMO_MODE=0`에서 서버 시작 거부(G1). 지금의 판정 기준(체급별 편차, 기준 합계)은 합성 데이터로 정한 값이라 실제 선수에게 쓰면 근거가 없다 | 46 반박 1 | ✅ |
 
 ---
 
@@ -79,8 +81,9 @@ S3의 비교 화면은 앱 화면이 아니라 **Playwright로 각 응답을 캡
 |---|---|---|
 | POST | `/api/session` | `{code}` → 세션 쿠키 설정 (D23) |
 | GET | `/api/demo/personas` | `DEMO_MODE=1`일 때만: 데모 코드 선택 목록 |
-| GET | `/api/me` | 세션의 선수 본인: 기록, 예측 밴드, 태그, 추천 이유, 추천 |
-| GET | `/api/team/summary` | 지도자 세션: 팀에 추천되는 교육 주제 목록 (인원수 없음, Phase 2는 k≥3) |
+| POST | `/api/profile/compute` | 선수 세션만. `{sex, age, records[], confirmed}` → `{profile: AthleteProfile \| null, warnings[]}`. 경고가 있고 `confirmed=false`면 profile 없이 경고만 (D25) |
+| GET | `/api/demo/examples/{athlete_id}` | `DEMO_MODE=1`일 때만: 페르소나 입력 예시(기록 행) |
+| GET | `/api/team/summary` | 지도자 세션: 팀에 추천되는 교육 주제 목록 (인원수 없음). 데모에서만 합성 팀으로 동작, **시범에서는 비활성**(입력을 저장하지 않으므로 데이터 출처가 없음) |
 | POST | `/api/check` | `{query, country, timing}` → 판정 카드 |
 | POST | `/api/chat` | `{messages, context?}` (role·athlete_id는 세션에서) → `{answer, citations[], refer_to_expert, out_of_scope}` |
 | GET | `/api/sources/{chunk_id}` | 출처 팝오버 |
@@ -134,6 +137,7 @@ docs/reference/ docs/design/
 9. 학교 서버 사용 가능 여부
 10. Anthropic API 데이터 보존·학습 정책을 IRB 서류에 반영 (연구진이 공식 문서로 확인)
 11. LLM 모델: 기본값 Sonnet 5.5(질문 1회 약 $0.02)로 둘지, Opus 5.5(약 2배, 가장 높은 품질)로 할지. 환경변수 하나로 바뀜
+12. **직접 입력의 판정 기준은 아직 합성 데이터 기준**(D26). 시범 전에 실제 경기 기록 데이터(여러 선수)로 기준을 다시 맞춰야 함 — 연구진 데이터 필요
 
 ## 8. 작업 순서
 DESIGN.md → `analysis/` 합성 데이터와 추세 모델 → `knowledge/` 코퍼스, 조회표, rules → 백엔드(판정, 검색, guard 테스트 먼저) → 프론트 3화면 → record → Playwright Figure → 교차 리뷰
@@ -154,7 +158,7 @@ DESIGN.md → `analysis/` 합성 데이터와 추세 모델 → `knowledge/` 코
 ### 시작 관문 (모두 통과해야 시범 서버를 연다)
 | # | 관문 | 비고 |
 |---|---|---|
-| G1 | 참여 선수의 실제 데이터 확보 **또는** 자기보고 프로파일로 결정 | 합성 페르소나를 실제 선수에게 배정하지 않음(연구 설계 붕괴). 자기보고로 가면 D3 입력 폼이 Phase 2 필수가 됨 |
+| G1 | **실제 경기 기록 데이터로 모델 파라미터를 다시 적합**(`model_params.json`의 `source`가 `synthetic`이 아님, D26). 선수 입력은 D3로 구현됨 | 합성 파라미터로 실제 선수를 판정하면 근거가 없음. 서버가 시작을 거부 |
 | G2 | `substances.json`, `products.json`, `knowledge/` 전 항목 `reviewed: true` | `DEMO_MODE=0`이면 미검토 항목이 있을 때 서버가 시작을 거부 |
 | G3 | 시범 연도의 금지목록으로 갱신하고 재검토 | 매년 1월 1일 발효. `version`의 해가 지나면 화면 상단에 만료 경고 |
 | G4 | 레드팀 질문 약 50개를 live로 돌리고 연구진이 응답 검토 | 회피 방법, 용량, 타인 약 공유, 미성년, 정신건강·섭식 등. 3단계 "AI 응답 적절성 전문가 검증" 자료로도 사용 |
@@ -162,7 +166,7 @@ DESIGN.md → `analysis/` 합성 데이터와 추세 모델 → `knowledge/` 코
 | G6 | IRB 승인 | 아래 동의 문구와 로그 정책이 신청서 근거가 됨 |
 
 ### 배포 점검 (Docker, `compose.pilot.yaml`)
-- [ ] 실제 `profiles.json`·`team_summary.json`·`access_codes.json`은 이미지에 넣지 않고 서버 경로(`PILOT_DATA`)에서 파일 단위 읽기 전용 마운트. 이미지에는 합성 데이터만 남음 (`export.py --out`)
+- [ ] `access_codes.json`은 이미지에 넣지 않고 서버 경로(`PILOT_DATA`)에서 읽기 전용 마운트. 선수 프로파일은 입력으로 계산하므로 profiles·team_summary 마운트는 없음(D25)
 - [ ] `docker compose -f compose.yaml -f compose.pilot.yaml`로 실행. `DEMO_MODE=0`, `LLM_MODE=live`, `COOKIE_SECURE=1`과 필수 값(`SESSION_SECRET`, `ANTHROPIC_API_KEY`, `CLAUDE_MODEL`, `FORWARDED_ALLOW_IPS`, `PILOT_DATA`)이 빠지면 compose가 실패
 - [x] G2 시작 관문이 코드에 있음: `DEMO_MODE=0`이면 `reviewed: false` 항목이 하나라도 있을 때 서버 시작 거부 (테스트 있음)
 - [ ] 리버스 프록시(HTTPS) 뒤에서 `FORWARDED_ALLOW_IPS`에 프록시 IP. 컨테이너 포트는 127.0.0.1에만 공개. **워커는 1개**

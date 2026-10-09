@@ -48,13 +48,42 @@ export interface AthleteProfile {
   sex: "M" | "F";
   age: number;
   weight_class: number;
-  competition_level: "junior" | "national" | "international";
+  competition_level: CompetitionLevel;
   records: RecordPoint[];
   forecast: ForecastPoint[];
   tags: ProfileTag[];
   tag_labels: string[];
   reasons: { tag: ProfileTag; text: string }[];
   recommendations: Recommendation[];
+}
+
+export type CompetitionLevel = "junior" | "national" | "international";
+
+export interface RecordInput {
+  date: string; // "YYYY-MM"
+  competition_level: CompetitionLevel;
+  body_weight: number;
+  snatch: number;
+  clean_jerk: number;
+}
+
+export interface ComputeRequest {
+  sex: "M" | "F";
+  age: number;
+  records: RecordInput[];
+  confirmed?: boolean;
+}
+
+export interface InputWarning {
+  row: number | null;
+  field: string | null;
+  code: "ratio" | "jump";
+  message: string;
+}
+
+export interface ComputeResponse {
+  profile: AthleteProfile | null;
+  warnings: InputWarning[];
 }
 
 export interface TeamSummary {
@@ -116,6 +145,17 @@ export class ApiError extends Error {
   }
 }
 
+// 422(pydantic) 오류를 사람이 읽을 문장으로. 행 번호는 1부터.
+function validationMessage(errors: { loc: (string | number)[]; msg: string }[]): string {
+  return errors
+    .map((e) => {
+      const row = e.loc.indexOf("records") >= 0 ? e.loc[e.loc.indexOf("records") + 1] : undefined;
+      const msg = e.msg.replace(/^Value error, /, "");
+      return typeof row === "number" ? `${row + 1}번째 기록: ${msg}` : msg;
+    })
+    .join(" / ");
+}
+
 async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await fetch(path, {
     method,
@@ -124,7 +164,10 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!res.ok) {
-    const detail = await res.json().then((d) => (typeof d.detail === "string" ? d.detail : ""), () => "");
+    const detail = await res.json().then(
+      (d) => (typeof d.detail === "string" ? d.detail : Array.isArray(d.detail) ? validationMessage(d.detail) : ""),
+      () => "",
+    );
     throw new ApiError(res.status, detail || "요청을 처리하지 못했어요.");
   }
   return res.status === 204 ? (undefined as T) : res.json();
@@ -135,7 +178,8 @@ export const api = {
   whoami: () => call<SessionInfo>("GET", "/api/session"),
   logout: () => call<void>("DELETE", "/api/session"),
   personas: () => call<DemoPersona[]>("GET", "/api/demo/personas"),
-  me: () => call<AthleteProfile>("GET", "/api/me"),
+  compute: (req: ComputeRequest) => call<ComputeResponse>("POST", "/api/profile/compute", req),
+  demoExample: (athleteId: string) => call<ComputeRequest>("GET", `/api/demo/examples/${encodeURIComponent(athleteId)}`),
   team: () => call<TeamSummary>("GET", "/api/team/summary"),
   check: (query: string, country: string, timing: Timing) => call<CheckResult>("POST", "/api/check", { query, country, timing }),
   chat: (messages: ChatMessage[], check_result?: CheckResult) =>

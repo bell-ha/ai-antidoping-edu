@@ -579,6 +579,74 @@ button.card-soft:active {
   font-weight: 600;
 }
 
+/* ---------- 기록 입력 표 (D25) ---------- */
+
+.fields-2.narrow {
+  max-width: 480px;
+}
+
+.records {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.records-head,
+.records-row {
+  display: grid;
+  grid-template-columns: 28px 1.4fr 1.3fr 1fr 1fr 1fr 64px 36px;
+  gap: 8px;
+  align-items: center;
+}
+
+.records-head {
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.records-row.flagged .input,
+.records-row.flagged .select {
+  border-color: var(--st-threshold);
+  background: var(--st-threshold-bg);
+}
+
+.records-no {
+  text-align: center;
+}
+
+.records-cell {
+  min-width: 0;
+}
+
+.records-label {
+  display: none;
+}
+
+.records-total {
+  color: var(--ink);
+  font-weight: 600;
+  text-align: right;
+  padding-right: 4px;
+}
+
+.records-remove {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.records-remove:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
 /* ---------- 대화 ---------- */
 
 .suggest-list {
@@ -732,6 +800,55 @@ button.card-soft:active {
 
   .chat {
     min-height: 440px;
+  }
+
+  /* 태블릿·폰: 표 대신 행마다 작은 카드 */
+  .records-head {
+    display: none;
+  }
+
+  .records-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-card);
+    position: relative;
+  }
+
+  .records-no {
+    grid-column: 1 / -1;
+    text-align: left;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .records-no::after {
+    content: "번째 대회";
+  }
+
+  .records-label {
+    display: block;
+    font-size: var(--fs-caption);
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .records-total {
+    text-align: left;
+  }
+
+  .records-total::before {
+    content: "합계 ";
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .records-remove {
+    position: absolute;
+    top: 6px;
+    right: 6px;
   }
 }
 

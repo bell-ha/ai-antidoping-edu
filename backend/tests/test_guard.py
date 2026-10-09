@@ -4,6 +4,7 @@
 """
 
 import re
+import types
 from pathlib import Path
 
 import pytest
@@ -13,7 +14,7 @@ from app import config
 from app.api import routes, session
 from app.llm import guard
 from app.main import app
-from app.schemas import CheckResult, Chunk, LlmAnswer, OfficialLink, ProfileRecord
+from app.schemas import AthleteProfile, CheckResult, Chunk, InputWarning, LlmAnswer, OfficialLink, PromptProfile
 
 CHUNKS = [
     Chunk(id="kada-supplement#contamination", doc_id="kada-supplement", source="KADA", title="보충제 가이드",
@@ -22,10 +23,23 @@ CHUNKS = [
           section="S6 흥분제", url="https://example.org/b", version="2026", roles=["support"], text="...", reviewed=False),
 ]
 
-RECORD_A = ProfileRecord(
-    athlete_id="A", sex="M", age=19, age_band="10대 후반", weight_class=73, competition_level="national",
-    records=[], forecast=[], tags=["rapid_improvement"], reasons=[], recommendations=[],
+PROMPT_A = PromptProfile(tags=["rapid_improvement"], age_band="10대 후반", competition_level="national")
+PROFILE_A = AthleteProfile(
+    athlete_id="self", sport="weightlifting", sex="M", age=19, weight_class=73, competition_level="national",
+    records=[], forecast=[], tags=["rapid_improvement"], tag_labels=["최근 경기력 급격한 향상"], reasons=[], recommendations=[],
 )
+INPUT = {
+    "sex": "M", "age": 19,
+    "records": [{"date": f"2026-0{m}", "competition_level": "national", "body_weight": 72.5, "snatch": 110 + m, "clean_jerk": 135 + m} for m in (1, 3, 5)],
+}
+
+
+def fake_profiling(warnings: list[InputWarning]) -> types.ModuleType:
+    """46의 app.profiling과 같은 시그니처의 가짜 (D25)."""
+    m = types.ModuleType("app.profiling")
+    m.validate = lambda req: warnings
+    m.compute = lambda req: (PROFILE_A, PROMPT_A)
+    return m
 
 
 @pytest.fixture
@@ -39,7 +53,7 @@ def captured(monkeypatch):
 
     monkeypatch.setattr(routes.client, "generate", fake_generate)
     monkeypatch.setattr(routes, "retrieve", lambda q, k=4, role=None: CHUNKS)
-    monkeypatch.setattr(routes.profiles, "load_record", lambda aid: RECORD_A if aid == "A" else None)
+    monkeypatch.setattr(routes, "profiling", fake_profiling([]))
     monkeypatch.setattr(routes.profiles, "tag_label", lambda t: "최근 경기력 급격한 향상")
     monkeypatch.setattr(config, "DEMO_MODE", True)
     session._failures.clear()
@@ -63,8 +77,60 @@ def test_chat_requires_session(captured):
 def test_athlete_session_gets_own_profile_in_prompt(captured):
     c = TestClient(app)
     login(c, "demo-athlete-a")
+    assert c.post("/api/profile/compute", json=INPUT).json()["profile"]["tags"] == ["rapid_improvement"]
     assert ask(c, "프로틴 먹어도 돼?").status_code == 200
     assert "최근 경기력 급격한 향상" in captured["system"]
+
+
+def test_no_profile_in_prompt_before_compute(captured):
+    c = TestClient(app)
+    login(c, "demo-athlete-a")
+    ask(c, "프로틴 먹어도 돼?")
+    assert "선수의 교육 프로파일:" not in captured["system"]
+
+
+def test_compute_is_athlete_only(captured):
+    """지도자·지원인력이 다른 선수의 기록으로 개인 프로파일을 만들지 못한다 (D9)."""
+    for code in ("demo-coach", "demo-support"):
+        c = TestClient(app)
+        login(c, code)
+        assert c.post("/api/profile/compute", json=INPUT).status_code == 403
+
+
+def test_warnings_block_profile_until_confirmed(captured, monkeypatch):
+    w = [InputWarning(row=2, field="total", code="jump", message="직전 대회보다 합계가 크게 바뀌었어요.")]
+    monkeypatch.setattr(routes, "profiling", fake_profiling(w))
+    c = TestClient(app)
+    login(c, "demo-athlete-a")
+    r = c.post("/api/profile/compute", json=INPUT).json()
+    assert r["profile"] is None and r["warnings"][0]["code"] == "jump"
+    r = c.post("/api/profile/compute", json={**INPUT, "confirmed": True}).json()
+    assert r["profile"] is not None
+
+
+@pytest.mark.parametrize("bad", [
+    {"records": list(reversed(INPUT["records"]))},                                  # 날짜 역순
+    {"records": INPUT["records"][:2]},                                               # 3행 미만
+    {"records": [*INPUT["records"][:2], {**INPUT["records"][2], "date": "2099-01"}]},  # 미래 달
+    {"records": [*INPUT["records"][:2], {**INPUT["records"][2], "body_weight": 12}]},  # 체중 범위
+])
+def test_invalid_input_is_422(captured, bad):
+    c = TestClient(app)
+    login(c, "demo-athlete-a")
+    assert c.post("/api/profile/compute", json={**INPUT, **bad}).status_code == 422
+
+
+def test_session_keeps_only_prompt_fields(captured):
+    """세션 쿠키(서명만, 암호화 아님)에 원 기록이 들어가지 않는다 (D25)."""
+    import base64
+    import json as _json
+
+    c = TestClient(app)
+    login(c, "demo-athlete-a")
+    c.post("/api/profile/compute", json=INPUT)
+    payload = c.cookies["adedu_session"].split(".")[0]
+    data = _json.loads(base64.b64decode(payload + "=" * (-len(payload) % 4)))
+    assert set(data["profile"]) == {"tags", "age_band", "competition_level"}
 
 
 def test_coach_cannot_inject_athlete_profile_via_body(captured):
@@ -85,10 +151,10 @@ def test_prompt_has_no_raw_records(captured):
     assert "73" not in prompt and "19세" not in prompt  # 체급·나이 수치 대신 연령대만 (D15)
 
 
-def test_me_is_athlete_only(captured):
+def test_me_endpoint_is_gone(captured):
     c = TestClient(app)
-    login(c, "demo-coach")
-    assert c.get("/api/me").status_code == 403
+    login(c, "demo-athlete-a")
+    assert c.get("/api/me").status_code == 404
 
 
 def test_demo_codes_rejected_outside_demo_mode(captured, monkeypatch):
