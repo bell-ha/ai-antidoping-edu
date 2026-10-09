@@ -5,16 +5,18 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
-from app import config, rag, substances
+from app import config, profiling, rag, substances
 from app.api import routes, session
 
 def pilot_problems(today: date, secret: str) -> list[str]:
-    """시범 모드(DEMO_MODE=0) 시작 관문 (§10 G2·G3). 하나라도 있으면 서버가 뜨지 않는다."""
+    """시범 모드(DEMO_MODE=0) 시작 관문 (§10 G1·G2·G3, D26). 하나라도 있으면 서버가 뜨지 않는다."""
     problems = []
     if secret == config.DEV_SECRET or len(secret) < 32:
         problems.append("SESSION_SECRET을 32자 이상 무작위 값으로 설정해야 합니다.")
     if pending := substances.unreviewed() + rag.unreviewed():
         problems.append(f"연구진 검토 전 항목 {len(pending)}개 (reviewed: false): {pending[:5]} …")
+    if profiling.params_source() != "real":
+        problems.append("예측 파라미터가 합성 데이터 기준입니다. 실제 경기 기록으로 다시 학습한 model_params.json을 넣으세요(D26).")
     if today > (expires := substances.list_expires()):
         problems.append(f"금지목록 유효기간이 {expires}에 끝났습니다. 새 금지목록으로 조회표와 코퍼스를 갱신하세요.")
     return problems

@@ -166,7 +166,8 @@ DESIGN.md → `analysis/` 합성 데이터와 추세 모델 → `knowledge/` 코
 | G6 | IRB 승인 | 아래 동의 문구와 로그 정책이 신청서 근거가 됨 |
 
 ### 배포 점검 (Docker, `compose.pilot.yaml`)
-- [ ] `access_codes.json`은 이미지에 넣지 않고 서버 경로(`PILOT_DATA`)에서 읽기 전용 마운트. 선수 프로파일은 입력으로 계산하므로 profiles·team_summary 마운트는 없음(D25)
+- [ ] `access_codes.json`과 **`model_params.json`(source: real, 실제 경기 기록으로 학습)**은 이미지에 넣지 않고 서버 경로(`PILOT_DATA`)에서 읽기 전용 마운트. 선수 프로파일은 입력으로 계산하므로 profiles·team_summary 마운트는 없음(D25)
+- [x] D26 시작 관문이 코드에 있음: `params_source()`가 `real`이 아니면 시범 모드 시작 거부 (테스트 있음)
 - [ ] `docker compose -f compose.yaml -f compose.pilot.yaml`로 실행. `DEMO_MODE=0`, `LLM_MODE=live`, `COOKIE_SECURE=1`과 필수 값(`SESSION_SECRET`, `ANTHROPIC_API_KEY`, `CLAUDE_MODEL`, `FORWARDED_ALLOW_IPS`, `PILOT_DATA`)이 빠지면 compose가 실패
 - [x] G2 시작 관문이 코드에 있음: `DEMO_MODE=0`이면 `reviewed: false` 항목이 하나라도 있을 때 서버 시작 거부 (테스트 있음)
 - [ ] 리버스 프록시(HTTPS) 뒤에서 `FORWARDED_ALLOW_IPS`에 프록시 IP. 컨테이너 포트는 127.0.0.1에만 공개. **워커는 1개**

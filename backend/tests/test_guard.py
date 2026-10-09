@@ -335,8 +335,22 @@ def test_pilot_gate_checks_list_expiry(monkeypatch):
 
     monkeypatch.setattr(main.substances, "unreviewed", lambda: [])
     monkeypatch.setattr(main.rag, "unreviewed", lambda: [])
+    monkeypatch.setattr(main.profiling, "params_source", lambda: "real")
     secret = "x" * 32
     expires = main.substances.list_expires()
     assert main.pilot_problems(expires, secret) == []
     after = date.fromordinal(expires.toordinal() + 1)
     assert any("유효기간" in p for p in main.pilot_problems(after, secret))
+
+
+def test_pilot_gate_rejects_synthetic_params(monkeypatch):
+    """합성 파라미터로 실제 선수를 판정하는 상태로는 시범이 뜨지 않는다 (D26)."""
+    from app import main
+
+    monkeypatch.setattr(main.substances, "unreviewed", lambda: [])
+    monkeypatch.setattr(main.rag, "unreviewed", lambda: [])
+    assert main.profiling.params_source() == "synthetic"  # 레포에 들어 있는 것은 합성
+    problems = main.pilot_problems(main.substances.list_expires(), "x" * 32)
+    assert any("D26" in p for p in problems)
+    monkeypatch.setattr(main.profiling, "params_source", lambda: "real")
+    assert main.pilot_problems(main.substances.list_expires(), "x" * 32) == []
