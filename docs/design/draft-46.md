@@ -1,6 +1,6 @@
 # 설계 초안 — 46 세션
 
-> 근거: `docs/reference/research-proposal.pdf`(연구계획서 5쪽), `fig-system-architecture.png`(구성도 ①~⑤), `fig-drug-check-screen.png`(AI 약물 확인 화면 예시), `fig-knowledge-sources.png`(WADA/KADA/ADEL/Global DRO), `fig-app-education-flow.png`(경기력→교육 추천 표).
+> 근거: `private/reference/research-proposal.pdf`(연구계획서 5쪽), `fig-system-architecture.png`(구성도 ①~⑤), `fig-drug-check-screen.png`(AI 약물 확인 화면 예시), `fig-knowledge-sources.png`(WADA/KADA/ADEL/Global DRO), `fig-app-education-flow.png`(경기력→교육 추천 표).
 > 전제: 논문용 프로토타입 웹 데모. 실서비스 아님. 경기력 데이터는 일단 **합성**으로 가정.
 > 상대 초안(draft-37)을 보지 않고 작성함.
 

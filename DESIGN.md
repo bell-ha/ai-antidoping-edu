@@ -3,7 +3,7 @@
 화면 작업 전에 읽는 디자인 규칙. 값은 `frontend/src/styles/tokens.css`에 그대로 옮긴다.
 
 - **형태: 반응형 웹.** PC에서는 넓은 화면을 쓰는 상단 메뉴 + 다단 구성, 폰에서는 1단으로 접힌다. 휴대폰 앱처럼 만들지 않는다(하단 탭, 폰 폭 고정 프레임 없음).
-- **시각 레퍼런스: Cal.com** — [awesome-design-md](https://github.com/voltagent/awesome-design-md)의 `design-md/cal/DESIGN.md`. 흰 바탕, 검정 주 버튼, 옅은 회색 카드, 얇은 테두리, 절제된 색. 처음 받은 화면 예시(`docs/reference/fig-drug-check-screen.png`의 검정 "확인 절차 보기" 버튼)와 결이 같다.
+- **시각 레퍼런스: Cal.com** — [awesome-design-md](https://github.com/voltagent/awesome-design-md)의 `design-md/cal/DESIGN.md`. 흰 바탕, 검정 주 버튼, 옅은 회색 카드, 얇은 테두리, 절제된 색. 처음 받은 화면 예시(`private/reference/fig-drug-check-screen.png`의 검정 "확인 절차 보기" 버튼)와 결이 같다.
 - 레퍼런스에서 바꾼 것: 글꼴(Cal Sans·Inter → Pretendard, 한글), 판정 상태 색(이 서비스의 안전 규칙, 3절), 어두운 푸터는 쓰지 않음(도구 화면이라 마케팅 페이지의 리듬이 필요 없음).
 - 근거: `docs/design/DESIGN-DECISIONS.md` D7·D9·D19·D20·D21.
 

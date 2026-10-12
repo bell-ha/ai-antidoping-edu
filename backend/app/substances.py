@@ -1,8 +1,12 @@
 """약물·보충제 확인 (D10, D11, D12). 판정은 조회표가 하고 LLM은 설명만 한다.
 
-조회표: data/substances.json(성분), data/products.json(제품·제품군), data/dro_countries.json.
+조회표: data/substances.json(성분, 손으로 정리·검토), data/products.json(제품·제품군), data/dro_countries.json,
+data/wada/prohibited_list_<연도>.json(WADA 금지목록 PDF 자동 추출, analysis/wada_extract.py).
+손 조회표가 우선이고, 거기 없는 이름만 WADA 추출본에서 찾는다(정확히 일치하는 영문 이름·동의어만).
 - "허용" 상태는 없다. 목록에 없는 성분도 NOT_LISTED_VERIFY(확인 필요)다.
 - 제품군(category)은 성분을 특정할 수 없으므로 항상 UNKNOWN이고, 성분 목록은 '주의 성분'이다.
+- WADA 추출 항목의 예외(용량·경로·용도 조건)는 조건 충족 여부를 알 수 없으므로 UNKNOWN + 조건 안내.
+  조건 없이 "금지 아님"인 항목(모니터링 대상 등)만 NOT_LISTED_VERIFY.
 - 사용 시기는 상태를 낮추지 않는다. 경기기간 중에만 금지인 성분을 경기기간 외에 쓴다고 해도
   상태는 그대로 두고, 절차에서 경기 전 잔류 가능성을 안내한다(D11 "모름 = 경기기간 중"의 연장).
 """
@@ -24,6 +28,56 @@ def _load(name: str) -> dict:
 
 def normalize(text: str) -> str:
     return re.sub(r"[\s\-_·()（）]", "", text).lower()
+
+
+EXCEPTION_NOTE = "조건(용량·투여 경로·용도)에 따라 금지되지 않을 수 있어요. 해당하는지는 KADA나 팀 닥터에게 확인하세요."
+P1_NOTE = "베타차단제는 지정 종목에서만 금지되며 역도는 해당하지 않아요(다른 종목은 확인 필요)."
+
+
+@cache
+def _wada() -> tuple[dict, dict[str, list[dict]]]:
+    """WADA 추출본과 이름 색인(정규화한 이름·동의어 → 항목들). 같은 이름이 금지와 예외로 함께 나올 수 있다."""
+    version = _tables()[0]["list_version"]
+    wada = _load(f"wada/prohibited_list_{version}.json")
+    if "weightlifting" in {x.lower() for x in wada["sections"]["P1"].get("sports", [])}:
+        raise RuntimeError("P1 종목에 역도가 있음 — P1 규칙(NOT_LISTED_VERIFY)을 다시 정해야 함")
+    index: dict[str, list[dict]] = {}
+    for item in wada["items"]:
+        for name in [item["name"], *item.get("synonyms", [])]:
+            index.setdefault(normalize(name), []).append(item)
+    return wada, index
+
+
+def _wada_ingredient(items: list[dict]) -> Ingredient:
+    """추출 항목(들) → 상태. 우선순위: 예외 > 기준치 > 금지 구분(prohibited 필드)."""
+    wada, _ = _wada()
+    first = items[0]
+    kinds = {i["kind"] for i in items}
+    # 조건으로 보여줄 원문: 예외·기준치, 또는 각주가 달린 금지 항목(예: 에피네프린 국소 사용). 일반 금지 항목의
+    # condition은 나열 줄 발췌일 뿐이라 보여주지 않는다.
+    conditions = [i["condition"] for i in items
+                  if i.get("condition") and (i["kind"] != "prohibited" or i.get("footnote_stars"))]
+    section = first["section"]
+    note = None
+    if "exception" in kinds:
+        if all(i["prohibited"] == "no" for i in items):
+            status: CheckStatus = "NOT_LISTED_VERIFY"
+            note = "금지목록에 '금지 아님'으로 명시된 성분이에요(모니터링 대상 등)."
+        else:
+            status, note = "UNKNOWN", EXCEPTION_NOTE
+    elif "threshold" in kinds:
+        status = "THRESHOLD"
+    elif first["prohibited"] == "all_times":
+        status = "PROHIBITED"
+    elif first["prohibited"] == "in_competition":
+        status = "IN_COMPETITION_ONLY"
+    else:  # particular_sports(P1) 또는 no
+        status, note = "NOT_LISTED_VERIFY", P1_NOTE if section == "P1" else None
+    extra = wada["section_conditions"].get(section) if section in ("S3", "S9") else None
+    parts = [x for x in [note, extra, *(f"원문: {c}" for c in conditions[:2])] if x]
+    return Ingredient(name_ko=first["name"], name_en=first["name"], status=status,
+                      wada_class=first.get("subsection") or section, note=" ".join(parts) or None,
+                      source_url=wada["source_url"])
 
 
 @cache
@@ -124,7 +178,10 @@ def check(query: str, country: str, timing: Timing) -> CheckResult:
     hit = _match(query)
 
     kind, ids, supplement, reviewed, note, extra = "unmatched", [], False, False, None, []
-    if hit and hit[0] == "substance":
+    wada_items = None if hit else _wada()[1].get(normalize(query))
+    if wada_items:
+        kind = "substance"
+    elif hit and hit[0] == "substance":
         kind, ids = "substance", [hit[1]]
     elif hit:
         p = products["products"][hit[1]]
@@ -133,7 +190,7 @@ def check(query: str, country: str, timing: Timing) -> CheckResult:
     else:
         ids = _partial(query)  # 판정 없이 주의 성분만: matched_kind는 unmatched, 상태는 UNKNOWN
 
-    pairs = [_ingredient(i) for i in ids]
+    pairs = [_ingredient(i) for i in ids] if not wada_items else [(_wada_ingredient(wada_items), False)]
     ingredients = [ing for ing, _ in pairs]
     if kind in ("substance", "product"):
         status: CheckStatus = min((i.status for i in ingredients), key=STRICTNESS.index) if ingredients else "UNKNOWN"
@@ -165,9 +222,12 @@ def unreviewed() -> list[str]:
     out += [f"products.json:{k}" for k, v in products["products"].items() if not v["reviewed"]]
     if not dro["reviewed"]:
         out.append("dro_countries.json")
+    # 자동 추출본은 파일 단위로 검토한다(추출 방법 + 섹션별 표본 + 예외 테스트) — 사용자·연구진 승인 대기
+    if not _wada()[0]["reviewed"]:
+        out.append(f"wada/prohibited_list_{substances['list_version']}.json")
     return out
 
 
 def list_expires() -> date:
-    """§10 G3: 조회표가 따르는 금지목록의 마지막 유효일. 매년 1월 1일 새 목록이 발효된다."""
-    return date.fromisoformat(_tables()[0]["list_expires"])
+    """§10 G3: 조회표와 WADA 추출본 중 먼저 끝나는 유효일. 매년 1월 1일 새 목록이 발효된다."""
+    return min(date.fromisoformat(_tables()[0]["list_expires"]), date.fromisoformat(_wada()[0]["list_expires"]))

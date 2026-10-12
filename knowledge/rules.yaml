@@ -1,4 +1,4 @@
-# 교육 프로파일 규칙 (D5, D6, D8). 근거: docs/reference/fig-app-education-flow.png 표.
+# 교육 프로파일 규칙 (D5, D6, D8). 근거: 연구계획서의 추천 표(private/reference, 비공개).
 # analysis/profile.py가 읽는다. 임계값을 바꾸면 export.py가 페르소나별 태그를 다시 검사한다.
 
 version: 2026

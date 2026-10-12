@@ -129,9 +129,56 @@ def test_names_are_unique_across_tables():
 def test_unreviewed_lists_every_pending_entry():
     """§10 G2: 지금은 전 항목이 검토 전이다. 연구진이 reviewed:true로 바꾸면 이 목록에서 빠진다."""
     pending = substances.unreviewed()
-    assert len(pending) == len(TABLES["substances.json"]["substances"]) + len(TABLES["products.json"]["products"]) + 1
+    # + dro_countries.json + WADA 추출본(파일 단위 검토)
+    assert len(pending) == len(TABLES["substances.json"]["substances"]) + len(TABLES["products.json"]["products"]) + 2
+    assert "wada/prohibited_list_2026.json" in pending
 
 
 def test_list_expires_matches_list_version():
     expires = substances.list_expires()
     assert (expires.year, expires.month, expires.day) == (int(TABLES["substances.json"]["list_version"]), 12, 31)
+
+
+# ---------- WADA 금지목록 자동 추출본 (손 조회표에 없는 이름) ----------
+
+@pytest.mark.parametrize("query,status,wada_class", [
+    ("Bumetanide", "PROHIBITED", "S5"),            # 상시 금지
+    ("cocaine", "IN_COMPETITION_ONLY", "S6.A"),    # 경기기간 중 금지
+    ("Budesonide", "IN_COMPETITION_ONLY", "S9"),   # 투여 경로 조건 안내 포함
+    ("Vilanterol", "UNKNOWN", "S3"),               # 흡입 용량 예외 → 조건 충족 여부를 모름
+    ("Dorzolamide", "UNKNOWN", "S5"),              # 점안 예외
+    ("nicotine", "NOT_LISTED_VERIFY", "S6"),       # 조건 없이 "금지 아님"(모니터링)
+    ("bisoprolol", "NOT_LISTED_VERIFY", "P1"),     # 역도는 P1 종목이 아님
+])
+def test_wada_extract_status_rules(query, status, wada_class):
+    r = check(query, "KR", "in_competition")
+    assert (r.matched_kind, r.status, r.ingredients[0].wada_class) == ("substance", status, wada_class)
+    assert r.ingredients[0].source_url.startswith("https://www.wada-ama.org/")
+    assert r.reviewed is False
+
+
+def test_wada_exception_never_shows_as_cleared():
+    """예외 성분은 '허용'처럼 보이면 안 된다: 조건 안내가 반드시 붙는다."""
+    r = check("Vilanterol", "KR", "in_competition")
+    assert substances.EXCEPTION_NOTE in r.ingredients[0].note
+    assert "원문:" in r.ingredients[0].note
+
+
+def test_wada_route_condition_for_glucocorticoids():
+    assert "흡입" in check("Budesonide", "KR", "in_competition").ingredients[0].note
+
+
+def test_wada_footnote_condition_is_shown_but_listing_lines_are_not():
+    assert "local administration" in check("adrenaline", "KR", "in_competition").ingredients[0].note
+    assert check("Bumetanide", "KR", "in_competition").ingredients[0].note is None
+
+
+@pytest.mark.parametrize("query", ["pseudoephedrine", "caffeine", "CBD", "salbutamol"])
+def test_hand_table_takes_priority_over_extract(query):
+    """손 조회표(기준치 수치·한국어 설명·항목별 검토)가 있으면 그것을 쓴다."""
+    r = check(query, "KR", "in_competition")
+    assert r.ingredients[0].name_ko != r.ingredients[0].name_en  # 손 조회표 항목은 한국어 이름이 있다
+
+
+def test_list_expiry_covers_both_tables():
+    assert substances.list_expires().isoformat() == "2026-12-31"

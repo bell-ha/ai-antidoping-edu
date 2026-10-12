@@ -2,7 +2,7 @@
 
 > 상대 초안(draft-46)을 보기 전에 독립적으로 쓴 초안. 반박과 합의는 review-of-*.md → DESIGN-DECISIONS.md에서.
 
-근거 자료: `docs/reference/research-proposal.pdf`, `docs/reference/fig-*.png`
+근거 자료: `private/reference/research-proposal.pdf`, `private/reference/fig-*.png`
 
 ---
 
