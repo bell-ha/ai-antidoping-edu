@@ -23,14 +23,14 @@ CHUNKS = [
           section="S6 흥분제", url="https://example.org/b", version="2026", roles=["support"], text="...", reviewed=False),
 ]
 
-PROMPT_A = PromptProfile(tags=["rapid_improvement"], age_band="10대 후반", competition_level="national")
+PROMPT_A = PromptProfile(tags=["rapid_improvement"], age_band="10대 후반", competition_category="domestic")
 PROFILE_A = AthleteProfile(
-    athlete_id="self", sport="weightlifting", sex="M", age=19, weight_class=73, competition_level="national",
+    athlete_id="self", sport="weightlifting", sex="M", age=19, weight_class=73, competition_category="domestic",
     records=[], forecast=[], tags=["rapid_improvement"], tag_labels=["최근 경기력 급격한 향상"], reasons=[], recommendations=[],
 )
 INPUT = {
-    "sex": "M", "age": 19,
-    "records": [{"date": f"2026-0{m}", "competition_level": "national", "body_weight": 72.5, "snatch": 110 + m, "clean_jerk": 135 + m} for m in (1, 3, 5)],
+    "sex": "M", "birth_year": 2007,
+    "records": [{"date": f"2026-0{m}", "competition_category": "domestic", "body_weight": 72.5, "snatch": 110 + m, "clean_jerk": 135 + m} for m in (1, 3, 5)],
 }
 
 
@@ -113,6 +113,8 @@ def test_warnings_block_profile_until_confirmed(captured, monkeypatch):
     {"records": INPUT["records"][:2]},                                               # 3행 미만
     {"records": [*INPUT["records"][:2], {**INPUT["records"][2], "date": "2099-01"}]},  # 미래 달
     {"records": [*INPUT["records"][:2], {**INPUT["records"][2], "body_weight": 12}]},  # 체중 범위
+    {"birth_year": 2024},                                                            # 대회 때 나이가 너무 어림
+    {"records": [{**r, "competition_category": "national"} for r in INPUT["records"]]},  # 옛 3단계 값
 ])
 def test_invalid_input_is_422(captured, bad):
     c = TestClient(app)
@@ -130,7 +132,7 @@ def test_session_keeps_only_prompt_fields(captured):
     c.post("/api/profile/compute", json=INPUT)
     payload = c.cookies["adedu_session"].split(".")[0]
     data = _json.loads(base64.b64decode(payload + "=" * (-len(payload) % 4)))
-    assert set(data["profile"]) == {"tags", "age_band", "competition_level"}
+    assert set(data["profile"]) == {"tags", "age_band", "competition_category"}
 
 
 def test_coach_cannot_inject_athlete_profile_via_body(captured):

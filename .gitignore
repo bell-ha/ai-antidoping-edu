@@ -15,3 +15,8 @@ frontend/dist/
 
 .env
 .DS_Store
+
+# 연구진 인계 자료 — 실제 선수 기록(생년월일·국적·제재 여부)과 심사 중 원고. 레포·이미지에 넣지 않는다
+APP_RNN_platform_handoff/
+manuscript_*.docx
+Artificial-Intelligence-Driven-Athlete-Performance-Passport-*/

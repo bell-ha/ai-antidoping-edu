@@ -20,7 +20,7 @@ export interface DemoPersona {
 
 export interface RecordPoint {
   date: string;
-  competition_level: string;
+  competition_category: CompetitionCategory;
   weight_class: number;
   body_weight: number;
   snatch: number;
@@ -48,7 +48,9 @@ export interface AthleteProfile {
   sex: "M" | "F";
   age: number;
   weight_class: number;
-  competition_level: CompetitionLevel;
+  competition_category: CompetitionCategory;
+  model: "rnn" | "synthetic_trend" | "none";
+  notices: string[];
   records: RecordPoint[];
   forecast: ForecastPoint[];
   tags: ProfileTag[];
@@ -57,11 +59,11 @@ export interface AthleteProfile {
   recommendations: Recommendation[];
 }
 
-export type CompetitionLevel = "junior" | "national" | "international";
+export type CompetitionCategory = "world" | "continent" | "other_international" | "domestic";
 
 export interface RecordInput {
   date: string; // "YYYY-MM"
-  competition_level: CompetitionLevel;
+  competition_category: CompetitionCategory;
   body_weight: number;
   snatch: number;
   clean_jerk: number;
@@ -69,7 +71,7 @@ export interface RecordInput {
 
 export interface ComputeRequest {
   sex: "M" | "F";
-  age: number;
+  birth_year: number;
   records: RecordInput[];
   confirmed?: boolean;
 }

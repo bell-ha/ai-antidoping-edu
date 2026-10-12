@@ -21,8 +21,12 @@ MIN_HISTORY = 2
 OFFSET_WINDOW = 4
 
 
+# 합성 생성기의 3단계 수준 → 폼 범주(데모 페르소나 D의 국제대회는 세계대회로 둔다)
+CATEGORY = {"junior": "domestic", "national": "domestic", "international": "world"}
+
+
 def to_records(a: Athlete) -> list[Record]:
-    return [Record(r.date, r.competition_level, r.weight_class, r.body_weight, r.snatch, r.clean_jerk)
+    return [Record(r.date, CATEGORY[r.competition_level], r.weight_class, r.body_weight, r.snatch, r.clean_jerk)
             for r in a.records]
 
 
@@ -36,6 +40,7 @@ def fit(athletes: list[Athlete], source: str) -> dict:
             ys.append(r.total / CLASS_PEAK[a.sex][r.weight_class])
     params = {
         "source": source,
+        "model": "synthetic_trend",
         "weight_class_system": "IWF-2018",
         "classes": CLASSES,
         "class_peak": {sex: {str(c): v for c, v in peaks.items()} for sex, peaks in CLASS_PEAK.items()},
@@ -48,7 +53,7 @@ def fit(athletes: list[Athlete], source: str) -> dict:
     residuals = defaultdict(list)
     for a in athletes:
         records = to_records(a)
-        record_ages = ages(a.age_at(a.records[-1].year), records)
+        record_ages = ages(a.birth_year, records)
         for i in range(MIN_HISTORY, len(records)):
             residuals[f"{a.sex}{records[i].weight_class}"].append(
                 records[i].total - mean_prediction(a.sex, records, record_ages, i, params))

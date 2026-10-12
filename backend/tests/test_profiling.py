@@ -2,6 +2,7 @@
 
 import json
 
+import numpy as np
 import pytest
 
 from app import profiling
@@ -33,12 +34,13 @@ def test_examples_fit_input_limits():
 
 
 def test_result_does_not_depend_on_server_clock():
-    """'최근' 창은 마지막 입력 날짜 기준이다. 모든 날짜를 2년 뒤로 옮겨도 태그와 이유가 같다(Figure 재현성)."""
+    """'최근' 창은 마지막 입력 날짜 기준이다. 모든 날짜와 출생연도를 2년 앞으로 옮겨도(나이는 같음) 태그와
+    이유가 같다(Figure 재현성)."""
     for aid in EXPECTED:
         ex = EXAMPLES[aid]
         shifted = [{**r, "date": f"{int(r['date'][:4]) - 2}{r['date'][4:]}"} for r in ex["records"]]
         a, _ = profiling.compute(request(aid))
-        b, _ = profiling.compute(request(aid, records=shifted))
+        b, _ = profiling.compute(request(aid, records=shifted, birth_year=ex["birth_year"] - 2))
         assert (a.tags, [r.text for r in a.reasons]) == (b.tags, [r.text for r in b.reasons])
 
 
@@ -57,7 +59,7 @@ def test_weight_class_is_derived_from_body_weight(sex, bw, expected):
 
 def test_prompt_profile_has_only_d15_fields():
     _, prompt = profiling.compute(request("A"))
-    assert set(prompt.model_dump()) == {"tags", "age_band", "competition_level"}
+    assert set(prompt.model_dump()) == {"tags", "age_band", "competition_category"}
     assert prompt.age_band == "18-20세"
 
 
@@ -87,10 +89,10 @@ def test_params_are_marked_synthetic():
 
 
 def test_no_rank_or_birth_year_in_outputs():
-    """D8·§10: 순위 관련 값과 생년은 어떤 산출물에도 없다."""
+    """D8·§10: 순위 관련 값은 어떤 산출물에도 없다. 출생연도는 합성 데모 입력(demo_examples)에만 있다."""
     for name in ("demo_examples.json", "model_params.json", "team_summary.json"):
         raw = (DATA / name).read_text(encoding="utf-8")
-        for word in ("percentile", "rank", "birth_year"):
+        for word in ("percentile", "rank") + (() if name == "demo_examples.json" else ("birth_year",)):
             assert word not in raw, (name, word)
 
 
@@ -101,3 +103,77 @@ def test_demo_team_summary_has_topics_only():
         TeamSummaryRecord.model_validate(row)
         assert set(row) == {"team_id", "topics"}
     assert len(load_team_summary("demo-team").topics) == 5
+
+
+def test_weight_jump_suppresses_performance_tags():
+    """예측 모델에 체중 입력이 없어 체중을 늘린 선수의 잔차가 계통적으로 크다(OOF 실측) →
+    직전 대비 체중 변화가 기준을 넘으면 급격한 향상·감소를 붙이지 않고 체중 변화로 둔다."""
+    rows = [dict(r) for r in EXAMPLES["A"]["records"]]
+    rows[-1]["body_weight"] = rows[-2]["body_weight"] + 6.0
+    profile, _ = profiling.compute(request("A", records=rows))
+    assert profile.tags == ["weight_change"]
+    assert "체중" in profile.reasons[0].text
+
+
+# ---------- rnn 경로 (실데이터 가중치는 레포에 없으므로 작은 무작위 모델로 경로만 검증) ----------
+
+@pytest.fixture
+def rnn_params(tmp_path, monkeypatch):
+    rng = np.random.default_rng(0)
+    h, d = 4, 1 + 2 + 2 + 2
+    w = {"emb_ec.weight": rng.normal(size=(5, 2)), "emb_age.weight": rng.normal(size=(40, 2)),
+         "emb_year.weight": rng.normal(size=(30, 2)), "rnn.weight_ih_l0": rng.normal(size=(4 * h, d)) * 0.1,
+         "rnn.weight_hh_l0": rng.normal(size=(4 * h, h)) * 0.1, "rnn.bias_ih_l0": np.zeros(4 * h),
+         "rnn.bias_hh_l0": np.zeros(4 * h), "head.0.weight": rng.normal(size=(2, h)), "head.0.bias": np.zeros(2),
+         "head.3.weight": rng.normal(size=(1, 2)), "head.3.bias": np.zeros(1)}
+    for k in ("emb_ec.weight", "emb_age.weight", "emb_year.weight"):
+        w[k][0] = 0.0  # padding_idx
+    np.savez(tmp_path / "rnn_M.npz", **w)
+    classes = profiling.params()["classes"]
+    meta = {"vocab": [{"continent": 1, "etc": 2, "nation": 3, "world": 4},
+                      {str(a): i + 1 for i, a in enumerate(range(10, 49))},
+                      {str(y): i + 1 for i, y in enumerate(range(1998, 2023))}],
+            "center": 250.0, "scale": 40.0, "z95": 1.96,
+            "bias": {f"M{c}": 5.0 for c in classes["M"]}, "sigma": {f"M{c}": 15.0 for c in classes["M"]}}
+    (tmp_path / "rnn_M.json").write_text(json.dumps(meta), encoding="utf-8")
+    p = {"source": "real", "model": "rnn", "classes": classes, "min_history": 2, "files": {"M": "rnn_M", "F": None}}
+    monkeypatch.setattr(profiling, "MODEL_DIR", tmp_path)
+    profiling._rnn.cache_clear()
+    monkeypatch.setattr(profiling, "params", lambda: p)
+    yield p
+    profiling._rnn.cache_clear()
+
+
+def test_rnn_path_applies_class_bias_and_sigma(rnn_params):
+    from app import rnn_infer
+    profile, _ = profiling.compute(request("E"))
+    assert profile.model == "rnn"
+    records = profiling.to_records(request("E"))
+    record_ages = profiling.ages(EXAMPLES["E"]["birth_year"], records)
+    raw = profiling._rnn_mean("rnn_M", records, record_ages, len(records) - 1)
+    last = profile.forecast[-1]
+    assert last.mean == pytest.approx(raw + 5.0, abs=0.06)
+    assert last.hi - last.lo == pytest.approx(2 * 1.96 * 15.0, abs=0.2)
+    assert rnn_infer is not None
+
+
+def test_rnn_unseen_year_uses_zero_embedding(rnn_params):
+    """학습 이후 연도(2023+)는 vocab 밖 → 0(영벡터). 데모 E의 기록(2024–2026)이 전부 그 경우다."""
+    meta, _ = profiling._rnn("rnn_M")
+    assert all(r["date"][:4] not in meta["vocab"][2] for r in EXAMPLES["E"]["records"])
+    profile, _ = profiling.compute(request("E"))
+    assert profile.model == "rnn" and len(profile.forecast) == len(EXAMPLES["E"]["records"]) - 2
+
+
+def test_rnn_domestic_history_adds_notice(rnn_params):
+    profile, _ = profiling.compute(request("E"))  # 데모 E는 국내 대회만
+    assert profiling.DOMESTIC_NOTICE in profile.notices
+
+
+def test_sex_without_model_returns_no_numbers(rnn_params):
+    """인계 계약: 모델이 없으면 숫자 대신 상태. 예측이 필요한 태그는 없고 입력 기반 태그만."""
+    profile, prompt = profiling.compute(request("B"))  # B는 여자, 여자 모델 없음
+    assert profile.model == "none" and profile.forecast == []
+    assert profiling.NO_MODEL_NOTICE in profile.notices
+    assert not {"rapid_improvement", "decline"} & set(profile.tags)
+    assert profile.tags == ["baseline"] and "예측 없이" in profile.reasons[0].text

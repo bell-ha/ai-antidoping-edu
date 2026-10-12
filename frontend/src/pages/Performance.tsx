@@ -1,12 +1,18 @@
 import { Info } from "lucide-react";
 import { useEffect, useRef } from "react";
-import type { AthleteProfile } from "../api";
 import { RecommendationList } from "../components/RecommendationList";
 import { RecordChart } from "../components/RecordChart";
 import { RecordForm } from "../components/RecordForm";
-import { useSession, weightClassLabel } from "../session";
+import { CATEGORY_LABEL, useSession, weightClassLabel } from "../session";
 
-const LEVEL: Record<AthleteProfile["competition_level"], string> = { junior: "주니어", national: "국내 대회", international: "국제 대회" };
+
+// 어떤 모델로 계산했는지 그대로 밝힌다 (D26: 합성 기준인지 실제 데이터 기준인지)
+function chartCaption(model: "rnn" | "synthetic_trend" | "none"): string {
+  const base = "단위 kg · 2018 IWF 체급 기준 · 예측은 직전 기록 2개 이상부터";
+  if (model === "rnn") return `${base} · 연구진 RNN(IWF 국제대회 기록으로 학습)`;
+  if (model === "synthetic_trend") return `${base} · 합성 데이터 추세 모델(시연용)`;
+  return "단위 kg · 2018 IWF 체급 기준 · 이 성별은 아직 경기력 예측 모델이 없어 기록만 보여줘요";
+}
 
 export function Performance() {
   const { profile: p, setProfile } = useSession();
@@ -27,18 +33,28 @@ export function Performance() {
       <div className="stack-lg">
         <RecordForm onResult={setProfile} />
 
+        {p && p.notices.length > 0 && (
+          <div className="notice notice-neutral" role="status">
+            <Info size={18} />
+            <div className="stack" style={{ gap: 4 }}>
+              {p.notices.map((n) => (
+                <span key={n}>{n}</span>
+              ))}
+            </div>
+          </div>
+        )}
         {p && (
           <div className="grid" ref={resultRef} style={{ scrollMarginTop: 88 }}>
             <section className="card span-8" data-figure="chart">
-              <h2 className="heading">경기 기록과 예측</h2>
-              <RecordChart records={p.records} forecast={p.forecast} />
+              <h2 className="heading">{p.model === "none" ? "경기 기록" : "경기 기록과 예측"}</h2>
+              <RecordChart records={p.records} forecast={p.forecast} caption={chartCaption(p.model)} />
             </section>
 
             <div className="span-4 stack-lg" data-figure="profile">
               <section className="card">
                 <h2 className="heading">교육 프로파일</h2>
                 <p className="muted num">
-                  {p.age}세 · {p.sex === "M" ? "남자" : "여자"} {weightClassLabel(p.sex, p.weight_class)} · {LEVEL[p.competition_level]}
+                  {p.age}세 · {p.sex === "M" ? "남자" : "여자"} {weightClassLabel(p.sex, p.weight_class)} · 최근 {CATEGORY_LABEL[p.competition_category]}
                 </p>
                 <div className="row wrap">
                   {p.tags.map((t, i) => (

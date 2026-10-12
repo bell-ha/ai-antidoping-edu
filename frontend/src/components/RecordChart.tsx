@@ -35,7 +35,8 @@ function useWidth() {
   return [ref, width] as const;
 }
 
-export function RecordChart({ records, forecast }: { records: RecordPoint[]; forecast: ForecastPoint[] }) {
+export function RecordChart({ records, forecast, caption }: { records: RecordPoint[]; forecast: ForecastPoint[]; caption: string }) {
+  const hasForecast = forecast.length > 0; // 해당 성별 모델이 없으면 예측을 그리지 않는다
   const [ref, W] = useWidth();
   const H = Math.round((W * 9) / 16);
 
@@ -48,21 +49,25 @@ export function RecordChart({ records, forecast }: { records: RecordPoint[]; for
           </svg>
           실제 기록(합계)
         </span>
-        <span>
-          <svg width="20" height="8" aria-hidden>
-            <line x1="0" y1="4" x2="20" y2="4" stroke="var(--muted)" strokeWidth="1.5" strokeDasharray="4 3" />
-          </svg>
-          예측
-        </span>
-        <span>
-          <svg width="14" height="10" aria-hidden>
-            <rect width="14" height="10" fill="var(--app-line)" />
-          </svg>
-          예측 범위
-        </span>
+        {hasForecast && (
+          <>
+            <span>
+              <svg width="20" height="8" aria-hidden>
+                <line x1="0" y1="4" x2="20" y2="4" stroke="var(--muted)" strokeWidth="1.5" strokeDasharray="4 3" />
+              </svg>
+              예측
+            </span>
+            <span>
+              <svg width="14" height="10" aria-hidden>
+                <rect width="14" height="10" fill="var(--app-line)" />
+              </svg>
+              예측 범위
+            </span>
+          </>
+        )}
       </div>
       <div ref={ref}>{W > 0 && <Plot records={records} forecast={forecast} W={W} H={H} />}</div>
-      <p className="caption">단위 kg · 2018 IWF 체급 기준 · 예측은 직전 기록 2개 이상부터</p>
+      <p className="caption">{caption}</p>
     </div>
   );
 }
@@ -105,7 +110,7 @@ function Plot({ records, forecast, W, H }: { records: RecordPoint[]; forecast: F
         </text>
       ))}
 
-      <path d={band} fill="var(--app-line)" opacity="0.7" />
+      {forecast.length > 0 && <path d={band} fill="var(--app-line)" opacity="0.7" />}
       <path d={path(forecast.map((f) => [x(f.date), y(f.hi)]))} fill="none" stroke="var(--app-ink)" strokeWidth="0.75" strokeDasharray="2 2" />
       <path d={path(forecast.map((f) => [x(f.date), y(f.lo)]))} fill="none" stroke="var(--app-ink)" strokeWidth="0.75" strokeDasharray="2 2" />
       <path d={path(forecast.map((f) => [x(f.date), y(f.mean)]))} fill="none" stroke="var(--muted)" strokeWidth="1.5" strokeDasharray="4 3" />

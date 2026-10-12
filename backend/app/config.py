@@ -6,6 +6,8 @@ from typing import Literal, cast
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / "data"
+# 예측 모델 파일(model_params.json, rnn_*.npz/json)만 다른 곳에서 읽을 때. 실데이터 산출물은 레포 밖에 둔다(D26)
+MODEL_DIR = Path(os.environ.get("MODEL_DIR", DATA))
 
 LlmMode = Literal["mock", "live", "record", "replay"]
 

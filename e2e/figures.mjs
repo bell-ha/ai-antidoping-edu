@@ -77,7 +77,7 @@ async function open(code, viewport) {
 // 직접 입력(D25): 예시 채우기 → 계산. 페이지를 새로 열면 프로파일이 사라지므로 이후 이동은 메뉴 클릭으로
 async function computeExample(p) {
   await p.click("button:has-text('예시 채우기')");
-  await p.waitForFunction(() => document.querySelector("#age")?.value);
+  await p.waitForFunction(() => document.querySelector("#birth-year")?.value);
   await p.click("button:has-text('교육 프로파일 만들기')");
   await p.waitForSelector("[data-figure='chart'] svg");
 }
@@ -92,7 +92,7 @@ const SCENARIOS = [
     path: "/performance",
     act: async (p) => {
       await p.click("button:has-text('예시 채우기')");
-      await p.waitForFunction(() => document.querySelector("#age")?.value);
+      await p.waitForFunction(() => document.querySelector("#birth-year")?.value);
       // 마지막 기록의 용상에 오타(+100)를 넣으면 급변 경고가 떠야 한다 (D25 ④)
       const last = p.locator("input[aria-label$='번째 용상']").last();
       await last.fill(String(Number(await last.inputValue()) + 100));

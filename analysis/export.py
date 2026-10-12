@@ -27,7 +27,7 @@ sys.path.insert(0, str(ROOT / "backend"))
 from app import profiling  # noqa: E402
 from app.schemas import ComputeRequest  # noqa: E402
 from make_synthetic import Athlete, generate  # noqa: E402
-from predict import fit  # noqa: E402
+from predict import CATEGORY, fit  # noqa: E402
 
 EXPECTED_TAGS = {"A": ["rapid_improvement"], "B": ["decline"], "C": ["weight_change"],
                  "D": ["high_level"], "E": ["baseline"]}
@@ -38,9 +38,9 @@ DEMO_TEAM = ("demo-team", ["A", "C", "E"])
 
 def example(a: Athlete) -> dict:
     rows = a.records[-EXAMPLE_ROWS:]
-    return {"sex": a.sex, "age": a.age_at(rows[-1].year),
-            "records": [{"date": r.date, "competition_level": r.competition_level, "body_weight": r.body_weight,
-                         "snatch": r.snatch, "clean_jerk": r.clean_jerk} for r in rows]}
+    return {"sex": a.sex, "birth_year": a.birth_year,
+            "records": [{"date": r.date, "competition_category": CATEGORY[r.competition_level],
+                         "body_weight": r.body_weight, "snatch": r.snatch, "clean_jerk": r.clean_jerk} for r in rows]}
 
 
 def team_summary(team_id: str, recommendations: list[list[str]], catalog_order: list[str], min_k: int) -> dict:
@@ -65,10 +65,10 @@ def main() -> None:
     params = fit(background, args.source)
     examples = {a.athlete_id: example(a) for a in personas}
 
-    # 서버와 같은 경로로 계산해 검사한다. profiling.params()는 DATA/model_params.json을 읽으므로 먼저 써 둔다.
+    # 서버와 같은 경로로 계산해 검사한다. profiling.params()는 MODEL_DIR/model_params.json을 읽으므로 먼저 써 둔다.
     args.out.mkdir(parents=True, exist_ok=True)
     write(args.out / "model_params.json", params)
-    profiling.DATA = args.out
+    profiling.MODEL_DIR = args.out
     profiling.params.cache_clear()
     results = {aid: profiling.compute(ComputeRequest(**ex))[0] for aid, ex in examples.items()}
 

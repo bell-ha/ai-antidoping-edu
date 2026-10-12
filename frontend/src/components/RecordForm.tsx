@@ -1,6 +1,7 @@
 import { ArrowRight, Plus, TriangleAlert, Wand2, X } from "lucide-react";
 import { useState, type FormEvent } from "react";
-import { api, type AthleteProfile, type CompetitionLevel, type ComputeRequest, type InputWarning } from "../api";
+import { api, type AthleteProfile, type CompetitionCategory, type ComputeRequest, type InputWarning } from "../api";
+import { CATEGORY_LABEL } from "../session";
 import { useSession } from "../session";
 import { Select } from "./Select";
 
@@ -9,7 +10,7 @@ import { Select } from "./Select";
 
 interface Row {
   date: string;
-  competition_level: CompetitionLevel;
+  competition_category: CompetitionCategory;
   body_weight: string;
   snatch: string;
   clean_jerk: string;
@@ -17,21 +18,22 @@ interface Row {
 
 const MIN_ROWS = 3;
 const MAX_ROWS = 10;
-const LEVELS: { value: CompetitionLevel; label: string }[] = [
-  { value: "junior", label: "주니어" },
-  { value: "national", label: "국내 대회" },
-  { value: "international", label: "국제 대회" },
-];
-const emptyRow = (): Row => ({ date: "", competition_level: "national", body_weight: "", snatch: "", clean_jerk: "" });
+// 연구진 RNN의 대회 분류 4종(schemas.CompetitionCategory). 범주를 잘못 고르면 예측이 수 kg 달라지므로 예시를 붙인다.
+const CATEGORIES: { value: CompetitionCategory; label: string }[] = (Object.keys(CATEGORY_LABEL) as CompetitionCategory[]).map((value) => ({
+  value,
+  label: CATEGORY_LABEL[value],
+}));
+const CATEGORY_HELP = "세계대회: 올림픽·세계선수권·월드컵·유니버시아드 / 대륙대회: 아시안게임·아시아선수권 / 그 밖의 국제대회: 국제 초청대회·국제컵 / 국내 대회: 전국체전·국내 선수권 등";
+const emptyRow = (): Row => ({ date: "", competition_category: "domestic", body_weight: "", snatch: "", clean_jerk: "" });
 
-function toRequest(sex: "M" | "F", age: string, rows: Row[], confirmed: boolean): ComputeRequest {
+function toRequest(sex: "M" | "F", birthYear: string, rows: Row[], confirmed: boolean): ComputeRequest {
   return {
     sex,
-    age: Number(age),
+    birth_year: Number(birthYear),
     confirmed,
     records: rows.map((r) => ({
       date: r.date,
-      competition_level: r.competition_level,
+      competition_category: r.competition_category,
       body_weight: Number(r.body_weight),
       snatch: Number(r.snatch),
       clean_jerk: Number(r.clean_jerk),
@@ -44,7 +46,7 @@ const filled = (r: Row) => r.date && r.body_weight && r.snatch && r.clean_jerk;
 export function RecordForm({ onResult }: { onResult: (p: AthleteProfile) => void }) {
   const { who, demo } = useSession();
   const [sex, setSex] = useState<"M" | "F">("M");
-  const [age, setAge] = useState("");
+  const [birthYear, setBirthYear] = useState("");
   const [rows, setRows] = useState<Row[]>(() => Array.from({ length: 5 }, emptyRow));
   const [warnings, setWarnings] = useState<InputWarning[]>([]);
   const [error, setError] = useState("");
@@ -59,11 +61,11 @@ export function RecordForm({ onResult }: { onResult: (p: AthleteProfile) => void
     if (!who.athlete_id) return;
     const ex = await api.demoExample(who.athlete_id);
     setSex(ex.sex);
-    setAge(String(ex.age));
+    setBirthYear(String(ex.birth_year));
     setRows(
       ex.records.map((r) => ({
         date: r.date,
-        competition_level: r.competition_level,
+        competition_category: r.competition_category,
         body_weight: String(r.body_weight),
         snatch: String(r.snatch),
         clean_jerk: String(r.clean_jerk),
@@ -79,7 +81,7 @@ export function RecordForm({ onResult }: { onResult: (p: AthleteProfile) => void
     setError("");
     setPending(true);
     api
-      .compute(toRequest(sex, age, used, confirmed))
+      .compute(toRequest(sex, birthYear, used, confirmed))
       .then(
         (res) => {
           setWarnings(res.warnings);
@@ -96,7 +98,7 @@ export function RecordForm({ onResult }: { onResult: (p: AthleteProfile) => void
   };
 
   const usedCount = rows.filter(filled).length;
-  const ready = !!age && usedCount >= MIN_ROWS;
+  const ready = birthYear.length === 4 && usedCount >= MIN_ROWS;
 
   return (
     <form className="card" onSubmit={submit} data-figure="input">
@@ -125,10 +127,18 @@ export function RecordForm({ onResult }: { onResult: (p: AthleteProfile) => void
           />
         </div>
         <div className="field">
-          <label className="label" htmlFor="age">
-            나이(가장 최근 대회 때)
+          <label className="label" htmlFor="birth-year">
+            출생연도
           </label>
-          <input id="age" className="input" inputMode="numeric" value={age} onChange={(e) => setAge(e.target.value.replace(/\D/g, ""))} placeholder="예: 19" />
+          <input
+            id="birth-year"
+            className="input num"
+            inputMode="numeric"
+            maxLength={4}
+            value={birthYear}
+            onChange={(e) => setBirthYear(e.target.value.replace(/\D/g, ""))}
+            placeholder="예: 2007"
+          />
         </div>
       </div>
 
@@ -155,7 +165,7 @@ export function RecordForm({ onResult }: { onResult: (p: AthleteProfile) => void
               </label>
               <label className="records-cell">
                 <span className="records-label">대회 수준</span>
-                <Select id={`level-${i}`} value={r.competition_level} options={LEVELS} onChange={(v) => update(i, { competition_level: v })} />
+                <Select id={`category-${i}`} value={r.competition_category} options={CATEGORIES} onChange={(v) => update(i, { competition_category: v })} />
               </label>
               {(["body_weight", "snatch", "clean_jerk"] as const).map((f) => (
                 <label key={f} className="records-cell">
@@ -190,6 +200,7 @@ export function RecordForm({ onResult }: { onResult: (p: AthleteProfile) => void
         </button>
         <p className="caption">오래된 대회부터 순서대로, 최소 {MIN_ROWS}개 · 입력한 기록은 저장되지 않아요</p>
       </div>
+      <p className="caption">대회 수준 — {CATEGORY_HELP}</p>
 
       {warnings.length > 0 && (
         <div className="notice notice-caution" role="alert">

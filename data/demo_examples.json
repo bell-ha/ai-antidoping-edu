@@ -1,60 +1,60 @@
 {
   "A": {
     "sex": "M",
-    "age": 19,
+    "birth_year": 2007,
     "records": [
       {
         "date": "2024-06",
-        "competition_level": "junior",
+        "competition_category": "domestic",
         "body_weight": 70.5,
         "snatch": 107,
         "clean_jerk": 126
       },
       {
         "date": "2024-09",
-        "competition_level": "junior",
+        "competition_category": "domestic",
         "body_weight": 72.5,
         "snatch": 105,
         "clean_jerk": 129
       },
       {
         "date": "2025-03",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 71.8,
         "snatch": 108,
         "clean_jerk": 135
       },
       {
         "date": "2025-06",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 71.3,
         "snatch": 109,
         "clean_jerk": 136
       },
       {
         "date": "2025-09",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 72.1,
         "snatch": 109,
         "clean_jerk": 132
       },
       {
         "date": "2026-03",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 71.2,
         "snatch": 112,
         "clean_jerk": 142
       },
       {
         "date": "2026-06",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 71.7,
         "snatch": 121,
         "clean_jerk": 145
       },
       {
         "date": "2026-09",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 71.8,
         "snatch": 123,
         "clean_jerk": 156
@@ -63,60 +63,60 @@
   },
   "B": {
     "sex": "F",
-    "age": 27,
+    "birth_year": 1999,
     "records": [
       {
         "date": "2024-06",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 58.4,
         "snatch": 79,
         "clean_jerk": 96
       },
       {
         "date": "2024-09",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 57.1,
         "snatch": 78,
         "clean_jerk": 98
       },
       {
         "date": "2025-03",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 57.4,
         "snatch": 78,
         "clean_jerk": 98
       },
       {
         "date": "2025-06",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 58.1,
         "snatch": 80,
         "clean_jerk": 97
       },
       {
         "date": "2025-09",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 58.3,
         "snatch": 81,
         "clean_jerk": 96
       },
       {
         "date": "2026-03",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 56.9,
         "snatch": 79,
         "clean_jerk": 99
       },
       {
         "date": "2026-06",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 58.4,
         "snatch": 76,
         "clean_jerk": 92
       },
       {
         "date": "2026-09",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 58.0,
         "snatch": 71,
         "clean_jerk": 85
@@ -125,60 +125,60 @@
   },
   "C": {
     "sex": "M",
-    "age": 22,
+    "birth_year": 2004,
     "records": [
       {
         "date": "2024-06",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 80.2,
         "snatch": 121,
         "clean_jerk": 149
       },
       {
         "date": "2024-09",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 80.2,
         "snatch": 119,
         "clean_jerk": 151
       },
       {
         "date": "2025-03",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 80.2,
         "snatch": 129,
         "clean_jerk": 152
       },
       {
         "date": "2025-06",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 87.6,
         "snatch": 132,
         "clean_jerk": 159
       },
       {
         "date": "2025-09",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 87.6,
         "snatch": 133,
         "clean_jerk": 156
       },
       {
         "date": "2026-03",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 87.6,
         "snatch": 135,
         "clean_jerk": 158
       },
       {
         "date": "2026-06",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 87.6,
         "snatch": 133,
         "clean_jerk": 162
       },
       {
         "date": "2026-09",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 87.6,
         "snatch": 134,
         "clean_jerk": 162
@@ -187,60 +187,60 @@
   },
   "D": {
     "sex": "F",
-    "age": 25,
+    "birth_year": 2001,
     "records": [
       {
         "date": "2024-06",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 63.0,
         "snatch": 86,
         "clean_jerk": 105
       },
       {
         "date": "2024-09",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 61.7,
         "snatch": 87,
         "clean_jerk": 104
       },
       {
         "date": "2025-03",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 63.2,
         "snatch": 87,
         "clean_jerk": 106
       },
       {
         "date": "2025-06",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 62.8,
         "snatch": 88,
         "clean_jerk": 104
       },
       {
         "date": "2025-09",
-        "competition_level": "international",
+        "competition_category": "world",
         "body_weight": 63.0,
         "snatch": 88,
         "clean_jerk": 106
       },
       {
         "date": "2026-03",
-        "competition_level": "international",
+        "competition_category": "world",
         "body_weight": 63.3,
         "snatch": 86,
         "clean_jerk": 109
       },
       {
         "date": "2026-06",
-        "competition_level": "international",
+        "competition_category": "world",
         "body_weight": 61.7,
         "snatch": 85,
         "clean_jerk": 108
       },
       {
         "date": "2026-09",
-        "competition_level": "international",
+        "competition_category": "world",
         "body_weight": 62.1,
         "snatch": 87,
         "clean_jerk": 106
@@ -249,60 +249,60 @@
   },
   "E": {
     "sex": "M",
-    "age": 23,
+    "birth_year": 2003,
     "records": [
       {
         "date": "2024-06",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 95.1,
         "snatch": 131,
         "clean_jerk": 163
       },
       {
         "date": "2024-09",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 95.1,
         "snatch": 135,
         "clean_jerk": 163
       },
       {
         "date": "2025-03",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 95.1,
         "snatch": 135,
         "clean_jerk": 165
       },
       {
         "date": "2025-06",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 95.1,
         "snatch": 136,
         "clean_jerk": 164
       },
       {
         "date": "2025-09",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 95.1,
         "snatch": 133,
         "clean_jerk": 166
       },
       {
         "date": "2026-03",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 95.1,
         "snatch": 139,
         "clean_jerk": 164
       },
       {
         "date": "2026-06",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 95.1,
         "snatch": 137,
         "clean_jerk": 171
       },
       {
         "date": "2026-09",
-        "competition_level": "national",
+        "competition_category": "domestic",
         "body_weight": 95.1,
         "snatch": 138,
         "clean_jerk": 164

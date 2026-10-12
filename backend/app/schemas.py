@@ -12,7 +12,10 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 Role = Literal["athlete", "coach", "support"]
 Sport = Literal["weightlifting"]  # D22: 종목 추상화 계층은 만들지 않음
-CompetitionLevel = Literal["junior", "national", "international"]
+# 연구진 RNN의 대회 분류(world/continent/nation/etc)에 맞춘 입력 범주. 토큰 매핑은 profiling이 한다:
+# world→world, continent→continent, other_international→nation(데이터상 국제 초청전), domestic→etc(학습 자료에 없음)
+CompetitionCategory = Literal["world", "continent", "other_international", "domestic"]
+PerformanceModel = Literal["rnn", "synthetic_trend", "none"]
 
 
 # ---------- 세션 (D23) ----------
@@ -44,7 +47,7 @@ ProfileTag = Literal["rapid_improvement", "decline", "weight_change", "high_leve
 
 class RecordPoint(BaseModel):
     date: str  # "YYYY-MM". 대회명은 저장하지 않음 (§10 재식별)
-    competition_level: CompetitionLevel
+    competition_category: CompetitionCategory
     weight_class: int  # 2018 IWF 체급 (D22)
     body_weight: float
     snatch: int
@@ -84,9 +87,11 @@ class AthleteProfile(BaseModel):
     athlete_id: str
     sport: Sport
     sex: Literal["M", "F"]
-    age: int
+    age: int  # 마지막 대회 연도 − 출생연도
     weight_class: int
-    competition_level: CompetitionLevel
+    competition_category: CompetitionCategory  # 마지막 행
+    model: PerformanceModel = "synthetic_trend"  # none이면 forecast·경기력 태그 없음(해당 성별 모델 없음)
+    notices: list[str] = []  # 화면에 그대로 보여줄 상태 안내(예: "이 성별의 경기력 모델이 아직 없어요")
     records: list[RecordPoint]
     forecast: list[ForecastPoint]
     tags: list[ProfileTag]
@@ -100,7 +105,7 @@ class AthleteProfile(BaseModel):
 class RecordInput(BaseModel):
     """선수가 입력하는 대회 1회. 체급(성별+계체 체중)과 합계는 서버가 도출한다."""
     date: str = Field(pattern=r"^\d{4}-(0[1-9]|1[0-2])$")  # "YYYY-MM"
-    competition_level: CompetitionLevel
+    competition_category: CompetitionCategory
     body_weight: float = Field(ge=30, le=200)
     snatch: int = Field(ge=1, le=300)
     clean_jerk: int = Field(ge=1, le=300)
@@ -109,7 +114,7 @@ class RecordInput(BaseModel):
 class ComputeRequest(BaseModel):
     """POST /api/profile/compute. 입력은 서버에 저장하지 않는다."""
     sex: Literal["M", "F"]
-    age: int = Field(ge=10, le=80)  # 가장 최근 대회 때의 나이
+    birth_year: int = Field(ge=1940)  # 기록별 나이(모델 입력) 계산용. 저장하지 않는다
     records: list[RecordInput] = Field(min_length=3, max_length=10)
     confirmed: bool = False  # 경고를 사용자가 확인했는지
 
@@ -120,6 +125,9 @@ class ComputeRequest(BaseModel):
             raise ValueError("대회 기록은 오래된 것부터 날짜순으로 입력해 주세요.")
         if dates[-1] > date.today().strftime("%Y-%m"):
             raise ValueError("아직 오지 않은 달의 기록은 입력할 수 없어요.")
+        age_first = int(dates[0][:4]) - self.birth_year
+        if age_first < 8 or self.birth_year > date.today().year - 8:
+            raise ValueError("출생연도와 대회 날짜를 다시 확인해 주세요.")
         return self
 
 
@@ -127,7 +135,7 @@ class PromptProfile(BaseModel):
     """세션에 저장하고 프롬프트에 넣는 것만 (D15, D25). 원 기록은 넣지 않는다."""
     tags: list[ProfileTag]
     age_band: str
-    competition_level: CompetitionLevel
+    competition_category: CompetitionCategory
 
 
 class InputWarning(BaseModel):

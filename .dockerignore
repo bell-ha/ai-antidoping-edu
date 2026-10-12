@@ -10,3 +10,6 @@ data/access_codes.json
 logs
 .git
 .env
+APP_RNN_platform_handoff
+manuscript_*.docx
+Artificial-Intelligence-Driven-Athlete-Performance-Passport-*

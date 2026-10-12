@@ -21,7 +21,7 @@ ROLE_TONE: dict[Role, str] = {
     "support": "사용자는 선수지원인력(트레이너, 팀 닥터, 약사 등)입니다. 관련 조항(예: S6)과 절차를 정확히 밝히세요.",
 }
 
-LEVEL_KO = {"junior": "주니어", "national": "국내 대회", "international": "국제 대회"}
+CATEGORY_KO = {"world": "세계대회", "continent": "대륙대회", "other_international": "그 밖의 국제대회", "domestic": "국내 대회"}
 
 
 def system_prompt(role: Role, profile: PromptProfile | None, tag_labels: list[str]) -> str:
@@ -29,7 +29,7 @@ def system_prompt(role: Role, profile: PromptProfile | None, tag_labels: list[st
     if profile is not None:
         parts.append(
             "선수의 교육 프로파일: "
-            f"연령대 {profile.age_band}, 경기 수준 {LEVEL_KO[profile.competition_level]}, "
+            f"연령대 {profile.age_band}, 최근 출전 대회 {CATEGORY_KO[profile.competition_category]}, "
             f"교육 프로파일 태그 {', '.join(tag_labels)}. "
             "이 프로파일과 관련된 교육 내용이 근거에 있으면 먼저 다루세요."
         )

@@ -1,5 +1,6 @@
 {
   "source": "synthetic",
+  "model": "synthetic_trend",
   "weight_class_system": "IWF-2018",
   "classes": {
     "M": [
