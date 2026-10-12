@@ -421,6 +421,196 @@
       "note": "성분 자체는 금지목록에 없지만 보충제 제품은 오염 위험이 있음.",
       "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
       "reviewed": false
+    },
+    "clobetasol": {
+      "name_ko": "클로베타솔",
+      "name_en": "clobetasol",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S9",
+      "note": "S9는 모든 당질코르티코이드를 금지(이 이름은 목록에 예시로 나오지 않음). 경기기간 중 주사·경구·직장 투여가 금지이고, 흡입·국소 사용은 허가 용량 안에서 가능.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "clobetasone": {
+      "name_ko": "클로베타손",
+      "name_en": "clobetasone",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S9",
+      "note": "S9는 모든 당질코르티코이드를 금지(이 이름은 목록에 예시로 나오지 않음). 경기기간 중 주사·경구·직장 투여가 금지이고, 흡입·국소 사용은 허가 용량 안에서 가능.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "diflucortolone": {
+      "name_ko": "디플루코르톨론",
+      "name_en": "diflucortolone",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S9",
+      "note": "S9는 모든 당질코르티코이드를 금지(이 이름은 목록에 예시로 나오지 않음). 경기기간 중 주사·경구·직장 투여가 금지이고, 흡입·국소 사용은 허가 용량 안에서 가능.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "fluocinolone": {
+      "name_ko": "플루오시놀론",
+      "name_en": "fluocinolone",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S9",
+      "note": "S9는 모든 당질코르티코이드를 금지(이 이름은 목록에 예시로 나오지 않음). 경기기간 중 주사·경구·직장 투여가 금지이고, 흡입·국소 사용은 허가 용량 안에서 가능.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "fluocinonide": {
+      "name_ko": "플루오시노니드",
+      "name_en": "fluocinonide",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S9",
+      "note": "S9는 모든 당질코르티코이드를 금지(이 이름은 목록에 예시로 나오지 않음). 경기기간 중 주사·경구·직장 투여가 금지이고, 흡입·국소 사용은 허가 용량 안에서 가능.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "desonide": {
+      "name_ko": "데소나이드",
+      "name_en": "desonide",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S9",
+      "note": "S9는 모든 당질코르티코이드를 금지(이 이름은 목록에 예시로 나오지 않음). 경기기간 중 주사·경구·직장 투여가 금지이고, 흡입·국소 사용은 허가 용량 안에서 가능.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "halcinonide": {
+      "name_ko": "할시노니드",
+      "name_en": "halcinonide",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S9",
+      "note": "S9는 모든 당질코르티코이드를 금지(이 이름은 목록에 예시로 나오지 않음). 경기기간 중 주사·경구·직장 투여가 금지이고, 흡입·국소 사용은 허가 용량 안에서 가능.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "halometasone": {
+      "name_ko": "할로메타손",
+      "name_en": "halometasone",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S9",
+      "note": "S9는 모든 당질코르티코이드를 금지(이 이름은 목록에 예시로 나오지 않음). 경기기간 중 주사·경구·직장 투여가 금지이고, 흡입·국소 사용은 허가 용량 안에서 가능.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "fluorometholone": {
+      "name_ko": "플루오로메톨론",
+      "name_en": "fluorometholone",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S9",
+      "note": "S9는 모든 당질코르티코이드를 금지(이 이름은 목록에 예시로 나오지 않음). 경기기간 중 주사·경구·직장 투여가 금지이고, 흡입·국소 사용은 허가 용량 안에서 가능.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "loteprednol": {
+      "name_ko": "로테프레드놀",
+      "name_en": "loteprednol",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S9",
+      "note": "S9는 모든 당질코르티코이드를 금지(이 이름은 목록에 예시로 나오지 않음). 경기기간 중 주사·경구·직장 투여가 금지이고, 흡입·국소 사용은 허가 용량 안에서 가능.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "difluprednate": {
+      "name_ko": "디플루프레드네이트",
+      "name_en": "difluprednate",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S9",
+      "note": "S9는 모든 당질코르티코이드를 금지(이 이름은 목록에 예시로 나오지 않음). 경기기간 중 주사·경구·직장 투여가 금지이고, 흡입·국소 사용은 허가 용량 안에서 가능.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "prednicarbate": {
+      "name_ko": "프레드니카르베이트",
+      "name_en": "prednicarbate",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S9",
+      "note": "S9는 모든 당질코르티코이드를 금지(이 이름은 목록에 예시로 나오지 않음). 경기기간 중 주사·경구·직장 투여가 금지이고, 흡입·국소 사용은 허가 용량 안에서 가능.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "alclometasone": {
+      "name_ko": "알클로메타손",
+      "name_en": "alclometasone",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S9",
+      "note": "S9는 모든 당질코르티코이드를 금지(이 이름은 목록에 예시로 나오지 않음). 경기기간 중 주사·경구·직장 투여가 금지이고, 흡입·국소 사용은 허가 용량 안에서 가능.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "amcinonide": {
+      "name_ko": "암시노니드",
+      "name_en": "amcinonide",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S9",
+      "note": "S9는 모든 당질코르티코이드를 금지(이 이름은 목록에 예시로 나오지 않음). 경기기간 중 주사·경구·직장 투여가 금지이고, 흡입·국소 사용은 허가 용량 안에서 가능.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "desoximetasone": {
+      "name_ko": "데속시메타손",
+      "name_en": "desoximetasone",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S9",
+      "note": "S9는 모든 당질코르티코이드를 금지(이 이름은 목록에 예시로 나오지 않음). 경기기간 중 주사·경구·직장 투여가 금지이고, 흡입·국소 사용은 허가 용량 안에서 가능.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "rimexolone": {
+      "name_ko": "리멕솔론",
+      "name_en": "rimexolone",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S9",
+      "note": "S9는 모든 당질코르티코이드를 금지(이 이름은 목록에 예시로 나오지 않음). 경기기간 중 주사·경구·직장 투여가 금지이고, 흡입·국소 사용은 허가 용량 안에서 가능.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "flumetasone": {
+      "name_ko": "플루메타손",
+      "name_en": "flumetasone",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S9",
+      "note": "S9는 모든 당질코르티코이드를 금지(이 이름은 목록에 예시로 나오지 않음). 경기기간 중 주사·경구·직장 투여가 금지이고, 흡입·국소 사용은 허가 용량 안에서 가능.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "deprodone": {
+      "name_ko": "데프로돈",
+      "name_en": "deprodone",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S9",
+      "note": "S9는 모든 당질코르티코이드를 금지(이 이름은 목록에 예시로 나오지 않음). 경기기간 중 주사·경구·직장 투여가 금지이고, 흡입·국소 사용은 허가 용량 안에서 가능.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
+    },
+    "triamcinolone": {
+      "name_ko": "트리암시놀론",
+      "name_en": "triamcinolone",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S9",
+      "note": "S9는 모든 당질코르티코이드를 금지(이 이름은 목록에 예시로 나오지 않음). 경기기간 중 주사·경구·직장 투여가 금지이고, 흡입·국소 사용은 허가 용량 안에서 가능.",
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
     }
   }
 }

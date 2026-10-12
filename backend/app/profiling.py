@@ -20,7 +20,8 @@ import yaml
 
 from app.config import MODEL_DIR, ROOT
 from app.profiles import recommendation, tag_label
-from app.schemas import AthleteProfile, ComputeRequest, ForecastPoint, InputWarning, PromptProfile, Reason, RecordPoint
+from app.schemas import (AthleteProfile, ComputeRequest, ForecastPoint, InputWarning, PromptProfile, Reason, RecordPoint,
+                         RuleCheck)
 
 TOP_CLASS = 999  # 최상위 무제한 체급(+109 / +87)
 RATIO_RANGE = (0.35, 0.55)  # 인상/합계가 이 밖이면 입력 확인 경고
@@ -168,6 +169,7 @@ class Result:
     recommendations: list[str]
     forecast: list[ForecastPoint]
     notices: list[str]
+    checks: list[RuleCheck]
 
 
 def evaluate(sex: str, birth_year: int, records: list[Record], emphasis_first: bool = False,
@@ -230,8 +232,9 @@ def evaluate(sex: str, birth_year: int, records: list[Record], emphasis_first: b
     elif abs(bw_change) >= t["body_weight_change_pct"]:
         add("weight_change", f"최근 12개월 체중 {bw_change:+.1f}% (기준 ±{t['body_weight_change_pct']:.0f}%)")
 
-    if any(r.competition_category in t["high_level_categories"] for r in records
-           if months_ago(r) <= t["high_level_window_months"]):
+    high_level_n = sum(r.competition_category in t["high_level_categories"] for r in records
+                       if months_ago(r) <= t["high_level_window_months"])
+    if high_level_n:
         add("high_level", f"최근 {t['high_level_window_months']}개월 안에 세계대회 또는 대륙대회 출전")
 
     if not tags:
@@ -247,13 +250,35 @@ def evaluate(sex: str, birth_year: int, records: list[Record], emphasis_first: b
             contents.insert(0, first)
         recommendations += [c for c in contents if c not in recommendations]
 
+    # 판정 점검표: 붙지 않은 태그까지 규칙 입력값과 기준을 그대로 보여준다(D6 확장, 화면은 DEMO_MODE에서만).
+    k = t["weight_jump_kg"]
+
+    def performance_detail(threshold: float) -> str:
+        if z is None:
+            return "이 성별은 예측 모델이 없어 판단하지 않음"
+        if weight_jumped:
+            return f"체중이 바뀐 대회라 판단하지 않음 (직전 대비 계체 {jump:+.1f}kg, 기준 ±{k:.0f}kg 초과)"
+        return f"예측 대비 {z:+.1f}σ (기준 {threshold:+.1f}σ)"
+
+    weight_detail = next((r.text for r in reasons if r.tag == "weight_change"), None) or (
+        f"체급 변경 없음 · 직전 대비 계체 {jump:+.1f}kg (기준 ±{k:.0f}kg 초과) · "
+        + (f"최근 12개월 체중 {bw_change:+.1f}% (기준 ±{t['body_weight_change_pct']:.0f}%)" if year_ago
+           else "12개월 전 기록 없음"))
+    checks = [RuleCheck(tag=tag, label=tag_label(tag), met=tag in tags, detail=detail) for tag, detail in [
+        ("rapid_improvement", performance_detail(t["residual_z_up"])),
+        ("decline", performance_detail(t["residual_z_down"])),
+        ("weight_change", weight_detail),
+        ("high_level", f"마지막 대회 기준 {t['high_level_window_months']}개월 안의 세계·대륙대회 {high_level_n}회 "
+                       f"(기준 1회 이상)"),
+    ]]
+
     forecast = []
     if model != "none":
         for i in range(p["min_history"], len(records)):
             f = predict(sex, records, record_ages, i, p)
             forecast.append(ForecastPoint(date=records[i].date, mean=round(f.mean, 1), lo=round(f.lo, 1),
                                           hi=round(f.hi, 1)))
-    return Result(model, tags, reasons, recommendations, forecast, notices)
+    return Result(model, tags, reasons, recommendations, forecast, notices, checks)
 
 
 def to_records(req: ComputeRequest) -> list[Record]:
@@ -302,6 +327,7 @@ def compute(req: ComputeRequest) -> tuple[AthleteProfile, PromptProfile]:
         tags=result.tags,
         tag_labels=[tag_label(t) for t in result.tags],
         reasons=result.reasons,
+        checks=result.checks,
         recommendations=[recommendation(c) for c in result.recommendations],
     )
     return profile, PromptProfile(tags=result.tags, age_band=age_band(age), competition_category=last.competition_category)

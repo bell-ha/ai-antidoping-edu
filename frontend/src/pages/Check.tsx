@@ -63,7 +63,7 @@ export function Check() {
             <label className="label" htmlFor="q">
               제품명 또는 성분명
             </label>
-            <input id="q" className="input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="예: 감기약, 슈도에페드린" autoComplete="off" />
+            <input id="q" className="input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="예: 타이레놀콜드-에스정, 슈도에페드린, letrozole" autoComplete="off" />
           </div>
           <div className="fields-2">
             <div className="field">
@@ -79,6 +79,7 @@ export function Check() {
               <Select id="timing" value={timing} options={TIMINGS} onChange={setTiming} />
             </div>
           </div>
+          <p className="caption">국내 의약품은 제품명으로, WADA 금지목록 성분은 영문 성분명으로도 찾을 수 있어요(예: letrozole, meldonium).</p>
           <button className="btn btn-block" disabled={!query.trim()}>
             확인 절차 보기 <ArrowRight size={18} />
           </button>
@@ -154,6 +155,32 @@ export function Check() {
                 </div>
               )}
 
+              {result.candidates.length > 0 && (
+                <div className="stack" style={{ gap: 6 }} data-test="candidates">
+                  <p className="label">같은 이름의 제품이 여러 개예요. 성분이 달라 하나로 판단하지 않았어요</p>
+                  <p className="caption">갖고 있는 제품의 정확한 이름을 골라 다시 확인하세요.</p>
+                  {result.candidates.map((c) => (
+                    <div key={c.name} className="ingredient">
+                      <strong>{c.name}</strong>
+                      <span className="caption">
+                        {c.otc} · {c.ingredients.join(", ")}
+                      </span>
+                      <button
+                        type="button"
+                        className="btn-sub small"
+                        style={{ alignSelf: "flex-start" }}
+                        onClick={() => {
+                          setQuery(c.name);
+                          run(c.name);
+                        }}
+                      >
+                        이 제품으로 확인
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className="stack">
                 <p className="label">확인 절차</p>
                 <ol className="steps">
@@ -173,6 +200,19 @@ export function Check() {
                   <MessageCircle size={16} /> AI에게 더 묻기
                 </button>
               </div>
+              {result.data_sources.length > 0 && (
+                <p className="caption">
+                  제품·성분 정보:{" "}
+                  {result.data_sources.map((d, i) => (
+                    <span key={d.url}>
+                      {i > 0 && " · "}
+                      <a href={d.url} target="_blank" rel="noreferrer">
+                        {d.label}
+                      </a>
+                    </span>
+                  ))}
+                </p>
+              )}
             </section>
           )}
         </div>

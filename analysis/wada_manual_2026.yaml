@@ -1,0 +1,118 @@
+# WADA 2026 금지목록 — 자동 추출(analysis/wada_extract.py)을 보완하는 손 보정.
+# 자동 추출이 문장형 섹션을 다루지 못하는 곳(S0, M1–M3), 종목 목록(P1), 섹션 NOTE, 흔한 별칭만 여기에 둔다.
+# 모든 항목은 원문 PDF의 문구에 근거한다(쪽 번호 기록). 별칭(aliases)은 원문에 없는 이름이며 "alias"로 표시된다.
+
+manual_sections: [S0, M1, M2, M3]  # 이 섹션은 자동 추출 항목을 버리고 아래 items만 쓴다
+
+items:
+  # S0 — 원문 4쪽: "including but not limited to BPC-157, 2,4-dinitrophenol (DNP), ryanodine receptor-1-calstabin
+  # complex stabilizers [e.g. S-107, S48168 (ARM210)] and troponin activators (e.g. reldesemtiv and tirasemtiv)"
+  - {section: S0, name: BPC-157, page: 4}
+  - {section: S0, name: "2,4-Dinitrophenol", synonyms: [DNP], page: 4}
+  - {section: S0, name: Ryanodine receptor-1-calstabin complex stabilizers, page: 4}
+  - {section: S0, name: S-107, page: 4}
+  - {section: S0, name: S48168, synonyms: [ARM210], page: 4}
+  - {section: S0, name: Troponin activators, page: 4}
+  - {section: S0, name: Reldesemtiv, page: 4}
+  - {section: S0, name: Tirasemtiv, page: 4}
+  - {section: S0, name: Non-approved substances, synonyms: [designer drugs, substances approved only for veterinary use], page: 4,
+     condition: "어느 섹션에도 없고 사람 치료용으로 승인되지 않은 약리 물질(임상 전·임상 중·중단된 약, 디자이너 약물, 동물용 전용 약)은 상시 금지"}
+
+  # S1 — 원문 6쪽 S1.1 끝 문장 "… including their esters." (INDEX 표제어 "Esters of anabolic androgenic steroids")
+  - {section: S1, subsection: S1.1, name: Esters of anabolic androgenic steroids, page: 6}
+
+  # M1 — 원문 13쪽
+  - {section: M1, subsection: M1.1, name: Blood transfusion, page: 13,
+     synonyms: [blood doping, autologous blood transfusion, homologous blood transfusion, red blood cell products],
+     condition: "자가·동종·이종 혈액 또는 적혈구 제제를 순환계에 투여·재주입하는 것은 상시 금지"}
+  - {section: M1, subsection: M1.1, name: Withdrawal of blood, synonyms: [apheresis, Blood withdrawal], page: 13,
+     condition: "혈액·혈액 성분 채취 금지. 단 1) 의료 검사·도핑검사 목적 2) 공인 기관 헌혈은 제외"}
+  - {section: M1, subsection: M1.2, name: Perfluorochemicals, page: 13}
+  - {section: M1, subsection: M1.2, name: Efaproxiral, synonyms: [RSR13], page: 13}
+  - {section: M1, subsection: M1.2, name: Voxelotor, page: 13}
+  - {section: M1, subsection: M1.2, name: Modified haemoglobin products, page: 13,
+     synonyms: [haemoglobin-based blood substitutes, microencapsulated haemoglobin products],
+     condition: "산소 운반 인위적 향상. 보충 산소 흡입은 제외"}
+  - {section: M1, subsection: M1.3, name: Intravascular manipulation of blood, synonyms: [Blood manipulation], page: 13,
+     condition: "혈액·혈액 성분을 물리적·화학적으로 혈관 안에서 조작하는 모든 방법"}
+  - {section: M1, subsection: M1.4, name: Carbon monoxide re-breathing, synonyms: [Carbon monoxide, Re-breathing systems or equipment to deliver carbon monoxide], page: 13,
+     condition: "일산화탄소 재호흡 장치 사용 금지. 의료·과학 전문가 감독 아래 진단 목적이면 제외"}
+
+  # M2 — 원문 13쪽 (M2.2만 Specified Method)
+  - {section: M2, subsection: M2.1, name: Sample tampering, page: 13,
+     synonyms: [Tampering, sample substitution, urine substitution, sample adulteration, addition of proteases to sample, Proteases],
+     condition: "도핑검사 시료의 바꿔치기·변조 시도 포함 상시 금지"}
+  - {section: M2, subsection: M2.2, name: Intravenous infusion, page: 13,
+     synonyms: [Infusions, Intravenous infusions/injections, intravenous injection, IV infusion, IV drip],
+     condition: "12시간 동안 합계 100 mL를 넘는 정맥 수액·주사는 상시 금지. 병원 치료·수술·임상 진단 검사 중 정당하게 받은 경우는 제외. 필요하면 TUE"}
+
+  # M3 — 원문 14쪽
+  - {section: M3, subsection: M3.1, name: Gene doping, page: 14,
+     synonyms: [gene editing, gene silencing, gene transfer],
+     condition: "유전체 서열·유전자 발현을 바꿀 수 있는 핵산·핵산 유사체 사용 금지"}
+  - {section: M3, subsection: M3.2, name: Cell doping, page: 14,
+     synonyms: [genetically modified cells],
+     condition: "정상 또는 유전자 변형 세포·세포 성분(핵, 미토콘드리아·리보솜 등 세포 소기관) 사용 금지"}
+
+# 자동 추출 항목에 붙이는 이름(name은 항목 이름 또는 기존 동의어와 정규화 일치). 원문 괄호에 있는 것(source: list)과 흔한 별칭(source: alias)을 구분한다.
+synonyms:
+  - {section: S1, name: Trestolone, add: [7ɑ-Methyl-19-nortestosterone, MENT], source: list}
+  - {section: S4, name: Insulins, add: [insulin, insulin-mimetics], source: list}
+  - {section: S2, name: Growth hormone, add: [GH, somatropin, hGH, human growth hormone], source: alias}
+  - {section: S6, name: Methylenedioxymethamphetamine, add: [MDMA, ecstasy], source: list}
+  - {section: S6, name: Metamfetamine, add: [methamphetamine], source: alias}
+  - {section: S6, name: Amfetamine, add: [amphetamine], source: alias}
+  - {section: S6, name: 4-Methylpentan-2-amine, add: [DMBA], source: alias}
+  - {section: S6, name: ɑ-pyrrolidinovalerophenone, add: [alpha-PVP, ɑ-PVP], source: alias}
+  - {section: S6, name: Methylnaphthidate, add: [Methylnaphtidate], source: list}  # 원문 INDEX 표기
+  - {section: S5, name: Plasma expanders by intravenous administration, add: [Plasma expanders], source: list}
+  - {section: S4, name: Myostatin-or precursor-neutralizing antibodies, add: [Myostatin-neutralizing antibodies, Myostatin precursor-neutralizing antibodies], source: list}
+  - {section: S8, name: marijuana, add: [cannabis, marihuana, cannabis products], source: alias}
+  - {section: S8, name: Natural and synthetic tetrahydrocannabinols, add: [Tetrahydrocannabinols, tetrahydrocannabinol, THC, dronabinol], source: list}
+
+# 섹션 NOTE·본문 조건(원문 요약). 앱이 결과 카드에 섹션 조건으로 보여준다.
+section_conditions:
+  S0: "승인되지 않은 물질: 어떤 정부 보건당국도 사람 치료용으로 승인하지 않은 약리 물질은 상시 금지."
+  S3: "흡입 살부타몰·포르모테롤·살메테롤·빌란테롤은 용량 한도 안에서 예외(항목 condition 참고). 소변에서 살부타몰 1000 ng/mL, 포르모테롤 40 ng/mL를 넘으면 치료 용량이었다는 것을 선수가 입증해야 함."
+  S5: "기준치 물질(포르모테롤·살부타몰·카틴·에페드린·메틸에페드린·슈도에페드린)이 이뇨제·은폐제와 함께 검출되면 양이 적어도 위반. 그 물질에 대한 TUE가 따로 있어야 함(점안 탄산탈수효소억제제·치과 펠리프레신은 제외)."
+  M1: "금지방법(상시). 혈액·혈액 성분 조작."
+  M2: "금지방법(상시). 화학적·물리적 조작. M2.2(정맥 수액)만 Specified Method."
+  M3: "금지방법(상시). 유전자·세포 도핑."
+  S9: "주사·경구(설하·볼·잇몸 등 구강점막 포함)·직장 투여는 경기기간 중 금지. 흡입·국소(치과 근관·피부·코·눈·귀·항문 주위) 투여는 허가 용량·적응증 안에서 금지 아님."
+  P1: "지정 종목에서만 경기기간 중 금지, * 표시 종목은 경기기간 외에도 금지(종목 목록: sections.P1.sports). 역도는 해당 없음."
+
+# P1 종목 — 원문 20쪽. out_of_competition: 원문 * 표시("Also prohibited Out-of-Competition")
+p1_sports:
+  - {name: Archery (WA), out_of_competition: true}
+  - {name: Automobile (FIA), out_of_competition: false}
+  - {name: Billiards (all disciplines) (WCBS), out_of_competition: false}
+  - {name: Darts (WDF), out_of_competition: false}
+  - {name: Golf (IGF), out_of_competition: false}
+  - {name: Mini-Golf (WMF), out_of_competition: false}
+  - {name: "Shooting (ISSF, IPC)", out_of_competition: true}
+  - {name: "Underwater sports (CMAS) in all subdisciplines of freediving, spearfishing and target shooting", out_of_competition: true}
+
+# INDEX 표제어 중 앱 검색으로 판정할 대상이 아닌 것(이유와 함께). tests가 이 목록 밖의 표제어는 모두 조회되기를 요구한다.
+index_not_substances:
+  "Blood": "M1.1 방법 설명 단어 → Blood transfusion 항목"
+  "Blood (autologous)": "M1.1 방법 설명 단어 → Blood transfusion 항목(autologous blood transfusion)"
+  "Blood (components)": "M1.1 방법 설명 단어 → Blood transfusion·Withdrawal of blood 항목"
+  "Blood (heterologous)": "M1.1 방법 설명 단어 → Blood transfusion 항목"
+  "Blood (homologous)": "M1.1 방법 설명 단어 → Blood transfusion 항목(homologous blood transfusion)"
+  "Cell (red blood)": "M1.1 방법 설명 단어 → Blood transfusion 항목(red blood cell products)"
+  "Haemoglobin (products)": "M1.2 → Modified haemoglobin products 항목"
+  "Haemoglobin (microencapsulated products)": "M1.2 → Modified haemoglobin products 항목(microencapsulated haemoglobin products)"
+  "Injections (>100 mL)": "M2.2 조건 표제어 → Intravenous infusion 항목. '주사' 일반어를 금지로 잡지 않으려고 동의어로 넣지 않음"
+  "Cell (genetically modified)": "M3.2 방법 설명 단어 → Cell doping 항목(genetically modified cells)"
+  "Cell (normal)": "M3.2 방법 설명 단어 → Cell doping 항목"
+  "Cell components (nuclei)": "M3.2 방법 설명 단어 → Cell doping 항목"
+  "Cell components (mitochondria)": "M3.2 방법 설명 단어 → Cell doping 항목"
+  "Cell components (ribosomes)": "M3.2 방법 설명 단어 → Cell doping 항목"
+  "Mitochondria": "M3.2 방법 설명 단어 → Cell doping 항목"
+  "Nuclei/nucleus": "M3.2 방법 설명 단어 → Cell doping 항목"
+  "Ribosomes": "M3.2 방법 설명 단어 → Cell doping 항목"
+  "Organelles (e.g. nuclei, mitochondria, ribosomes)": "M3.2 방법 설명 단어 → Cell doping 항목"
+  "Nucleic acids": "M3.1 방법 설명 단어 → Gene doping 항목"
+  "Nucleic acid analogues": "M3.1 방법 설명 단어 → Gene doping 항목"
+  "Imidazoline": "S6 예외의 분류어(imidazoline derivatives) — 개별 성분(naphazoline 등)은 각각 항목"
+  "receptor delta agonists": "INDEX 줄바꿈 조각(Peroxisome proliferator-activated receptor delta agonists)"

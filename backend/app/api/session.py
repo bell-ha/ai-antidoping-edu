@@ -1,4 +1,4 @@
-"""접근 코드 세션 (D23). role·athlete_id·team_id는 여기서만 나온다."""
+"""접근 코드 세션 (D23). role·athlete_id는 여기서만 나온다."""
 
 import json
 import time

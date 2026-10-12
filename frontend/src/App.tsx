@@ -3,11 +3,11 @@ import { Navigate, Route, Routes } from "react-router";
 import { api, type AthleteProfile, type SessionInfo } from "./api";
 import { Shell } from "./components/Shell";
 import { HOME_BY_ROLE, SessionContext, TABS_BY_ROLE } from "./session";
+import { Architecture } from "./pages/Architecture";
 import { Check } from "./pages/Check";
 import { Learn } from "./pages/Learn";
 import { Performance } from "./pages/Performance";
 import { Start } from "./pages/Start";
-import { Team } from "./pages/Team";
 
 export default function App() {
   const [who, setWho] = useState<SessionInfo | null | undefined>(undefined);
@@ -33,9 +33,9 @@ export default function App() {
       <Routes>
         <Route element={<Shell />}>
           {tabs.includes("performance") && <Route path="/performance" element={<Performance />} />}
-          {tabs.includes("team") && <Route path="/team" element={<Team />} />}
           <Route path="/check" element={<Check />} />
           <Route path="/learn" element={<Learn />} />
+          <Route path="/architecture" element={<Architecture />} />
           <Route path="*" element={<Navigate to={HOME_BY_ROLE[who.role]} replace />} />
         </Route>
       </Routes>

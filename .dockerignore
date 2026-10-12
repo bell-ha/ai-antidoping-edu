@@ -11,3 +11,5 @@ logs
 .git
 .env
 private
+data/drugs.sqlite
+data/drugs.tmp

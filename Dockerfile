@@ -21,6 +21,8 @@ COPY backend/scripts ./scripts
 COPY data /app/data
 COPY knowledge /app/knowledge
 COPY --from=web /src/frontend/dist /app/frontend/dist
+# 약물 DB: 원천 JSON에서 빌드한다(원천 sha256을 meta에 기록 → 시범 모드 시작 검사가 같은 해시를 확인)
+RUN python -m app.drug_db
 
 RUN useradd --system --uid 10001 app && mkdir -p /app/data/llm_cache && chown -R app /app/data/llm_cache
 USER app

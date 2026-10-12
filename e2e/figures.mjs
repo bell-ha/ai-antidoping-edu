@@ -11,7 +11,7 @@ const OUT = new URL("../docs/figures/", import.meta.url).pathname;
 const VIEWPORTS = { desktop: { width: 1280, height: 800 }, mobile: { width: 390, height: 844 } };
 // Figure 캡처 때만 테두리를 진하게 (#E5E7EB는 흑백 인쇄에서 사라짐). 앱 토큰은 그대로.
 // 고정 메뉴는 요소가 뷰포트보다 길어 스크롤 캡처될 때 카드 위에 겹쳐 찍히므로 흐름 안으로 되돌린다
-const PRINT_CSS = ".card{border-color:#9CA3AF!important} .chip-source,.card-soft{outline:1px solid #C4C8CE} .nav{position:static!important}";
+const PRINT_CSS = ".card{border-color:#9CA3AF!important} .chip-source,.card-soft{outline:1px solid #C4C8CE} .nav{position:static!important} [data-test]{display:none!important}"; // 데모 전용 테스트 UI는 논문 Figure에서 뺀다
 
 for (const dir of ["screens/desktop", "screens/mobile", "paper"]) mkdirSync(OUT + dir, { recursive: true });
 
@@ -28,6 +28,7 @@ async function textCheck(page, name) {
       const el = n.parentElement;
       const cs = getComputedStyle(el);
       if (cs.visibility === "hidden" || cs.display === "none") continue;
+      if (!el.checkVisibility({ contentVisibilityAuto: true })) continue; // 접힌 <details> 내용
       if (el.closest("svg")) continue;
       const r = document.createRange();
       r.selectNodeContents(n);
@@ -149,7 +150,7 @@ const SCENARIOS = [
     },
     figures: { chat: "S5-evasion" },
   },
-  { name: "06-coach-team", code: "demo-coach", path: "/team" },
+  { name: "07-architecture", code: "demo-support", path: "/architecture", figures: { architecture: "architecture", "ai-roles": "ai-roles" } },
 ];
 
 for (const s of SCENARIOS) {

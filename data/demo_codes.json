@@ -1,9 +1,9 @@
 {
-  "demo-athlete-a": {"info": {"role": "athlete", "athlete_id": "A", "team_id": "demo-team", "label": "선수 A"}, "description": "19세 남자 73kg · 최근 기록이 크게 오른 선수"},
-  "demo-athlete-b": {"info": {"role": "athlete", "athlete_id": "B", "team_id": "demo-team", "label": "선수 B"}, "description": "27세 여자 59kg · 최근 기록이 내려간 선수"},
-  "demo-athlete-c": {"info": {"role": "athlete", "athlete_id": "C", "team_id": "demo-team", "label": "선수 C"}, "description": "22세 남자 81→89kg · 체급을 올린 선수"},
-  "demo-athlete-d": {"info": {"role": "athlete", "athlete_id": "D", "team_id": "demo-team", "label": "선수 D"}, "description": "25세 여자 64kg · 국제대회를 준비하는 국가대표"},
-  "demo-athlete-e": {"info": {"role": "athlete", "athlete_id": "E", "team_id": "demo-team", "label": "선수 E"}, "description": "23세 남자 96kg · 특별한 변화가 없는 선수"},
-  "demo-coach": {"info": {"role": "coach", "athlete_id": null, "team_id": "demo-team", "label": "지도자"}, "description": "팀에 필요한 교육 주제와 지도자용 질의응답"},
-  "demo-support": {"info": {"role": "support", "athlete_id": null, "team_id": null, "label": "선수지원인력"}, "description": "트레이너·팀 닥터·약사 · 약물 확인과 질의응답"}
+  "demo-athlete-a": {"info": {"role": "athlete", "athlete_id": "A", "label": "선수 A"}, "description": "19세 남자 73kg · 최근 기록이 크게 오른 선수"},
+  "demo-athlete-b": {"info": {"role": "athlete", "athlete_id": "B", "label": "선수 B"}, "description": "27세 여자 59kg · 최근 기록이 내려간 선수"},
+  "demo-athlete-c": {"info": {"role": "athlete", "athlete_id": "C", "label": "선수 C"}, "description": "22세 남자 81→89kg · 체급을 올린 선수"},
+  "demo-athlete-d": {"info": {"role": "athlete", "athlete_id": "D", "label": "선수 D"}, "description": "25세 여자 64kg · 국제대회를 준비하는 국가대표"},
+  "demo-athlete-e": {"info": {"role": "athlete", "athlete_id": "E", "label": "선수 E"}, "description": "23세 남자 96kg · 특별한 변화가 없는 선수"},
+  "demo-coach": {"info": {"role": "coach", "athlete_id": null, "label": "지도자"}, "description": "지도자용 약물 확인과 질의응답"},
+  "demo-support": {"info": {"role": "support", "athlete_id": null, "label": "선수지원인력"}, "description": "트레이너·팀 닥터·약사 · 약물 확인과 질의응답"}
 }

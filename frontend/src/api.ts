@@ -2,13 +2,12 @@
 
 export type Role = "athlete" | "coach" | "support";
 export type ProfileTag = "rapid_improvement" | "decline" | "weight_change" | "high_level" | "baseline";
-export type CheckStatus = "PROHIBITED" | "IN_COMPETITION_ONLY" | "THRESHOLD" | "NOT_LISTED_VERIFY" | "UNKNOWN";
+export type CheckStatus = "PROHIBITED" | "IN_COMPETITION_ONLY" | "THRESHOLD" | "CONDITIONAL" | "NOT_LISTED_VERIFY" | "UNKNOWN";
 export type Timing = "in_competition" | "out_of_competition" | "unknown";
 
 export interface SessionInfo {
   role: Role;
   athlete_id: string | null;
-  team_id: string | null;
   label: string;
 }
 
@@ -56,8 +55,18 @@ export interface AthleteProfile {
   tags: ProfileTag[];
   tag_labels: string[];
   reasons: { tag: ProfileTag; text: string }[];
+  checks: { tag: ProfileTag; label: string; met: boolean; detail: string }[];
   recommendations: Recommendation[];
+  residuals: ResidualPoint[];
 }
+
+export interface ResidualPoint {
+  date: string;
+  observed: number;
+  predicted: number;
+  diff_kg: number;
+}
+
 
 export type CompetitionCategory = "world" | "continent" | "other_international" | "domestic";
 
@@ -67,6 +76,21 @@ export interface RecordInput {
   body_weight: number;
   snatch: number;
   clean_jerk: number;
+}
+
+export interface DemoScenario {
+  id: string;
+  label: string;
+  description: string;
+  sex: "M" | "F";
+  expect: ProfileTag[];
+  expect_labels: string[];
+  warnings: ("ratio" | "jump")[];
+}
+
+export interface DemoScenarios {
+  model: "synthetic_trend" | "rnn";
+  scenarios: DemoScenario[];
 }
 
 export interface ComputeRequest {
@@ -86,11 +110,6 @@ export interface InputWarning {
 export interface ComputeResponse {
   profile: AthleteProfile | null;
   warnings: InputWarning[];
-}
-
-export interface TeamSummary {
-  team_id: string;
-  topics: Recommendation[];
 }
 
 export interface Ingredient {
@@ -116,6 +135,8 @@ export interface CheckResult {
   related_chunk_ids: string[];
   list_version: string;
   reviewed: boolean;
+  data_sources: { label: string; url: string }[];
+  candidates: { name: string; otc: string; ingredients: string[] }[];
 }
 
 export interface ChatMessage {
@@ -181,8 +202,8 @@ export const api = {
   logout: () => call<void>("DELETE", "/api/session"),
   personas: () => call<DemoPersona[]>("GET", "/api/demo/personas"),
   compute: (req: ComputeRequest) => call<ComputeResponse>("POST", "/api/profile/compute", req),
+  demoScenarios: () => call<DemoScenarios>("GET", "/api/demo/examples"),
   demoExample: (athleteId: string) => call<ComputeRequest>("GET", `/api/demo/examples/${encodeURIComponent(athleteId)}`),
-  team: () => call<TeamSummary>("GET", "/api/team/summary"),
   check: (query: string, country: string, timing: Timing) => call<CheckResult>("POST", "/api/check", { query, country, timing }),
   chat: (messages: ChatMessage[], check_result?: CheckResult) =>
     call<ChatResponse>("POST", "/api/chat", { messages, context: check_result ? { check_result } : null }),

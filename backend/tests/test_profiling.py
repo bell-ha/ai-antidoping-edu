@@ -6,26 +6,48 @@ import numpy as np
 import pytest
 
 from app import profiling
-from app.config import DATA
-from app.profiles import load_team_summary
-from app.schemas import ComputeRequest, TeamSummaryRecord
+from app.config import DATA, ROOT
+from app.schemas import ComputeRequest
 
 EXAMPLES = json.loads((DATA / "demo_examples.json").read_text(encoding="utf-8"))
-EXPECTED = {"A": ["rapid_improvement"], "B": ["decline"], "C": ["weight_change"], "D": ["high_level"],
-            "E": ["baseline"]}
+PERSONAS = ["A", "B", "C", "D", "E"]  # 논문 Figure용 — 태그가 바뀌면 Figure가 바뀐다
+REAL_MODELS = ROOT / "private/models"  # 레포 밖 실모델(gitignore). 없으면 rnn 기대값 테스트는 건너뜀
 
 
 def request(aid: str, **changes) -> ComputeRequest:
     return ComputeRequest(**{**EXAMPLES[aid], **changes})
 
 
-@pytest.mark.parametrize("aid", list(EXPECTED))
-def test_demo_examples_give_designed_tags(aid):
-    """§2: 페르소나 하나에 표의 행 하나. 화면의 "입력 예시 채우기"와 같은 경로."""
+@pytest.mark.parametrize("aid", list(EXAMPLES))
+def test_examples_give_hand_written_tags(aid):
+    """페르소나(§2)와 테스트 시나리오: 손으로 적은 기대 태그·경고(analysis/scenarios.py)와 같아야 한다.
+    화면의 "입력 예시 채우기"·"테스트 시나리오"와 같은 경로."""
     profile, prompt = profiling.compute(request(aid))
-    assert profile.tags == EXPECTED[aid]
-    assert prompt.tags == EXPECTED[aid]
+    assert profile.tags == prompt.tags == EXAMPLES[aid]["expect"]["synthetic_trend"]
+    assert [w.code for w in profiling.validate(request(aid))] == EXAMPLES[aid]["warnings"]
     assert len(profile.forecast) == len(profile.records) - 2  # 예측은 직전 기록 2개 이상부터
+
+
+def test_personas_keep_figure_tags():
+    """Figure가 의존하는 페르소나 태그는 시나리오 정의를 바꾸다가 함께 바뀌면 안 된다."""
+    assert {aid: EXAMPLES[aid]["expect"]["synthetic_trend"] for aid in PERSONAS} == {
+        "A": ["rapid_improvement"], "B": ["decline"], "C": ["weight_change"], "D": ["high_level"], "E": ["baseline"]}
+
+
+@pytest.mark.skipif(not (REAL_MODELS / "model_params.json").exists(), reason="실모델(private/models) 없음")
+@pytest.mark.parametrize("aid", list(EXAMPLES))
+def test_examples_with_real_model(aid, monkeypatch):
+    """실데이터 RNN에서의 기대 태그. 실모델은 σ가 넓어 합성과 다를 수 있다(예: A)."""
+    monkeypatch.setattr(profiling, "MODEL_DIR", REAL_MODELS)
+    profiling.params.cache_clear()
+    profiling._rnn.cache_clear()
+    try:
+        profile, _ = profiling.compute(request(aid))
+        assert profile.tags == EXAMPLES[aid]["expect"]["rnn"]
+        assert profile.model == ("none" if EXAMPLES[aid]["sex"] == "F" else "rnn")
+    finally:
+        profiling.params.cache_clear()
+        profiling._rnn.cache_clear()
 
 
 def test_examples_fit_input_limits():
@@ -36,7 +58,7 @@ def test_examples_fit_input_limits():
 def test_result_does_not_depend_on_server_clock():
     """'최근' 창은 마지막 입력 날짜 기준이다. 모든 날짜와 출생연도를 2년 앞으로 옮겨도(나이는 같음) 태그와
     이유가 같다(Figure 재현성)."""
-    for aid in EXPECTED:
+    for aid in PERSONAS:
         ex = EXAMPLES[aid]
         shifted = [{**r, "date": f"{int(r['date'][:4]) - 2}{r['date'][4:]}"} for r in ex["records"]]
         a, _ = profiling.compute(request(aid))
@@ -64,7 +86,7 @@ def test_prompt_profile_has_only_d15_fields():
 
 
 def test_no_warnings_for_clean_examples():
-    for aid in EXPECTED:
+    for aid in PERSONAS:
         assert profiling.validate(request(aid)) == []
 
 
@@ -90,19 +112,11 @@ def test_params_are_marked_synthetic():
 
 def test_no_rank_or_birth_year_in_outputs():
     """D8·§10: 순위 관련 값은 어떤 산출물에도 없다. 출생연도는 합성 데모 입력(demo_examples)에만 있다."""
-    for name in ("demo_examples.json", "model_params.json", "team_summary.json"):
+    for name in ("demo_examples.json", "model_params.json"):
         raw = (DATA / name).read_text(encoding="utf-8")
         for word in ("percentile", "rank") + (() if name == "demo_examples.json" else ("birth_year",)):
             assert word not in raw, (name, word)
 
-
-def test_demo_team_summary_has_topics_only():
-    """D9: 이름·인원수 없음, 카탈로그 고정 순서."""
-    rows = json.loads((DATA / "team_summary.json").read_text(encoding="utf-8"))
-    for row in rows:
-        TeamSummaryRecord.model_validate(row)
-        assert set(row) == {"team_id", "topics"}
-    assert len(load_team_summary("demo-team").topics) == 5
 
 
 def test_weight_jump_suppresses_performance_tags():
@@ -177,3 +191,20 @@ def test_sex_without_model_returns_no_numbers(rnn_params):
     assert profiling.NO_MODEL_NOTICE in profile.notices
     assert not {"rapid_improvement", "decline"} & set(profile.tags)
     assert profile.tags == ["baseline"] and "예측 없이" in profile.reasons[0].text
+
+
+def test_rule_checklist_covers_all_rules_without_scores():
+    """판정 점검표: 4개 규칙 모두, 붙지 않은 것까지. 규칙 입력값과 기준만 — 위험·의심·점수 표현 없음(D7)."""
+    for aid in EXAMPLES:
+        profile, _ = profiling.compute(request(aid))
+        assert [c.tag for c in profile.checks] == ["rapid_improvement", "decline", "weight_change", "high_level"]
+        assert {c.tag for c in profile.checks if c.met} == set(profile.tags) - {"baseline"}
+        for c in profile.checks:
+            assert not any(word in c.detail for word in ("위험", "의심", "점수"))
+
+
+def test_rule_checklist_explains_boundary_and_suppression():
+    t03 = {c.tag: c for c in profiling.compute(request("T03"))[0].checks}
+    assert not t03["weight_change"].met and "+5.0kg" in t03["weight_change"].detail
+    t01 = {c.tag: c for c in profiling.compute(request("T01"))[0].checks}
+    assert not t01["rapid_improvement"].met and "판단하지 않음" in t01["rapid_improvement"].detail

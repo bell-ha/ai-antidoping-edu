@@ -6,9 +6,9 @@ import { Dialog } from "./Dialog";
 
 const NAV: Record<TabKey, { path: string; label: string }> = {
   performance: { path: "/performance", label: "경기력" },
-  team: { path: "/team", label: "팀 교육" },
   check: { path: "/check", label: "약물 확인" },
   learn: { path: "/learn", label: "AI 교육" },
+  architecture: { path: "/architecture", label: "시스템 구성" },
 };
 
 export function Shell() {

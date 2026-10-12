@@ -153,6 +153,43 @@ def test_prompt_has_no_raw_records(captured):
     assert "73" not in prompt and "19세" not in prompt  # 체급·나이 수치 대신 연령대만 (D15)
 
 
+def test_rule_checks_only_in_demo_mode(captured, monkeypatch):
+    """판정 점검표(checks)는 테스트·설명용. 시범(DEMO_MODE=0)에서는 비운다 (D7)."""
+    check = {"tag": "rapid_improvement", "label": "최근 경기력 급격한 향상", "met": True, "detail": "예측 대비 +2.3σ (기준 +2.0σ)"}
+    monkeypatch.setattr(routes.profiling, "compute", lambda req: (AthleteProfile.model_validate({**PROFILE_A.model_dump(), "checks": [check]}), PROMPT_A))
+    c = TestClient(app)
+    login(c, "demo-athlete-a")
+    assert c.post("/api/profile/compute", json=INPUT).json()["profile"]["checks"] == [check]
+
+    info = session.SessionInfo.model_validate(session._demo()["demo-athlete-a"]["info"])
+    monkeypatch.setattr(session, "_access", lambda: {"pilot-athlete": info})
+    monkeypatch.setattr(config, "DEMO_MODE", False)
+    c = TestClient(app)
+    login(c, "pilot-athlete")
+    r = c.post("/api/profile/compute", json=INPUT).json()["profile"]
+    assert r["tags"] == ["rapid_improvement"] and r["checks"] == []
+
+
+def test_demo_scenarios_list(captured, monkeypatch):
+    c = TestClient(app)
+    login(c, "demo-athlete-a")
+    monkeypatch.setattr(routes.profiling, "params", lambda: {"model": "rnn"}, raising=False)
+    r = c.get("/api/demo/examples").json()
+    assert r["model"] == "rnn"
+    ids = [s["id"] for s in r["scenarios"]]
+    assert "A" in ids and "T01" in ids
+    a = next(s for s in r["scenarios"] if s["id"] == "A")
+    assert a["expect"] == ["baseline"]  # 실모델 기준 기대 태그
+    assert c.get("/api/demo/examples/T08").status_code == 200
+    monkeypatch.setattr(config, "DEMO_MODE", False)
+    assert c.get("/api/demo/examples").status_code in (401, 404)
+
+
+def test_team_summary_is_gone(captured):
+    c = TestClient(app)
+    login(c, "demo-coach")
+    assert c.get("/api/team/summary").status_code == 404
+
 def test_me_endpoint_is_gone(captured):
     c = TestClient(app)
     login(c, "demo-athlete-a")

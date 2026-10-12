@@ -90,7 +90,7 @@ def server_message(text: str) -> ChatResponse:
 def needs_expert(question: str, check: CheckResult | None) -> bool:
     if any(re.search(p, question, re.IGNORECASE) for p in EXPERT_PATTERNS) or re.search(GIVEN_BY_STAFF, question):
         return True
-    return check is not None and check.status in ("PROHIBITED", "IN_COMPETITION_ONLY", "THRESHOLD", "UNKNOWN")
+    return check is not None and check.status in ("PROHIBITED", "IN_COMPETITION_ONLY", "THRESHOLD", "CONDITIONAL", "UNKNOWN")
 
 
 def apply(answer: LlmAnswer, chunks: list[Chunk], question: str, check: CheckResult | None) -> ChatResponse:

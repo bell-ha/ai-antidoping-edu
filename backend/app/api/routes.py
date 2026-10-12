@@ -1,4 +1,4 @@
-"""경기력·팀·약물 확인·AI 교육 API. 사용자 식별은 모두 세션에서 (D23)."""
+"""경기력·약물 확인·AI 교육 API. 사용자 식별은 모두 세션에서 (D23)."""
 
 import json
 
@@ -18,7 +18,8 @@ from app.schemas import (
     ComputeResponse,
     PromptProfile,
     SessionInfo,
-    TeamSummary,
+    DemoScenario,
+    DemoScenarios,
 )
 
 router = APIRouter(prefix="/api")
@@ -33,32 +34,42 @@ def compute(body: ComputeRequest, request: Request, who: SessionInfo = Depends(c
     if warnings and not body.confirmed:
         return ComputeResponse(profile=None, warnings=warnings)
     profile, prompt = profiling.compute(body)
+    if not config.DEMO_MODE:
+        profile.checks = []  # 판정 점검표는 테스트·설명용. 시범 선수에게는 기준 근접도가 점수처럼 읽힌다 (D7)
     # 세션(서명만 되고 암호화되지 않는 쿠키)에는 프롬프트용 필드만
     request.session["profile"] = prompt.model_dump()
     return ComputeResponse(profile=profile, warnings=warnings)
 
 
+def _demo_examples() -> dict:
+    path = config.DATA / "demo_examples.json"
+    return json.loads(path.read_text(encoding="utf-8")) if config.DEMO_MODE and path.exists() else {}
+
+
+@router.get("/demo/examples", response_model=DemoScenarios)
+def demo_scenarios(who: SessionInfo = Depends(current)) -> DemoScenarios:
+    """DEMO_MODE에서만: 테스트 시나리오 목록과 지금 서버 방식에서의 기대 태그."""
+    if not config.DEMO_MODE:
+        raise HTTPException(404)
+    model = profiling.params().get("model", "synthetic_trend")
+    return DemoScenarios(
+        model=model,
+        scenarios=[
+            DemoScenario(id=k, label=v.get("label", k), description=v.get("description", ""), sex=v["sex"], expect=v["expect"][model],
+                         expect_labels=[profiles.tag_label(t) for t in v["expect"][model]], warnings=v.get("warnings", []))
+            for k, v in _demo_examples().items()
+            if "expect" in v
+        ],
+    )
+
+
 @router.get("/demo/examples/{athlete_id}", response_model=ComputeRequest)
 def demo_example(athlete_id: str, who: SessionInfo = Depends(current)) -> ComputeRequest:
     """DEMO_MODE에서만: 페르소나 입력 예시(예시 채우기 버튼). 같은 compute 경로를 탄다."""
-    path = config.DATA / "demo_examples.json"
-    examples = json.loads(path.read_text(encoding="utf-8")) if config.DEMO_MODE and path.exists() else {}
+    examples = _demo_examples()
     if athlete_id not in examples:
         raise HTTPException(404)
     return ComputeRequest.model_validate(examples[athlete_id])
-
-
-@router.get("/team/summary", response_model=TeamSummary)
-def team_summary(who: SessionInfo = Depends(current)) -> TeamSummary:
-    # 입력을 저장하지 않으므로 시범에서는 팀 요약의 데이터 출처가 없다 → 데모에서만 (D25)
-    if not config.DEMO_MODE:
-        raise HTTPException(404)
-    if who.role != "coach" or who.team_id is None:
-        raise HTTPException(403)
-    summary = profiles.load_team_summary(who.team_id)
-    if summary is None:
-        raise HTTPException(404)
-    return summary
 
 
 @router.post("/check", response_model=CheckResult)

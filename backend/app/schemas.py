@@ -28,7 +28,6 @@ class SessionInfo(BaseModel):
     """코드 하나가 가리키는 대상. demo_codes.json / access_codes.json의 값."""
     role: Role
     athlete_id: str | None = None  # role == "athlete"일 때만
-    team_id: str | None = None
     label: str  # 화면 표시용 ("선수 A", "지도자")
 
 
@@ -62,16 +61,26 @@ class ForecastPoint(BaseModel):
     hi: float
 
 
+class ResidualPoint(BaseModel):
+    """대회별 관측 − 예측(kg). 인계 계약이 허용한 표시 항목. σ 단위 시계열은 점수판처럼 읽혀 쓰지 않는다 (D7)."""
+    date: str
+    observed: int
+    predicted: float
+    diff_kg: float
+
+
 class Reason(BaseModel):
     """추천 이유 = 규칙 입력값 직접 표시 (D6). 예: "예측 대비 +2.6σ (기준 2.0σ)" """
     tag: ProfileTag
     text: str
 
 
-class TeamSummaryRecord(BaseModel):
-    """data/team_summary.json. 카탈로그 고정 순서, 인원수 없음 (D9)."""
-    team_id: str
-    topics: list[str]  # content_id
+class RuleCheck(BaseModel):
+    """판정 점검표 한 줄: 태그 규칙의 입력값·기준·충족 여부. 점수가 아니라 규칙 입력값 그대로(D6)."""
+    tag: ProfileTag
+    label: str  # 태그 표시명
+    met: bool
+    detail: str  # 예: "예측 대비 +1.5σ (기준 +2.0σ)", "이 성별은 예측 모델이 없어 판단하지 않음"
 
 
 class Recommendation(BaseModel):
@@ -97,7 +106,9 @@ class AthleteProfile(BaseModel):
     tags: list[ProfileTag]
     tag_labels: list[str] = []  # tags와 같은 순서. 표시명 출처는 knowledge/catalog.yaml 하나
     reasons: list[Reason]
+    checks: list[RuleCheck] = []  # 붙지 않은 태그까지 모든 규칙의 판정 근거(테스트·설명용)
     recommendations: list[Recommendation]
+    residuals: list[ResidualPoint] = []  # 대회별 관측 − 예측(kg)
 
 
 # ---------- 직접 입력 (D25) ----------
@@ -145,21 +156,31 @@ class InputWarning(BaseModel):
     message: str
 
 
+class DemoScenario(BaseModel):
+    """DEMO_MODE 테스트 시나리오 목록 한 줄. expect는 지금 서버의 예측 방식 기준 기대 태그."""
+    id: str
+    label: str
+    description: str
+    sex: Literal["M", "F"]
+    expect: list[ProfileTag]
+    expect_labels: list[str]
+    warnings: list[Literal["ratio", "jump"]] = []
+
+
+class DemoScenarios(BaseModel):
+    model: Literal["synthetic_trend", "rnn"]  # 이 서버가 쓰는 예측 방식(params의 model)
+    scenarios: list[DemoScenario]
+
+
 class ComputeResponse(BaseModel):
     profile: AthleteProfile | None  # 경고가 있고 confirmed=false면 None
     warnings: list[InputWarning]
 
 
-class TeamSummary(BaseModel):
-    """GET /api/team/summary."""
-    team_id: str
-    topics: list[Recommendation]
-
-
 # ---------- 약물 확인 (D10, D11, D12) ----------
 
 Timing = Literal["in_competition", "out_of_competition", "unknown"]
-CheckStatus = Literal["PROHIBITED", "IN_COMPETITION_ONLY", "THRESHOLD", "NOT_LISTED_VERIFY", "UNKNOWN"]
+CheckStatus = Literal["PROHIBITED", "IN_COMPETITION_ONLY", "THRESHOLD", "CONDITIONAL", "NOT_LISTED_VERIFY", "UNKNOWN"]
 CountryRoute = Literal["kada", "globaldro", "local_unverified"]
 
 
@@ -183,6 +204,19 @@ class OfficialLink(BaseModel):
     url: str
 
 
+class DataSource(BaseModel):
+    """판정에 쓴 공공데이터 출처 표시(예: 공공누리 제1유형은 출처 표시가 조건)."""
+    label: str
+    url: str
+
+
+class ProductCandidate(BaseModel):
+    """같은 이름의 제품이 여럿이고 성분 구성이 다를 때의 후보(판정하지 않음)."""
+    name: str
+    otc: str  # 전문 / 일반
+    ingredients: list[str]  # 영문 성분명
+
+
 class CheckResult(BaseModel):
     query: str
     matched_kind: Literal["product", "category", "substance", "unmatched"]
@@ -197,6 +231,8 @@ class CheckResult(BaseModel):
     related_chunk_ids: list[str] = []
     list_version: str  # "2026"
     reviewed: bool
+    data_sources: list[DataSource] = []
+    candidates: list[ProductCandidate] = []  # 최대 10개
 
 
 # ---------- RAG (D13) ----------

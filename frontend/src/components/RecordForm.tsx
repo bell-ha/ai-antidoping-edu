@@ -1,5 +1,5 @@
 import { ArrowRight, Plus, TriangleAlert, Wand2, X } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { api, type AthleteProfile, type CompetitionCategory, type ComputeRequest, type InputWarning } from "../api";
 import { CATEGORY_LABEL } from "../session";
 import { useSession } from "../session";
@@ -43,7 +43,13 @@ function toRequest(sex: "M" | "F", birthYear: string, rows: Row[], confirmed: bo
 
 const filled = (r: Row) => r.date && r.body_weight && r.snatch && r.clean_jerk;
 
-export function RecordForm({ onResult }: { onResult: (p: AthleteProfile) => void }) {
+// 바깥(테스트 시나리오 패널)에서 입력을 채울 때. key가 바뀔 때마다 한 번 적용한다.
+export interface Preset {
+  key: number;
+  req: ComputeRequest;
+}
+
+export function RecordForm({ onResult, preset }: { onResult: (p: AthleteProfile) => void; preset?: Preset | null }) {
   const { who, demo } = useSession();
   const [sex, setSex] = useState<"M" | "F">("M");
   const [birthYear, setBirthYear] = useState("");
@@ -57,9 +63,7 @@ export function RecordForm({ onResult }: { onResult: (p: AthleteProfile) => void
     setRows((rs) => rs.map((r, k) => (k === i ? { ...r, ...patch } : r)));
   };
 
-  const fillExample = async () => {
-    if (!who.athlete_id) return;
-    const ex = await api.demoExample(who.athlete_id);
+  const apply = (ex: ComputeRequest) => {
     setSex(ex.sex);
     setBirthYear(String(ex.birth_year));
     setRows(
@@ -74,6 +78,14 @@ export function RecordForm({ onResult }: { onResult: (p: AthleteProfile) => void
     setWarnings([]);
     setError("");
   };
+
+  const fillExample = async () => {
+    if (who.athlete_id) apply(await api.demoExample(who.athlete_id));
+  };
+
+  useEffect(() => {
+    if (preset) apply(preset.req);
+  }, [preset]);
 
   const send = (confirmed: boolean) => {
     // 빈 행은 버리고 보낸다(기본 5행 중 일부만 채워도 됨)

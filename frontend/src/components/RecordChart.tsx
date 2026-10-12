@@ -23,7 +23,7 @@ function niceAxis(lo: number, hi: number, count = 5): { y0: number; y1: number; 
   return { y0, y1, ticks };
 }
 
-function useWidth() {
+export function useWidth() {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   useEffect(() => {
