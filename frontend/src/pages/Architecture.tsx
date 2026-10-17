@@ -61,7 +61,7 @@ const LANES: Lane[] = [
     id: "ask",
     title: "③ 질문하기",
     users: "선수 · 관리자",
-    screen: ["약 이름(제품명·성분명) · 규정 질문", "답변 · 출처 표시"],
+    screen: ["약 이름(제품명·성분명·한약재) · 규정 질문", "답변 · 약물 판정 카드 · 관련 교육 · 원문 링크"],
     steps: [
       { label: "질문 점검", kind: "rule" },
       { label: "약 이름 찾기", kind: "rule" },
@@ -71,6 +71,8 @@ const LANES: Lane[] = [
     sources: [
       { label: "WADA 2026 금지목록", detail: "원문 PDF에서 추출 · S0~S9 · P1 · M1~M3", kind: "data" },
       { label: "국내 의약품 목록", detail: "심평원 약가마스터 · 제품명 → 성분", kind: "data" },
+      { label: "조회표", detail: "자주 묻는 성분·제품군 · KADA 한약재 11종", kind: "data" },
+      { label: "교육 300개", detail: "질문과 가까운 교육 조각을 근거로", kind: "data" },
       { label: "Claude API", detail: "Anthropic 생성형 AI", kind: "ai" },
     ],
     note: "선수 이름·기록·단계는 AI에 보내지 않음 · 종목마다 다른 규정은 ‘종목마다 다르다’ · 경기기간 중/외 둘 다",
@@ -105,7 +107,7 @@ const NOT_AI = [
 const STACK = [
   { layer: "화면", tech: "React · TypeScript · Vite", note: "반응형 웹 (PC · 태블릿 · 휴대폰)" },
   { layer: "서버", tech: "Python · FastAPI", note: "화면과 API를 한 서버에서 제공" },
-  { layer: "경기력 예측", tech: "연구진 RNN 가중치 · numpy 추론", note: "모델 파일은 레포 밖 비공개 폴더" },
+  { layer: "경기력 예측", tech: "연구진 RNN 가중치 · numpy 추론", note: "Git 제외 private/models (없으면 공개용 합성 모델)" },
   { layer: "자료 검색", tech: "BM25 · 동의어 사전", note: "외부 검색 서비스 없음" },
   { layer: "생성형 AI", tech: "Claude API (Anthropic)", note: "구조화 응답 · 인용 검증" },
   { layer: "운영 DB", tech: "SQLite", note: "선수 · 기록 · 단계 · 이수 · 퀴즈 · 질문" },

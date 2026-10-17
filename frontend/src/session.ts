@@ -25,7 +25,6 @@ export const NAV_BY_ROLE: Record<Role, { path: string; label: string }[]> = {
   admin: [
     { path: "/admin", label: "선수 관리" },
     { path: "/admin/settings", label: "단계 설정" },
-    { path: "/check", label: "약물 확인" },
     { path: "/library", label: "교육 자료" },
     { path: "/ask", label: "질문하기" },
     { path: "/architecture", label: "시스템 구성" },

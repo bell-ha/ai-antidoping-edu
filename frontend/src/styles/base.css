@@ -205,16 +205,6 @@ a {
   grid-column: span 8;
 }
 
-.span-12 {
-  grid-column: span 12;
-}
-
-.cards-3 {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--gap);
-}
-
 .cards-2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -262,48 +252,6 @@ a {
   min-width: 0;
 }
 
-.card-soft {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 20px;
-  border: none;
-  border-radius: var(--radius-card);
-  background: var(--surface);
-  text-align: left;
-  text-decoration: none;
-  width: 100%;
-  min-width: 0;
-}
-
-button.card-soft:active {
-  background: var(--hairline);
-}
-
-.card-soft strong {
-  color: var(--ink);
-  font-weight: 600;
-}
-
-.card-soft .more {
-  margin-top: auto;
-  padding-top: 8px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: var(--fs-label);
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.empty {
-  border: 1px dashed var(--hairline);
-  border-radius: var(--radius-card);
-  padding: 48px 24px;
-  text-align: center;
-  color: var(--muted);
-}
-
 /* ---------- 입력·버튼 ---------- */
 
 .field {
@@ -311,12 +259,6 @@ button.card-soft:active {
   flex-direction: column;
   gap: 6px;
   min-width: 0;
-}
-
-.fields-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
 }
 
 .input,
@@ -447,12 +389,6 @@ button.card-soft:active {
   white-space: nowrap;
 }
 
-.chip-app {
-  background: var(--app-tint);
-  color: var(--ink);
-  box-shadow: inset 0 0 0 1px var(--app-line);
-}
-
 .chip-plain {
   background: var(--surface);
   color: var(--ink);
@@ -538,11 +474,6 @@ button.card-soft:active {
   font-weight: 600;
 }
 
-.notice-caution {
-  background: var(--st-threshold-bg);
-  color: var(--st-threshold);
-}
-
 .notice-neutral {
   background: var(--st-neutral-bg);
   color: var(--st-neutral);
@@ -562,95 +493,12 @@ button.card-soft:active {
   gap: 6px;
 }
 
-.ingredient {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 14px 0;
-  border-top: 1px solid var(--hairline);
-}
-
-.ingredient:first-of-type {
-  border-top: none;
-  padding-top: 4px;
-}
-
-.ingredient strong {
-  color: var(--ink);
-  font-weight: 600;
-}
-
 /* ---------- 기록 입력 표 (D25) ---------- */
-
-.fields-2.narrow {
-  max-width: 480px;
-}
 
 .records {
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.records-head,
-.records-row {
-  display: grid;
-  grid-template-columns: 28px 1.4fr 1.3fr 1fr 1fr 1fr 64px 36px;
-  gap: 8px;
-  align-items: center;
-}
-
-.records-head {
-  font-size: var(--fs-caption);
-  font-weight: 500;
-  color: var(--muted);
-}
-
-.records-row.flagged .input,
-.records-row.flagged .select {
-  border-color: var(--st-threshold);
-  background: var(--st-threshold-bg);
-}
-
-.records-no {
-  text-align: center;
-}
-
-.records-cell {
-  min-width: 0;
-}
-
-.records-label {
-  display: none;
-}
-
-.records-total {
-  color: var(--ink);
-  font-weight: 600;
-  text-align: right;
-  padding-right: 4px;
-}
-
-.records-remove {
-  width: 36px;
-  height: 36px;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--muted);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.records-remove-cell {
-  display: flex;
-  justify-content: center;
-}
-
-.records-remove:disabled {
-  opacity: 0.3;
-  cursor: default;
 }
 
 /* ---------- 대화 ---------- */
@@ -765,26 +613,6 @@ button.card-soft:active {
 
 /* ---------- 차트 ---------- */
 
-.chart {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-.legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 16px;
-  font-size: var(--fs-caption);
-  color: var(--muted);
-}
-
-.legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
 /* ---------- 반응형 (DESIGN.md 2절) ---------- */
 
 @media (max-width: 1023px) {
@@ -796,9 +624,7 @@ button.card-soft:active {
     grid-column: span 12;
   }
 
-  .cards-3 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  
 
   .sticky {
     position: static;
@@ -809,53 +635,21 @@ button.card-soft:active {
   }
 
   /* 태블릿·폰: 표 대신 행마다 작은 카드 */
-  .records-head {
-    display: none;
-  }
+  
 
-  .records-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-    padding: 14px;
-    border: 1px solid var(--hairline);
-    border-radius: var(--radius-card);
-    position: relative;
-  }
+  
 
-  .records-no {
-    grid-column: 1 / -1;
-    text-align: left;
-    font-weight: 600;
-    color: var(--ink);
-  }
+  
 
-  .records-no::after {
-    content: "번째 대회";
-  }
+  
 
-  .records-label {
-    display: block;
-    font-size: var(--fs-caption);
-    font-weight: 500;
-    color: var(--muted);
-    margin-bottom: 4px;
-  }
+  
 
-  .records-total {
-    text-align: left;
-  }
+  
 
-  .records-total::before {
-    content: "합계 ";
-    color: var(--muted);
-    font-weight: 500;
-  }
+  
 
-  .records-remove-cell {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-  }
+  
 }
 
 @media (max-width: 767px) {
@@ -886,7 +680,7 @@ button.card-soft:active {
     padding: 20px;
   }
 
-  .cards-3,
+  
   .cards-2 {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -915,52 +709,6 @@ button.card-soft:active {
 }
 
 /* ---------- 데모 전용: 테스트 시나리오 · 판정 점검표 ---------- */
-
-.test-panel summary {
-  cursor: pointer;
-  list-style: none;
-  flex-wrap: wrap;
-}
-
-.test-panel summary::-webkit-details-marker {
-  display: none;
-}
-
-.test-panel[open] summary {
-  margin-bottom: 12px;
-}
-
-.rule-checks {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.rule-checks li {
-  display: flex;
-  gap: 8px;
-  align-items: flex-start;
-  color: var(--muted);
-}
-
-.rule-checks li svg {
-  flex: none;
-  margin-top: 3px;
-}
-
-.rule-checks li div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.rule-checks li.met {
-  color: var(--app-ink);
-}
 
 /* ---------- 시스템 구성 (발표용) ---------- */
 
@@ -1427,3 +1175,13 @@ button.chip { cursor: pointer; }
   .nav-links::-webkit-scrollbar { display: none; }
   .home-actions .action-card { padding: 20px; }
 }
+.drug-cards { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.drug-card { border: 1px solid var(--hairline); border-radius: var(--radius-sm); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; background: var(--canvas); }
+.drug-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.drug-candidates { margin: 0; padding-left: 18px; font-size: var(--fs-label); display: flex; flex-direction: column; gap: 2px; }
+.related-list { display: flex; flex-direction: column; gap: 6px; }
+.related-lesson { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--hairline); border-radius: var(--radius-sm);
+  color: var(--ink); text-decoration: none; }
+.related-lesson:hover { border-color: var(--ink); }
+.related-lesson span:nth-child(2) { flex: 1; }
+.source-link { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-caption); color: var(--app-ink); }

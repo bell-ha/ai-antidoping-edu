@@ -7,8 +7,8 @@ const STATUS: Record<CheckStatus, { label: string; icon: LucideIcon }> = {
   IN_COMPETITION_ONLY: { label: "경기기간 중 금지", icon: CalendarX },
   THRESHOLD: { label: "기준을 넘으면 금지", icon: Gauge },
   CONDITIONAL: { label: "조건에 따라 금지 아닐 수 있음", icon: CircleAlert },
-  NOT_LISTED_VERIFY: { label: "목록에서 확인되지 않음 · 확인 필요", icon: SearchCheck },
-  UNKNOWN: { label: "성분 확인 필요", icon: CircleHelp },
+  NOT_LISTED_VERIFY: { label: "2026 금지목록에 없음", icon: SearchCheck },
+  UNKNOWN: { label: "제품마다 다름", icon: CircleHelp },
 };
 
 export function StatusBadge({ status, small }: { status: CheckStatus; small?: boolean }) {

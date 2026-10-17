@@ -204,6 +204,8 @@ export interface ChatResponse {
   refer_to_expert: boolean;
   out_of_scope: boolean;
   token: string;
+  drug_checks: CheckResult[]; // 질문 속 약 이름의 조회표 판정(D38)
+  related_lessons: { lesson_id: string; title: string; category: string }[]; // 답에 인용된 레슨(D39)
 }
 
 export class ApiError extends Error {
@@ -220,6 +222,12 @@ function validationMessage(errors: { loc: (string | number)[]; msg: string }[]):
   return errors.map((e) => e.msg.replace(/^Value error, /, "")).join(" / ");
 }
 
+// 로그인이 끊겼을 때(12시간 지남, 코드 재발급) 로그인 화면으로 돌려보내는 곳. App이 등록한다.
+let onUnauthorized: () => void = () => {};
+export function setUnauthorizedHandler(fn: () => void) {
+  onUnauthorized = fn;
+}
+
 async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await fetch(path, {
     method,
@@ -227,6 +235,7 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
     headers: body === undefined ? undefined : { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
+  if (res.status === 401 && path !== "/api/session") onUnauthorized();
   if (!res.ok) {
     const detail = await res.json().then(
       (d) => (typeof d.detail === "string" ? d.detail : Array.isArray(d.detail) ? validationMessage(d.detail) : ""),
@@ -258,10 +267,8 @@ export const api = {
   deleteRecord: (id: number, recordId: number) => call<AthleteDetail>("DELETE", `/api/admin/athletes/${id}/records/${recordId}`),
   saveSettings: (s: ProgramSettings) => call<Overview>("PUT", "/api/admin/settings", s),
   rerank: () => call<Overview>("POST", "/api/admin/rerank"),
-  check: (query: string, country: string, timing: Timing) => call<CheckResult>("POST", "/api/admin/check", { query, country, timing }),
   library: () => call<LibraryDocSummary[]>("GET", "/api/library"),
   libraryDoc: (docId: string) => call<LibraryDoc>("GET", `/api/library/${encodeURIComponent(docId)}`),
   // 공통
-  chat: (messages: ChatMessage[], check_result?: CheckResult) =>
-    call<ChatResponse>("POST", "/api/chat", { messages, context: check_result ? { check_result } : null }),
+  chat: (messages: ChatMessage[]) => call<ChatResponse>("POST", "/api/chat", { messages }),
 };

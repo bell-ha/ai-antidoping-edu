@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router";
-import { api, type SessionInfo } from "./api";
+import { api, setUnauthorizedHandler, type SessionInfo } from "./api";
 import { Shell } from "./components/Shell";
 import { HOME_BY_ROLE, SessionContext } from "./session";
 import { AdminAthlete } from "./pages/admin/AdminAthlete";
@@ -8,7 +8,6 @@ import { AdminAthletes } from "./pages/admin/AdminAthletes";
 import { AdminSettings } from "./pages/admin/AdminSettings";
 import { Architecture } from "./pages/Architecture";
 import { Ask } from "./pages/Ask";
-import { Check } from "./pages/Check";
 import { Guide } from "./pages/athlete/Guide";
 import { Home } from "./pages/athlete/Home";
 import { Lesson } from "./pages/athlete/Lesson";
@@ -20,6 +19,7 @@ export default function App() {
   const [demo, setDemo] = useState(false);
 
   useEffect(() => {
+    setUnauthorizedHandler(() => setWho(null));
     api.whoami().then(setWho, () => setWho(null));
     api.demoCodes().then(() => setDemo(true), () => setDemo(false));
   }, []);
@@ -46,7 +46,6 @@ export default function App() {
               <Route path="/admin" element={<AdminAthletes />} />
               <Route path="/admin/athletes/:athleteId" element={<AdminAthlete />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
-              <Route path="/check" element={<Check />} />
               <Route path="/library" element={<Library />} />
               <Route path="/library/:docId" element={<Library />} />
               <Route path="/architecture" element={<Architecture />} />
