@@ -170,17 +170,17 @@ export function RecordForm({ onResult, preset }: { onResult: (p: AthleteProfile)
           const flagged = warnings.some((w) => w.row === i);
           return (
             <div key={i} className={`records-row${flagged ? " flagged" : ""}`} role="row">
-              <span className="records-no caption">{i + 1}</span>
-              <label className="records-cell">
+              <span className="records-no caption" role="cell">{i + 1}</span>
+              <label className="records-cell" role="cell">
                 <span className="records-label">대회 년-월</span>
                 <input className="input" type="month" value={r.date} onChange={(e) => update(i, { date: e.target.value })} aria-label={`${i + 1}번째 대회 년-월`} />
               </label>
-              <label className="records-cell">
+              <label className="records-cell" role="cell">
                 <span className="records-label">대회 수준</span>
-                <Select id={`category-${i}`} value={r.competition_category} options={CATEGORIES} onChange={(v) => update(i, { competition_category: v })} />
+                <Select id={`category-${i}`} label={`${i + 1}번째 대회 수준`} value={r.competition_category} options={CATEGORIES} onChange={(v) => update(i, { competition_category: v })} />
               </label>
               {(["body_weight", "snatch", "clean_jerk"] as const).map((f) => (
-                <label key={f} className="records-cell">
+                <label key={f} className="records-cell" role="cell">
                   <span className="records-label">{f === "body_weight" ? "계체 체중(kg)" : f === "snatch" ? "인상(kg)" : "용상(kg)"}</span>
                   <input
                     className="input num"
@@ -191,16 +191,18 @@ export function RecordForm({ onResult, preset }: { onResult: (p: AthleteProfile)
                   />
                 </label>
               ))}
-              <span className="records-total num">{r.snatch && r.clean_jerk ? `${total}` : "—"}</span>
-              <button
-                type="button"
-                className="records-remove"
-                onClick={() => setRows((rs) => rs.filter((_, k) => k !== i))}
-                disabled={rows.length <= MIN_ROWS}
-                aria-label={`${i + 1}번째 기록 삭제`}
-              >
-                <X size={16} />
-              </button>
+              <span className="records-total num" role="cell">{r.snatch && r.clean_jerk ? `${total}` : "—"}</span>
+              <span className="records-remove-cell" role="cell">
+                <button
+                  type="button"
+                  className="records-remove"
+                  onClick={() => setRows((rs) => rs.filter((_, k) => k !== i))}
+                  disabled={rows.length <= MIN_ROWS}
+                  aria-label={`${i + 1}번째 기록 삭제`}
+                >
+                  <X size={16} />
+                </button>
+              </span>
             </div>
           );
         })}

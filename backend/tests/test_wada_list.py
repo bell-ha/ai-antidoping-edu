@@ -1,7 +1,7 @@
-"""WADA 금지목록 자동 추출본(data/wada/prohibited_list_2026.json) 고정 테스트.
+"""WADA 금지목록 자동 추출본(knowledge/drugs/wada/processed/prohibited_list_2026.json) 고정 테스트.
 
 원문(2026 금지목록 PDF)에서 직접 확인한 분류를 고정한다. 특히 "금지 아님"인 예외가 금지로 바뀌지 않는지.
-추출 스크립트: analysis/wada_extract.py + 손 보정 analysis/wada_manual_2026.yaml
+추출 스크립트: analysis/wada_extract.py + 손 보정 knowledge/drugs/wada/processed/wada_manual_2026.yaml
 """
 
 import json
@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-DATA = Path(__file__).resolve().parents[2] / "data/wada/prohibited_list_2026.json"
+DATA = Path(__file__).resolve().parents[2] / "knowledge/drugs/wada/processed/prohibited_list_2026.json"
 LIST = json.loads(DATA.read_text(encoding="utf-8"))
 
 
@@ -84,7 +84,7 @@ def test_no_broken_synonyms(field):
     assert bad == []
 
 
-# ---------- 금지방법(M1–M3)과 S0: 손 보정 (analysis/wada_manual_2026.yaml) ----------
+# ---------- 금지방법(M1–M3)과 S0: 손 보정 (knowledge/drugs/wada/processed/wada_manual_2026.yaml) ----------
 
 def test_methods_are_prohibited_at_all_times_not_exceptions():
     """독립 검토에서 M1–M3 내용이 S5 '예외'로 들어가 앱이 '조건부'로 보여준 결함의 회귀 방지."""
@@ -144,7 +144,7 @@ def test_index_extracted():
 def test_every_index_term_resolves_to_its_own_section():
     """원문 INDEX의 모든 표제어가 앱에서 조회되고, 표제어 쪽의 섹션과 같은 섹션으로 판정되는지.
     제외는 index_not_substances(방법 설명 단어 등)에 이유와 함께 적은 것만."""
-    from app import substances
+    from app.drugs import substances
 
     skip = LIST["index_not_substances"]
     assert all(t in {e["term"] for e in LIST["index"]} for t in skip)  # 제외 목록에 오타·옛 표제어가 남지 않게
@@ -169,7 +169,7 @@ def test_every_index_term_resolves_to_its_own_section():
 def test_at_all_times_index_terms_never_under_classified():
     """상시 금지 섹션(S0–S5, M)의 INDEX 표제어는 경기기간 외에도 금지로 나와야 한다.
     예외는 원문에 이름이 적힌 예외·기준치 성분뿐."""
-    from app import substances
+    from app.drugs import substances
 
     allowed = {"brinzolamide", "dorzolamide", "drospirenone", "felypressin", "pamabrom",  # S5 예외
                "salbutamol", "formoterol", "salmeterol", "vilanterol",  # S3 흡입 예외(용량)

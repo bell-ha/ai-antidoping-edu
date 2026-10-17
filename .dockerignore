@@ -3,13 +3,10 @@
 **/__pycache__
 **/.pytest_cache
 frontend/dist
-e2e
 docs
-data/raw
-data/access_codes.json
 logs
 .git
 .env
 private
-data/drugs.sqlite
-data/drugs.tmp
+var
+knowledge/**/raw

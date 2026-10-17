@@ -1,4 +1,5 @@
-# 데모·시범 공용 이미지. 프로세스 1개가 API와 화면을 함께 서빙한다 (D18, §10).
+# 이미지 하나 = 서버 하나(D37). 프로세스 1개가 API와 화면을 함께 서빙한다.
+# 더미 선수 넣기: docker compose exec app python /app/scripts/seed_dummy.py
 
 # 1) 프론트 빌드
 # 재현성: 베이스 이미지는 패치 버전까지, pip 의존성은 requirements.lock으로 고정 (§10)
@@ -13,18 +14,18 @@ RUN npm run build
 FROM python:3.14.7-slim
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /app/backend
-# 의존성만 설치한다. 패키지로 설치하면 코드가 site-packages로 옮겨져 data/ 경로(config.ROOT)가 틀어진다.
+# 의존성만 설치한다. 패키지로 설치하면 코드가 site-packages로 옮겨져 knowledge/ 경로(config.ROOT)가 틀어진다.
 COPY backend/requirements.lock ./
 RUN pip install --no-cache-dir -r requirements.lock
 COPY backend/app ./app
-COPY backend/scripts ./scripts
-COPY data /app/data
+COPY backend/settings ./settings
+COPY scripts/seed_dummy.py /app/scripts/seed_dummy.py
 COPY knowledge /app/knowledge
 COPY --from=web /src/frontend/dist /app/frontend/dist
 # 약물 DB: 원천 JSON에서 빌드한다(원천 sha256을 meta에 기록 → 시범 모드 시작 검사가 같은 해시를 확인)
-RUN python -m app.drug_db
+RUN python -m app.drugs.drug_db
 
-RUN useradd --system --uid 10001 app && mkdir -p /app/data/llm_cache && chown -R app /app/data/llm_cache
+RUN useradd --system --uid 10001 app && mkdir -p /app/var/db && chown -R app /app/var
 USER app
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 \

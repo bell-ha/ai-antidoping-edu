@@ -54,7 +54,6 @@ const LANES: Lane[] = [
       { label: "WADA 2026 금지목록", detail: "원문 PDF에서 추출 · 원문 색인 전수 대조", kind: "data" },
       { label: "국내 의약품 목록", detail: "심평원 약가마스터 · 제품명 → 성분 · 투여 경로", kind: "data" },
       { label: "성분·제품 조회표", detail: "자주 묻는 성분과 제품군", kind: "data" },
-      { label: "KADA · Global DRO", detail: "최종 확인 링크", kind: "ext" },
     ],
     note: "판정은 조회표가 함 · AI는 판정하지 않음 · ‘허용’ 판정 없음",
   },
@@ -154,8 +153,8 @@ export function Architecture() {
             </div>
 
             <div className="arch-session" role="row">
-              <Lock size={16} />
-              <span>
+              <Lock size={16} aria-hidden />
+              <span role="cell">
                 <strong>접근 코드 로그인</strong> · 역할(선수 · 지도자 · 지원인력)과 선수 ID는 서버 세션에만 두고 화면에서 받지 않음
               </span>
             </div>
@@ -204,8 +203,8 @@ export function Architecture() {
             ))}
 
             <div className="arch-link" role="row">
-              <ArrowDown size={16} />
-              <span>
+              <ArrowDown size={16} aria-hidden />
+              <span role="cell">
                 ①의 <strong>태그 · 나이대 · 대회 수준</strong>만 ③ AI 교육으로 넘어가 답변을 맞춤화해요. 대회 기록 원본은 넘어가지 않아요.
               </span>
             </div>

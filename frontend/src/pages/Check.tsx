@@ -1,4 +1,4 @@
-import { ArrowRight, ExternalLink, Info, MessageCircle, Pill, TriangleAlert } from "lucide-react";
+import { ArrowRight, MessageCircle, Pill, TriangleAlert } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import { api, type CheckResult, type Timing } from "../api";
@@ -47,7 +47,6 @@ export function Check() {
   };
 
   const showCodes = who.role === "support"; // 선수지원인력에게는 조항 코드 (DESIGN.md 6절)
-  const kada = result?.links[0];
 
   return (
     <>
@@ -94,7 +93,6 @@ export function Check() {
             </div>
           ) : (
             <section className="card" aria-live="polite" data-figure="check-result">
-              {/* 안전 문구와 실제로 눌러야 할 KADA 링크를 위에 둔다 (DESIGN.md 7절) */}
               <div className="stack">
                 <p className="caption">
                   “{result.query}” · {result.list_version} 금지목록 기준
@@ -102,20 +100,6 @@ export function Check() {
                 <StatusBadge status={result.status} />
               </div>
 
-              <div className="notice notice-neutral">
-                <Info size={18} />
-                <span>
-                  이 결과는 참고용입니다. 복용 전 반드시{" "}
-                  {kada ? (
-                    <a href={kada.url} target="_blank" rel="noreferrer">
-                      {kada.label}
-                    </a>
-                  ) : (
-                    "KADA 금지약물 검색"
-                  )}
-                  이나 팀 닥터에게 확인하세요.
-                </span>
-              </div>
 
               {result.supplement_warning && (
                 <div className="notice notice-caution">
@@ -127,7 +111,11 @@ export function Check() {
               {result.ingredients.length > 0 && (
                 <div>
                   <p className="label" style={{ marginBottom: 6 }}>
-                    {result.matched_kind === "category" ? "이 제품군에서 주의할 성분" : "성분"}
+                    {result.matched_kind === "category"
+                      ? "이 제품군에서 주의할 성분"
+                      : result.matched_kind === "unmatched"
+                        ? "이름이 비슷한 성분 — 같은 성분인지 포장의 성분명으로 확인하세요"
+                        : "성분"}
                   </p>
                   {result.ingredients.map((i) => (
                     <div key={i.name_en} className="ingredient">
@@ -137,7 +125,7 @@ export function Check() {
                       </strong>
                       {result.matched_kind !== "substance" && <StatusBadge status={i.status} small />}
                       {i.note && <span className="caption">{i.note}</span>}
-                      {result.matched_kind === "category" && (
+                      {(result.matched_kind === "category" || result.matched_kind === "unmatched") && (
                         <button
                           type="button"
                           className="btn-sub small"
@@ -191,11 +179,6 @@ export function Check() {
               </div>
 
               <div className="row wrap">
-                {result.links.map((l) => (
-                  <a key={l.url} className="btn-sub" href={l.url} target="_blank" rel="noreferrer">
-                    {l.label} <ExternalLink size={14} />
-                  </a>
-                ))}
                 <button type="button" className="btn-sub" onClick={() => navigate("/learn", { state: { check: result } })}>
                   <MessageCircle size={16} /> AI에게 더 묻기
                 </button>

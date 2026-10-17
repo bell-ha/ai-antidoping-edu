@@ -4,7 +4,7 @@ import sqlite3
 
 import pytest
 
-from app import drug_db
+from app.drugs import drug_db
 
 
 @pytest.fixture

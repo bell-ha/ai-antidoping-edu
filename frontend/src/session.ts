@@ -19,12 +19,12 @@ export function useSession(): SessionState {
 }
 
 // DESIGN.md 2절 역할별 탭
-export type TabKey = "performance" | "check" | "learn" | "architecture";
+export type TabKey = "performance" | "check" | "learn" | "library" | "architecture";
 
 export const TABS_BY_ROLE: Record<Role, TabKey[]> = {
-  athlete: ["performance", "check", "learn", "architecture"],
-  coach: ["check", "learn", "architecture"],
-  support: ["check", "learn", "architecture"],
+  athlete: ["performance", "check", "learn", "library", "architecture"],
+  coach: ["check", "learn", "library", "architecture"],
+  support: ["check", "learn", "library", "architecture"],
 };
 
 export const HOME_BY_ROLE: Record<Role, string> = {

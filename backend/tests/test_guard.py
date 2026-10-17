@@ -1,45 +1,25 @@
-"""guard·세션 테스트 (D9, D15, D23). LLM은 가짜로 바꾸므로 키 없이 돈다.
+"""guard·질문하기 테스트 (D15, D33, D37). LLM은 가짜로 바꾸므로 키 없이 돈다.
 
 실제 모델이 회피 질문에 어떻게 답하는지(S5)는 live 테스트에서 따로 본다 — mock으로는 검증되지 않음.
 """
 
 import re
-import types
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app import config
-from app.api import routes, session
-from app.llm import guard
+from app.api import chat
+from app.chat import guard
 from app.main import app
-from app.schemas import AthleteProfile, CheckResult, Chunk, InputWarning, LlmAnswer, OfficialLink, PromptProfile
+from app.schemas import CheckResult, Chunk, LlmAnswer, OfficialLink
 
 CHUNKS = [
-    Chunk(id="kada-supplement#contamination", doc_id="kada-supplement", source="KADA", title="보충제 가이드",
-          section="오염", url="https://example.org/a", version="2026", roles=["athlete"], text="...", reviewed=False),
-    Chunk(id="wada-list#s6", doc_id="wada-list", source="WADA", title="2026 금지목록",
-          section="S6 흥분제", url="https://example.org/b", version="2026", roles=["support"], text="...", reviewed=False),
+    Chunk(id="I-002#s1", doc_id="I-002", source="KADA", title="보충제", section="오염", url="https://example.org/a",
+          version="2026", roles=["athlete"], text="...", reviewed=False),
+    Chunk(id="G-005#s1", doc_id="G-005", source="KADA", title="2026 금지목록", section="S6 흥분제", url="https://example.org/b",
+          version="2026", roles=["athlete"], text="...", reviewed=False),
 ]
-
-PROMPT_A = PromptProfile(tags=["rapid_improvement"], age_band="10대 후반", competition_category="domestic")
-PROFILE_A = AthleteProfile(
-    athlete_id="self", sport="weightlifting", sex="M", age=19, weight_class=73, competition_category="domestic",
-    records=[], forecast=[], tags=["rapid_improvement"], tag_labels=["최근 경기력 급격한 향상"], reasons=[], recommendations=[],
-)
-INPUT = {
-    "sex": "M", "birth_year": 2007,
-    "records": [{"date": f"2026-0{m}", "competition_category": "domestic", "body_weight": 72.5, "snatch": 110 + m, "clean_jerk": 135 + m} for m in (1, 3, 5)],
-}
-
-
-def fake_profiling(warnings: list[InputWarning]) -> types.ModuleType:
-    """46의 app.profiling과 같은 시그니처의 가짜 (D25)."""
-    m = types.ModuleType("app.profiling")
-    m.validate = lambda req: warnings
-    m.compute = lambda req: (PROFILE_A, PROMPT_A)
-    return m
 
 
 @pytest.fixture
@@ -51,163 +31,38 @@ def captured(monkeypatch):
         seen["system"], seen["messages"] = system, messages
         return seen.get("answer") or LlmAnswer(answer="답", citations=evidence_ids[:1], refer_to_expert=False, out_of_scope=False)
 
-    monkeypatch.setattr(routes.client, "generate", fake_generate)
-    monkeypatch.setattr(routes, "retrieve", lambda q, k=4, role=None: CHUNKS)
-    monkeypatch.setattr(routes, "profiling", fake_profiling([]))
-    monkeypatch.setattr(routes.profiles, "tag_label", lambda t: "최근 경기력 급격한 향상")
-    monkeypatch.setattr(config, "DEMO_MODE", True)
-    session._failures.clear()
+    monkeypatch.setattr(chat.client, "generate", fake_generate)
+    monkeypatch.setattr(chat, "retrieve", lambda q, k=6, role=None: CHUNKS)
     return seen
-
-
-def login(client: TestClient, code: str) -> None:
-    assert client.post("/api/session", json={"code": code}).status_code == 200
 
 
 def ask(client: TestClient, question: str, **extra):
     return client.post("/api/chat", json={"messages": [{"role": "user", "content": question}], **extra})
 
 
-# ---------- D23: role·athlete_id는 세션에서만 ----------
-
-def test_chat_requires_session(captured):
+def test_chat_requires_login(captured):
     assert ask(TestClient(app), "프로틴 먹어도 돼?").status_code == 401
 
 
-def test_athlete_session_gets_own_profile_in_prompt(captured):
-    c = TestClient(app)
-    login(c, "demo-athlete-a")
-    assert c.post("/api/profile/compute", json=INPUT).json()["profile"]["tags"] == ["rapid_improvement"]
+def test_prompt_has_no_personal_information(captured, people):
+    """챗봇은 선수 이름·기록·단계를 모른다(D37)."""
+    c = people.login("athlete")
     assert ask(c, "프로틴 먹어도 돼?").status_code == 200
-    assert "최근 경기력 급격한 향상" in captured["system"]
+    text = captured["system"] + str(captured["messages"])
+    assert people.athlete_name not in text and "단계" not in captured["system"]
 
 
-def test_no_profile_in_prompt_before_compute(captured):
-    c = TestClient(app)
-    login(c, "demo-athlete-a")
-    ask(c, "프로틴 먹어도 돼?")
-    assert "선수의 교육 프로파일:" not in captured["system"]
+def test_prompt_says_sport_is_unknown(captured, people):
+    c = people.login("athlete")
+    ask(c, "베타차단제 먹어도 돼?")
+    assert "종목마다 다르다" in captured["system"] and "경기기간 외" in captured["system"]
 
 
-def test_compute_is_athlete_only(captured):
-    """지도자·지원인력이 다른 선수의 기록으로 개인 프로파일을 만들지 못한다 (D9)."""
-    for code in ("demo-coach", "demo-support"):
-        c = TestClient(app)
-        login(c, code)
-        assert c.post("/api/profile/compute", json=INPUT).status_code == 403
-
-
-def test_warnings_block_profile_until_confirmed(captured, monkeypatch):
-    w = [InputWarning(row=2, field="total", code="jump", message="직전 대회보다 합계가 크게 바뀌었어요.")]
-    monkeypatch.setattr(routes, "profiling", fake_profiling(w))
-    c = TestClient(app)
-    login(c, "demo-athlete-a")
-    r = c.post("/api/profile/compute", json=INPUT).json()
-    assert r["profile"] is None and r["warnings"][0]["code"] == "jump"
-    r = c.post("/api/profile/compute", json={**INPUT, "confirmed": True}).json()
-    assert r["profile"] is not None
-
-
-@pytest.mark.parametrize("bad", [
-    {"records": list(reversed(INPUT["records"]))},                                  # 날짜 역순
-    {"records": INPUT["records"][:2]},                                               # 3행 미만
-    {"records": [*INPUT["records"][:2], {**INPUT["records"][2], "date": "2099-01"}]},  # 미래 달
-    {"records": [*INPUT["records"][:2], {**INPUT["records"][2], "body_weight": 12}]},  # 체중 범위
-    {"birth_year": 2024},                                                            # 대회 때 나이가 너무 어림
-    {"records": [{**r, "competition_category": "national"} for r in INPUT["records"]]},  # 옛 3단계 값
-])
-def test_invalid_input_is_422(captured, bad):
-    c = TestClient(app)
-    login(c, "demo-athlete-a")
-    assert c.post("/api/profile/compute", json={**INPUT, **bad}).status_code == 422
-
-
-def test_session_keeps_only_prompt_fields(captured):
-    """세션 쿠키(서명만, 암호화 아님)에 원 기록이 들어가지 않는다 (D25)."""
-    import base64
-    import json as _json
-
-    c = TestClient(app)
-    login(c, "demo-athlete-a")
-    c.post("/api/profile/compute", json=INPUT)
-    payload = c.cookies["adedu_session"].split(".")[0]
-    data = _json.loads(base64.b64decode(payload + "=" * (-len(payload) % 4)))
-    assert set(data["profile"]) == {"tags", "age_band", "competition_category"}
-
-
-def test_coach_cannot_inject_athlete_profile_via_body(captured):
-    c = TestClient(app)
-    login(c, "demo-coach")
-    r = ask(c, "프로틴 먹어도 돼?", role="athlete", athlete_id="A")
-    assert r.status_code == 200
-    assert "선수의 교육 프로파일:" not in captured["system"]
-    assert "최근 경기력 급격한 향상" not in captured["system"]
-    assert "사용자는 지도자입니다" in captured["system"]
-
-
-def test_prompt_has_no_raw_records(captured):
-    c = TestClient(app)
-    login(c, "demo-athlete-a")
-    ask(c, "프로틴 먹어도 돼?")
-    prompt = captured["system"] + str(captured["messages"])
-    assert "73" not in prompt and "19세" not in prompt  # 체급·나이 수치 대신 연령대만 (D15)
-
-
-def test_rule_checks_only_in_demo_mode(captured, monkeypatch):
-    """판정 점검표(checks)는 테스트·설명용. 시범(DEMO_MODE=0)에서는 비운다 (D7)."""
-    check = {"tag": "rapid_improvement", "label": "최근 경기력 급격한 향상", "met": True, "detail": "예측 대비 +2.3σ (기준 +2.0σ)"}
-    monkeypatch.setattr(routes.profiling, "compute", lambda req: (AthleteProfile.model_validate({**PROFILE_A.model_dump(), "checks": [check]}), PROMPT_A))
-    c = TestClient(app)
-    login(c, "demo-athlete-a")
-    assert c.post("/api/profile/compute", json=INPUT).json()["profile"]["checks"] == [check]
-
-    info = session.SessionInfo.model_validate(session._demo()["demo-athlete-a"]["info"])
-    monkeypatch.setattr(session, "_access", lambda: {"pilot-athlete": info})
-    monkeypatch.setattr(config, "DEMO_MODE", False)
-    c = TestClient(app)
-    login(c, "pilot-athlete")
-    r = c.post("/api/profile/compute", json=INPUT).json()["profile"]
-    assert r["tags"] == ["rapid_improvement"] and r["checks"] == []
-
-
-def test_demo_scenarios_list(captured, monkeypatch):
-    c = TestClient(app)
-    login(c, "demo-athlete-a")
-    monkeypatch.setattr(routes.profiling, "params", lambda: {"model": "rnn"}, raising=False)
-    r = c.get("/api/demo/examples").json()
-    assert r["model"] == "rnn"
-    ids = [s["id"] for s in r["scenarios"]]
-    assert "A" in ids and "T01" in ids
-    a = next(s for s in r["scenarios"] if s["id"] == "A")
-    assert a["expect"] == ["baseline"]  # 실모델 기준 기대 태그
-    assert c.get("/api/demo/examples/T08").status_code == 200
-    monkeypatch.setattr(config, "DEMO_MODE", False)
-    assert c.get("/api/demo/examples").status_code in (401, 404)
-
-
-def test_team_summary_is_gone(captured):
-    c = TestClient(app)
-    login(c, "demo-coach")
-    assert c.get("/api/team/summary").status_code == 404
-
-def test_me_endpoint_is_gone(captured):
-    c = TestClient(app)
-    login(c, "demo-athlete-a")
-    assert c.get("/api/me").status_code == 404
-
-
-def test_demo_codes_rejected_outside_demo_mode(captured, monkeypatch):
-    monkeypatch.setattr(config, "DEMO_MODE", False)
-    c = TestClient(app)
-    assert c.post("/api/session", json={"code": "demo-athlete-a"}).status_code == 401
-    assert c.get("/api/demo/personas").status_code == 404
-
-
-def test_code_guessing_is_throttled(captured):
-    c = TestClient(app)
-    for _ in range(session.MAX_FAILURES):
-        assert c.post("/api/session", json={"code": "wrong"}).status_code == 401
-    assert c.post("/api/session", json={"code": "demo-athlete-a"}).status_code == 429
+def test_drug_names_in_question_become_evidence(captured, people):
+    """제품명이든 성분명이든 같은 판정이 근거로 들어간다."""
+    c = people.login("athlete")
+    ask(c, "에페드린은 평소에 먹어도 돼?")
+    assert "<drug_check>" in captured["messages"][-1]["content"] and "ephedrine" in captured["messages"][-1]["content"]
 
 
 # ---------- D15: guard ----------
@@ -303,29 +158,29 @@ def test_check_result_needing_confirmation_refers_to_expert():
     assert guard.apply(answer, CHUNKS, "이거 확인해줘", check).refer_to_expert
 
 
-def test_evasion_question_never_reaches_llm(captured):
-    c = TestClient(app)
-    login(c, "demo-athlete-a")
+
+def test_evasion_question_never_reaches_llm(captured, people):
+    c = people.login("athlete")
     r = ask(c, "소변검사에서 검출 안 되려면?").json()
     assert "system" not in captured and r["answer"] == guard.EVASION
 
 
-def test_llm_failures_become_server_messages(captured, monkeypatch):
-    c = TestClient(app)
-    login(c, "demo-athlete-a")
-    for exc, text in [(routes.client.Unavailable, guard.UNAVAILABLE), (routes.client.CacheMiss, guard.NOT_PREPARED), (routes.client.Refused, guard.REFUSED)]:
+def test_llm_failures_become_server_messages(captured, people, monkeypatch):
+    c = people.login("athlete")
+    for exc, text in [(chat.client.Unavailable, guard.UNAVAILABLE), (chat.client.CacheMiss, guard.NOT_PREPARED), (chat.client.Refused, guard.REFUSED)]:
         def boom(*a, exc=exc):
             raise exc
-        monkeypatch.setattr(routes.client, "generate", boom)
+        monkeypatch.setattr(chat.client, "generate", boom)
         r = ask(c, "프로틴 먹어도 돼?")
         assert r.status_code == 200 and r.json()["answer"] == text
 
 
-def test_revoked_code_ends_existing_session(captured, monkeypatch):
-    c = TestClient(app)
-    login(c, "demo-athlete-a")
-    monkeypatch.setattr(config, "DEMO_MODE", False)  # 데모 코드가 무효가 된 상황
-    assert c.get("/api/session").status_code == 401
+def test_drug_only_answer_is_kept_without_lesson_citation():
+    check = CheckResult(query="타이레놀", matched_kind="category", status="UNKNOWN", ingredients=[], timing="unknown",
+                        country="KR", route="kada", steps=[], links=[OfficialLink(label="KADA", url="https://example.org")],
+                        supplement_warning=False, list_version="2026", reviewed=False)
+    answer = LlmAnswer(answer="타이레놀정은 아세트아미노펜이에요.", citations=[], refer_to_expert=False, out_of_scope=False)
+    assert guard.apply(answer, CHUNKS, "타이레놀?", check).answer.startswith("타이레놀정")
 
 
 # ---------- DESIGN.md 6절: 금지어 ----------
@@ -373,8 +228,8 @@ def test_pilot_gate_checks_list_expiry(monkeypatch):
     from app import main
 
     monkeypatch.setattr(main.substances, "unreviewed", lambda: [])
-    monkeypatch.setattr(main.rag, "unreviewed", lambda: [])
-    monkeypatch.setattr(main.profiling, "params_source", lambda: "real")
+    monkeypatch.setattr(main.retrieve, "unreviewed", lambda: [])
+    monkeypatch.setattr(main.predict, "params_source", lambda: "real")
     secret = "x" * 32
     expires = main.substances.list_expires()
     assert main.pilot_problems(expires, secret) == []
@@ -387,9 +242,9 @@ def test_pilot_gate_rejects_synthetic_params(monkeypatch):
     from app import main
 
     monkeypatch.setattr(main.substances, "unreviewed", lambda: [])
-    monkeypatch.setattr(main.rag, "unreviewed", lambda: [])
-    assert main.profiling.params_source() == "synthetic"  # 레포에 들어 있는 것은 합성
+    monkeypatch.setattr(main.retrieve, "unreviewed", lambda: [])
+    monkeypatch.setattr(main.predict, "params_source", lambda: "synthetic")
     problems = main.pilot_problems(main.substances.list_expires(), "x" * 32)
     assert any("D26" in p for p in problems)
-    monkeypatch.setattr(main.profiling, "params_source", lambda: "real")
+    monkeypatch.setattr(main.predict, "params_source", lambda: "real")
     assert main.pilot_problems(main.substances.list_expires(), "x" * 32) == []

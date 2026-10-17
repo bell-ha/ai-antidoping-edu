@@ -2,14 +2,9 @@
 #   docker compose -f compose.yaml -f compose.pilot.yaml up -d --build
 # 필수 값이 빠지면 compose가 실패한다(데모 설정으로 뜨는 사고 방지).
 #
-# 선수 프로파일은 선수가 입력한 기록으로 계산하고 저장하지 않는다(D25) → 프로파일 파일은 마운트하지 않는다.
-# 이미지 밖(서버 경로 PILOT_DATA)에서 읽기 전용으로 넣는 것:
-#   access_codes.json  — 연구진이 발급한 접근 코드
-#   model_params.json  — 실제 경기 기록 기반 예측 설정(source: real, model: rnn, files: {M: rnn_M, F: null})
-#   rnn_M.npz / rnn_M.json — 연구진 RNN 가중치와 메타(analysis/train_rnn.py 산출물, 선수 key 목록 없음).
-#                        cd analysis && ../backend/.venv/bin/python export.py --source real --out $PILOT_DATA
-#                        (이미지 안의 것은 합성이라 그대로 두면 서버가 시작을 거부한다, D26)
-# 지도자 팀 요약은 시범에서 비활성(D25).
+# 이미지 밖(서버 경로 PILOT_DATA)에서 넣는 것:
+#   models/    — 연구진 모델(model_params.json: source real, rnn_M.npz/json). 서버는 /app/private/models를 먼저 쓴다(D37)
+#   db/        — 운영 DB 폴더(쓰기). 선수 계정은 관리자 화면에서 등록한다(가입 없음)
 # 시작 관문: reviewed:false 항목이 하나라도 있으면 서버가 시작을 거부한다(G2).
 # 리버스 프록시(nginx 등)가 HTTPS를 처리하고, FORWARDED_ALLOW_IPS에 프록시 IP를 넣는다. 워커는 1개.
 services:
@@ -22,29 +17,22 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:?ANTHROPIC_API_KEY를 설정하세요}
       CLAUDE_MODEL: ${CLAUDE_MODEL:?CLAUDE_MODEL을 명시하세요}
       FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:?리버스 프록시 IP를 설정하세요}
+      ANTHROPIC_WORKSPACE_ID: ${ANTHROPIC_WORKSPACE_ID:-}  # 조직 키일 때만
+      APP_DB: /app/var/db/app.sqlite  # 운영 DB — 아래 db 폴더에 남는다
+      DAILY_CHAT_LIMIT: ${DAILY_CHAT_LIMIT:-30}
+      SURVEY_URL: ${SURVEY_URL:-}  # 예: https://forms…/?pid={pid}
     ports: !override
       - "127.0.0.1:${PORT:-8100}:8000"  # 프록시만 접근
     volumes: !override
       # llm_cache 볼륨은 쓰지 않는다(시범은 live). 리눅스에서 호스트 디렉터리 소유자가 uid 10001이 아니면 쓰기 실패.
       # create_host_path: false — 파일이 없으면 빈 폴더를 만들지 않고 바로 실패한다.
       - type: bind
-        source: ${PILOT_DATA:?시범 데이터 폴더 PILOT_DATA를 설정하세요}/access_codes.json
-        target: /app/data/access_codes.json
+        source: ${PILOT_DATA:?시범 데이터 폴더 PILOT_DATA를 설정하세요}/models
+        target: /app/private/models
         read_only: true
         bind: { create_host_path: false }
+      # 운영 DB 폴더(쓰기). 미리 만들고 소유자를 uid 10001로: mkdir -p $PILOT_DATA/db && chown 10001 $PILOT_DATA/db
       - type: bind
-        source: ${PILOT_DATA}/model_params.json
-        target: /app/data/model_params.json
-        read_only: true
-        bind: { create_host_path: false }
-      # 실제 RNN(남자). 여자 모델이 생기면 rnn_F.{npz,json}을 같은 방식으로 추가한다
-      - type: bind
-        source: ${PILOT_DATA}/rnn_M.npz
-        target: /app/data/rnn_M.npz
-        read_only: true
-        bind: { create_host_path: false }
-      - type: bind
-        source: ${PILOT_DATA}/rnn_M.json
-        target: /app/data/rnn_M.json
-        read_only: true
+        source: ${PILOT_DATA}/db
+        target: /app/var/db  # /app/var 전체를 덮으면 이미지 안의 약물 DB(var/drugs.sqlite)가 가려진다
         bind: { create_host_path: false }

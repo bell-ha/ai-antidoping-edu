@@ -1,180 +1,78 @@
 """데이터 계약 (DESIGN-DECISIONS.md).
 
-analysis/export.py가 쓰는 JSON, substances.check(), rag.retrieve(), API 응답이 모두 이 모델을 따른다.
-D7: 사람에게 붙는 평가 용어 금지(DESIGN.md 6절). D8: 순위 관련 필드 없음. D15: 프롬프트에는 태그·연령대·경기 수준만.
+API 응답과 내부 모듈(drugs.check, chat.retrieve, model.adapter, program)이 모두 이 모델을 따른다.
 """
 
+from datetime import date
 from typing import Literal
 
-from datetime import date
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
-
-Role = Literal["athlete", "coach", "support"]
-Sport = Literal["weightlifting"]  # D22: 종목 추상화 계층은 만들지 않음
-# 연구진 RNN의 대회 분류(world/continent/nation/etc)에 맞춘 입력 범주. 토큰 매핑은 profiling이 한다:
-# world→world, continent→continent, other_international→nation(데이터상 국제 초청전), domestic→etc(학습 자료에 없음)
+# 선수 = 교육 시작하기·질문하기만, 관리자 = 선수 관리·단계 설정·기록 입력 (D37)
+Role = Literal["athlete", "admin"]
+# 연구진 RNN의 대회 분류(world/continent/nation/etc)에 맞춘 입력 범주. 토큰 매핑은 model.predict가 한다
 CompetitionCategory = Literal["world", "continent", "other_international", "domestic"]
-PerformanceModel = Literal["rnn", "synthetic_trend", "none"]
 
 
-# ---------- 세션 (D23) ----------
+# ---------- 로그인 (D37: 가입 없음, 관리자가 코드를 발급) ----------
 
-class SessionRequest(BaseModel):
+class LoginRequest(BaseModel):
     code: str = Field(min_length=1, max_length=64)
 
 
 class SessionInfo(BaseModel):
-    """코드 하나가 가리키는 대상. demo_codes.json / access_codes.json의 값."""
     role: Role
-    athlete_id: str | None = None  # role == "athlete"일 때만
-    label: str  # 화면 표시용 ("선수 A", "지도자")
+    athlete_id: int | None = None  # role == "athlete"일 때만
+    label: str  # 화면 표시용 이름
 
 
-class DemoPersona(BaseModel):
-    """GET /api/demo/personas. DEMO_MODE=1일 때만."""
-    code: str
-    info: SessionInfo
-    description: str
+# ---------- 연구진 모델 결과 ----------
+
+class ModelValue(BaseModel):
+    target: Literal["total"] = "total"
+    unit: Literal["kg"] = "kg"
+    value: float | None
 
 
-# ---------- 선수 프로파일 ----------
-# 선수가 입력한 기록으로 profiling.compute()가 만든다(D25). 저장하지 않는다.
-
-ProfileTag = Literal["rapid_improvement", "decline", "weight_change", "high_level", "baseline"]
+class ObservedValue(BaseModel):
+    value: int | None
 
 
-class RecordPoint(BaseModel):
-    date: str  # "YYYY-MM". 대회명은 저장하지 않음 (§10 재식별)
-    competition_category: CompetitionCategory
-    weight_class: int  # 2018 IWF 체급 (D22)
-    body_weight: float
-    snatch: int
-    clean_jerk: int
-    total: int
+class ModelResult(BaseModel):
+    """연구진 경기력 모델의 결과 모양(인계본 profile() 반환값). 플랫폼은 이 결과만 쓴다(D32, D35).
+    관측 − 예측은 줄 세우기에만 쓴다(D37). 도핑 여부·확률이 아니다."""
+    model_version: str
+    source: Literal["researchers", "platform_temporary", "synthetic", "none"]
+    prediction: ModelValue
+    observed: ObservedValue
+    residual_observed_minus_predicted: float | None
+    history_count: int
+    prediction_interval_kg: float | None = None  # 연구진은 구간을 주지 않음
+    data_warnings: list[str] = []
 
 
-class ForecastPoint(BaseModel):
-    date: str
-    mean: float
-    lo: float  # 체급별 잔차 σ × 1.96 (D4)
-    hi: float
-
-
-class ResidualPoint(BaseModel):
-    """대회별 관측 − 예측(kg). 인계 계약이 허용한 표시 항목. σ 단위 시계열은 점수판처럼 읽혀 쓰지 않는다 (D7)."""
-    date: str
-    observed: int
-    predicted: float
-    diff_kg: float
-
-
-class Reason(BaseModel):
-    """추천 이유 = 규칙 입력값 직접 표시 (D6). 예: "예측 대비 +2.6σ (기준 2.0σ)" """
-    tag: ProfileTag
-    text: str
-
-
-class RuleCheck(BaseModel):
-    """판정 점검표 한 줄: 태그 규칙의 입력값·기준·충족 여부. 점수가 아니라 규칙 입력값 그대로(D6)."""
-    tag: ProfileTag
-    label: str  # 태그 표시명
-    met: bool
-    detail: str  # 예: "예측 대비 +1.5σ (기준 +2.0σ)", "이 성별은 예측 모델이 없어 판단하지 않음"
-
-
-class Recommendation(BaseModel):
-    """카탈로그 항목. content_id = knowledge/ 문서 ID → 추천 카드 → AI 교육 → 근거가 하나로 이어짐."""
-    content_id: str
-    title: str
-    summary: str
-    suggested_question: str
-
-
-class AthleteProfile(BaseModel):
-    """POST /api/profile/compute 결과. 선수 본인 세션에서만 만들어진다 (D9, D25)."""
-    athlete_id: str
-    sport: Sport
-    sex: Literal["M", "F"]
-    age: int  # 마지막 대회 연도 − 출생연도
-    weight_class: int
-    competition_category: CompetitionCategory  # 마지막 행
-    model: PerformanceModel = "synthetic_trend"  # none이면 forecast·경기력 태그 없음(해당 성별 모델 없음)
-    notices: list[str] = []  # 화면에 그대로 보여줄 상태 안내(예: "이 성별의 경기력 모델이 아직 없어요")
-    records: list[RecordPoint]
-    forecast: list[ForecastPoint]
-    tags: list[ProfileTag]
-    tag_labels: list[str] = []  # tags와 같은 순서. 표시명 출처는 knowledge/catalog.yaml 하나
-    reasons: list[Reason]
-    checks: list[RuleCheck] = []  # 붙지 않은 태그까지 모든 규칙의 판정 근거(테스트·설명용)
-    recommendations: list[Recommendation]
-    residuals: list[ResidualPoint] = []  # 대회별 관측 − 예측(kg)
-
-
-# ---------- 직접 입력 (D25) ----------
+# ---------- 경기 기록 (관리자 입력) ----------
 
 class RecordInput(BaseModel):
-    """선수가 입력하는 대회 1회. 체급(성별+계체 체중)과 합계는 서버가 도출한다."""
+    """대회 1회. 체급(계체 체중)과 합계는 서버가 도출한다."""
     date: str = Field(pattern=r"^\d{4}-(0[1-9]|1[0-2])$")  # "YYYY-MM"
     competition_category: CompetitionCategory
     body_weight: float = Field(ge=30, le=200)
     snatch: int = Field(ge=1, le=300)
     clean_jerk: int = Field(ge=1, le=300)
 
-
-class ComputeRequest(BaseModel):
-    """POST /api/profile/compute. 입력은 서버에 저장하지 않는다."""
-    sex: Literal["M", "F"]
-    birth_year: int = Field(ge=1940)  # 기록별 나이(모델 입력) 계산용. 저장하지 않는다
-    records: list[RecordInput] = Field(min_length=3, max_length=10)
-    confirmed: bool = False  # 경고를 사용자가 확인했는지
-
-    @model_validator(mode="after")
-    def _dates(self) -> "ComputeRequest":
-        dates = [r.date for r in self.records]
-        if dates != sorted(dates):
-            raise ValueError("대회 기록은 오래된 것부터 날짜순으로 입력해 주세요.")
-        if dates[-1] > date.today().strftime("%Y-%m"):
+    @field_validator("date")
+    @classmethod
+    def _not_future(cls, v: str) -> str:
+        if v > date.today().strftime("%Y-%m"):
             raise ValueError("아직 오지 않은 달의 기록은 입력할 수 없어요.")
-        age_first = int(dates[0][:4]) - self.birth_year
-        if age_first < 8 or self.birth_year > date.today().year - 8:
-            raise ValueError("출생연도와 대회 날짜를 다시 확인해 주세요.")
-        return self
+        return v
 
 
-class PromptProfile(BaseModel):
-    """세션에 저장하고 프롬프트에 넣는 것만 (D15, D25). 원 기록은 넣지 않는다."""
-    tags: list[ProfileTag]
-    age_band: str
-    competition_category: CompetitionCategory
-
-
-class InputWarning(BaseModel):
-    row: int | None = None  # records 인덱스
-    field: str | None = None
-    code: Literal["ratio", "jump"]
-    message: str
-
-
-class DemoScenario(BaseModel):
-    """DEMO_MODE 테스트 시나리오 목록 한 줄. expect는 지금 서버의 예측 방식 기준 기대 태그."""
-    id: str
-    label: str
-    description: str
-    sex: Literal["M", "F"]
-    expect: list[ProfileTag]
-    expect_labels: list[str]
-    warnings: list[Literal["ratio", "jump"]] = []
-
-
-class DemoScenarios(BaseModel):
-    model: Literal["synthetic_trend", "rnn"]  # 이 서버가 쓰는 예측 방식(params의 model)
-    scenarios: list[DemoScenario]
-
-
-class ComputeResponse(BaseModel):
-    profile: AthleteProfile | None  # 경고가 있고 confirmed=false면 None
-    warnings: list[InputWarning]
+class RecordRow(RecordInput):
+    id: int
+    weight_class: int
+    total: int
 
 
 # ---------- 약물 확인 (D10, D11, D12) ----------
@@ -248,7 +146,7 @@ class Chunk(BaseModel):
     section: str
     url: str
     version: str
-    roles: list[Role]
+    roles: list[str]  # 레슨 frontmatter 그대로(검색 정렬에는 쓰지 않음)
     text: str
     reviewed: bool
 
@@ -258,6 +156,8 @@ class Chunk(BaseModel):
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
     content: str = Field(min_length=1, max_length=2000)
+    # assistant 턴은 서버가 그 답을 줄 때 붙인 서명이 있어야 한다 — 클라이언트가 지어낸 "이전 답변"을 막는다 (D33)
+    token: str | None = Field(default=None, max_length=64)
 
 
 class ChatContext(BaseModel):
@@ -293,3 +193,168 @@ class ChatResponse(BaseModel):
     citations: list[Citation]
     refer_to_expert: bool  # LLM 판단 OR 서버 규칙
     out_of_scope: bool
+    token: str = ""  # 다음 요청에서 이 답을 대화 기록으로 보낼 때 함께 보내는 서명 (D33)
+
+
+class LibrarySection(BaseModel):
+    id: str  # "s1" … — rag 청크 id의 "#s{n}"과 같은 번호
+    heading: str
+    text: str
+
+
+class LibraryDocSummary(BaseModel):
+    """GET /api/library 목록 한 줄."""
+    doc_id: str
+    title: str
+    source: Source
+    url: str
+    version: str
+    roles: list[str]  # 레슨 frontmatter 그대로(검색 정렬에는 쓰지 않음)
+    topic: str | None = None  # 교육 주제 묶음(문서 frontmatter의 topic)
+    summary: str | None = None
+    reviewed: bool
+    section_headings: list[str]
+    length: int  # 본문 글자 수
+
+
+class LibraryDoc(BaseModel):
+    """GET /api/library/{doc_id}: 문서 전체."""
+    doc_id: str
+    title: str
+    source: Source
+    url: str
+    version: str
+    roles: list[str]  # 레슨 frontmatter 그대로(검색 정렬에는 쓰지 않음)
+    topic: str | None = None
+    summary: str | None = None
+    reviewed: bool
+    sections: list[LibrarySection]
+
+
+class Survey(BaseModel):
+    url: str  # 가명 ID가 채워진 외부 설문 주소
+
+
+# ---------- 교육 프로그램 (D37) ----------
+
+class TierSetting(BaseModel):
+    """단계 하나(1 = 가장 낮음)."""
+    tier: int = Field(ge=1)
+    lessons_per_week: int = Field(ge=0, le=50)
+    quiz_probability: float = Field(ge=0, le=1)  # 하루 첫 접속 때 갑자기 퀴즈가 나올 확률
+    quiz_questions: int = Field(ge=1, le=10)  # 한 번에 나오는 문항 수
+
+
+class ProgramSettings(BaseModel):
+    tiers: list[TierSetting] = Field(min_length=1, max_length=10)
+
+
+class QuizQuestion(BaseModel):
+    """정답은 보내지 않는다."""
+    lesson_id: str
+    question: str
+    choices: list[str]
+
+
+class QuizAnswer(BaseModel):
+    lesson_id: str
+    choice: int = Field(ge=1, le=4)
+
+
+class QuizResult(BaseModel):
+    lesson_id: str
+    correct: bool
+    answer: int
+    explanation: str
+
+
+class LessonCard(BaseModel):
+    lesson_id: str
+    title: str
+    category: str
+    completed: bool
+
+
+class LessonView(BaseModel):
+    lesson_id: str
+    title: str
+    category: str
+    sections: list["LibrarySection"]
+    quiz: QuizQuestion
+    completed: bool
+
+
+class AthleteHome(BaseModel):
+    name: str
+    week_start: str  # 이번 주 월요일
+    lessons: list[LessonCard]  # 이번 주에 들을 것(지난주에 못 들은 것 포함) + 이번 주 완료
+    completed_total: int
+    lesson_total: int
+    surprise_quiz: list[QuizQuestion]  # 비어 있으면 없음
+
+
+class AthleteRow(BaseModel):
+    """관리자 선수 목록 한 줄."""
+    id: int
+    number: str
+    name: str
+    birth_year: int
+    weight_class: int | None
+    tier: int | None
+    rank: int | None
+    residual: float | None
+    records: int
+    lessons_completed: int
+    quiz_correct: int
+    quiz_wrong: int
+    questions: int
+    last_visit: str | None
+
+
+class QuizLog(BaseModel):
+    lesson_id: str
+    title: str
+    context: Literal["lesson", "surprise"]
+    choice: int
+    correct: bool
+    at: str
+
+
+class ChatLog(BaseModel):
+    question: str
+    answer: str
+    at: str
+
+
+class LessonLog(BaseModel):
+    lesson_id: str
+    title: str
+    week_start: str
+    completed_at: str | None
+
+
+class AthleteDetail(BaseModel):
+    athlete: AthleteRow
+    records: list[RecordRow]
+    model_result: ModelResult | None
+    lessons: list[LessonLog]
+    quizzes: list[QuizLog]
+    chats: list[ChatLog]
+
+
+class AthleteCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=30)
+    birth_year: int = Field(ge=1940, le=date.today().year - 8)
+
+
+class IssuedCode(BaseModel):
+    """새로 만든 로그인 코드. 서버에는 해시만 남아서 이때 한 번만 보인다."""
+    athlete_id: int
+    number: str
+    code: str
+
+
+class Overview(BaseModel):
+    athletes: list[AthleteRow]
+    settings: ProgramSettings
+    model_version: str

@@ -4,12 +4,12 @@ import json
 
 import pytest
 
-from app import substances
-from app.config import DATA
-from app.substances import check
+from app.drugs import substances
+from app.config import DRUGS
+from app.drugs.substances import check
 
-TABLES = {name: json.loads((DATA / name).read_text(encoding="utf-8"))
-          for name in ("substances.json", "products.json", "dro_countries.json")}
+TABLES = {name: json.loads((DRUGS / "curated" / name).read_text(encoding="utf-8"))
+          for name in ("substances.json", "products.json")}
 
 
 def test_no_allowed_status_exists():
@@ -38,7 +38,7 @@ def test_category_is_always_unknown_with_caution_list():
 def test_s2_requery_by_ingredient_gives_threshold():
     r = check("슈도에페드린", "KR", "in_competition")
     assert (r.matched_kind, r.status, r.ingredients[0].wada_class) == ("substance", "THRESHOLD", "S6.B")
-    assert any("TUE" in link.label for link in r.links)
+    assert not any("TUE" in link.label for link in r.links)  # 확인처·TUE 안내 링크 없음(2026-10-17 사용자)
 
 
 def test_timing_never_lowers_status():
@@ -67,24 +67,18 @@ def test_partial_name_is_never_judged(query):
     assert all(i.status != "NOT_LISTED_VERIFY" for i in r.ingredients)  # 주의 성분에는 문제 성분만
 
 
-def test_unmatched_is_unknown_and_points_to_kada():
+def test_unmatched_is_unknown():
     r = check("처음보는약", "KR", "unknown")
     assert (r.matched_kind, r.status, r.ingredients) == ("unmatched", "UNKNOWN", [])
-    assert r.links[0].url.startswith("https://www.kada-ad.or.kr/")
 
 
-@pytest.mark.parametrize("country,route", [("KR", "kada"), ("kr", "kada"), ("US", "globaldro"), ("JP", "globaldro"),
-                                           ("TH", "local_unverified")])
-def test_country_routes(country, route):
+@pytest.mark.parametrize("country,route", [("KR", "kada"), ("kr", "kada"), ("US", "local_unverified"), ("TH", "local_unverified")])
+def test_country_routes_and_no_confirm_elsewhere_links(country, route):
+    """다른 기관에서 다시 확인하라는 링크는 붙이지 않는다(2026-10-17 사용자). 해외 제품이면 성분이 다를 수 있다는 사실만."""
     r = check("감기약", country, "unknown")
     assert r.route == route
-    assert any(link.label.startswith("KADA") for link in r.links)  # 해외에서도 KADA는 항상
-    assert ("Global DRO" in [link.label for link in r.links]) == (route == "globaldro")
+    assert not any(link.label.startswith(("KADA", "Global DRO")) for link in r.links)
 
-
-def test_korea_is_not_a_global_dro_country():
-    """Global DRO는 한국 제품을 다루지 않고 KADA 검색으로 안내한다(globaldro.com, 2026-10-08 확인)."""
-    assert "KR" not in TABLES["dro_countries.json"]["countries"]
 
 
 def test_supplements_always_warn_even_if_ingredient_not_listed():
@@ -129,10 +123,10 @@ def test_names_are_unique_across_tables():
 def test_unreviewed_lists_every_pending_entry():
     """§10 G2: 지금은 전 항목이 검토 전이다. 연구진이 reviewed:true로 바꾸면 이 목록에서 빠진다."""
     pending = substances.unreviewed()
-    # + dro_countries.json + 한글 제품명 조회표 + WADA 추출본(파일 단위 검토)
-    assert len(pending) == len(TABLES["substances.json"]["substances"]) + len(TABLES["products.json"]["products"]) + 3
+    # + 한글 제품명 조회표 + WADA 추출본(파일 단위 검토)
+    assert len(pending) == len(TABLES["substances.json"]["substances"]) + len(TABLES["products.json"]["products"]) + 2
     assert "kr_products.json.gz" in pending
-    assert "wada/prohibited_list_2026.json" in pending
+    assert "wada/processed/prohibited_list_2026.json" in pending
 
 
 def test_list_expires_matches_list_version():
@@ -185,10 +179,10 @@ def test_list_expiry_covers_both_tables():
     assert substances.list_expires().isoformat() == "2026-12-31"
 
 
-def test_conditional_status_gets_tue_link_and_own_step():
+def test_conditional_status_gets_own_step():
     r = check("Vilanterol", "KR", "in_competition")
     assert r.status == "CONDITIONAL"
-    assert any("TUE" in link.label for link in r.links)
+    assert not any("TUE" in link.label for link in r.links)
     assert any("조건(용량" in s for s in r.steps)
 
 
@@ -309,3 +303,25 @@ def test_stimulant_class_code_is_not_a_verdict():
                                       note=substances.NO_MATCH_NOTE, source_url=substances.HIRA_URL)
     assert substances.by_atc(unmatched, "N06BA09").status == "UNKNOWN"
     assert substances.by_atc(unmatched, "C03CA01").status == "PROHIBITED"
+
+
+# ---------- 한글 성분명 (약가마스터 제품명 안의 성분명) ----------
+
+@pytest.mark.parametrize("query,en,status", [
+    ("펜터민", "phentermine", "IN_COMPETITION_ONLY"),
+    ("메틸프레드니솔론", "methylprednisolone", "IN_COMPETITION_ONLY"),  # 예전엔 부분 일치로 prednisolone이 나왔음
+    ("스피로노락톤", "spironolactone", "PROHIBITED"),
+    ("툴로부테롤", "tulobuterol", "PROHIBITED"),
+    ("소마트로핀", "somatropin", "PROHIBITED"),
+])
+def test_korean_ingredient_name_found_inside_product_names(query, en, status):
+    r = check(query, "KR", "in_competition")
+    assert (r.matched_kind, r.status) == ("substance", status)
+    assert [i.name_en for i in r.ingredients] == [en]
+    assert r.data_sources and "공공누리" in r.data_sources[0].label
+
+
+@pytest.mark.parametrize("query", ["펜타닐", "에피네프린", "인슐린"])
+def test_korean_ingredient_name_shared_by_several_ingredients_is_not_judged(query):
+    """'펜타닐'은 레미펜타닐·수펜타닐 제품명에도 들어 있다. 성분을 하나로 특정할 수 없으면 판정하지 않는다."""
+    assert check(query, "KR", "in_competition").status == "UNKNOWN"

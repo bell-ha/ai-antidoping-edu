@@ -1,6 +1,5 @@
-# 실제 데이터와 접근 코드 (D23, §10)
-data/raw/
-data/access_codes.json
+# 실행하면 생기는 것 · 서버에만 있는 것(약물 DB, 운영 기록, 접근 코드) — 통째로 올리지 않는다 (D23, §10)
+var/
 logs/
 
 # Python
@@ -20,6 +19,6 @@ frontend/dist/
 # 비공개 폴더 — 원고·실데이터 유래 근거, 연구계획서, 연구진 인계 자료. 공개 저장소에 올리지 않는다
 private/
 
-# 약물 DB는 생성물(원천: data/substances.json·products.json·kr_products.json.gz·wada/). 이미지 빌드 때 새로 만든다
-data/drugs.sqlite
-data/drugs.tmp
+# 원본(raw) 자료는 받은 그대로 로컬에만 둔다(용량·재배포). 받는 곳과 지문은 각 raw/README.md
+knowledge/**/raw/*
+!knowledge/**/raw/README.md

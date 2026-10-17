@@ -74,7 +74,7 @@ export function Start({ onLogin }: { onLogin: (who: SessionInfo) => void }) {
       </main>
 
       <footer className="footer">
-        <p className="container caption">{personas.length > 0 && "합성 데이터 · "}연구용 프로토타입 · 최종 확인은 KADA</p>
+        <p className="container caption">{personas.length > 0 && "합성 데이터 · "}연구용 프로토타입</p>
       </footer>
     </>
   );

@@ -6,6 +6,7 @@ import { HOME_BY_ROLE, SessionContext, TABS_BY_ROLE } from "./session";
 import { Architecture } from "./pages/Architecture";
 import { Check } from "./pages/Check";
 import { Learn } from "./pages/Learn";
+import { Library } from "./pages/Library";
 import { Performance } from "./pages/Performance";
 import { Start } from "./pages/Start";
 
@@ -35,6 +36,8 @@ export default function App() {
           {tabs.includes("performance") && <Route path="/performance" element={<Performance />} />}
           <Route path="/check" element={<Check />} />
           <Route path="/learn" element={<Learn />} />
+          <Route path="/library" element={<Library />} />
+          <Route path="/library/:docId" element={<Library />} />
           <Route path="/architecture" element={<Architecture />} />
           <Route path="*" element={<Navigate to={HOME_BY_ROLE[who.role]} replace />} />
         </Route>

@@ -1,6 +1,6 @@
-import { CircleHelp, ExternalLink, Send, Stethoscope } from "lucide-react";
+import { BookOpen, CircleHelp, ExternalLink, Send } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { useLocation } from "react-router";
+import { Link, useLocation } from "react-router";
 import { api, type ChatMessage, type ChatResponse, type CheckResult, type Citation } from "../api";
 import { Dialog } from "../components/Dialog";
 import { useSession } from "../session";
@@ -42,7 +42,7 @@ export function Learn() {
   const send = (question: string) => {
     if (!question.trim() || pending) return;
     const history: ChatMessage[] = turns.flatMap((t) =>
-      t.response ? [{ role: "user" as const, content: t.question }, { role: "assistant" as const, content: t.response.answer }] : [],
+      t.response ? [{ role: "user" as const, content: t.question }, { role: "assistant" as const, content: t.response.answer, token: t.response.token }] : [],
     );
     setTurns((ts) => [...ts, { question }]);
     setDraft("");
@@ -126,8 +126,11 @@ export function Learn() {
             <b>{SOURCE_LABEL[source.source]}</b>
           </span>
           <h2 className="heading">{source.title}</h2>
-          <a className="btn btn-block" href={source.url} target="_blank" rel="noreferrer">
-            원문 보기 <ExternalLink size={18} />
+          <Link className="btn btn-block" to={`/library/${source.chunk_id}`} onClick={() => setSource(null)}>
+            교육 자료에서 읽기 <BookOpen size={18} />
+          </Link>
+          <a className="btn-sub" href={source.url} target="_blank" rel="noreferrer">
+            원문 사이트 <ExternalLink size={14} />
           </a>
         </Dialog>
       )}
@@ -139,13 +142,7 @@ function Answer({ r, onSource }: { r: ChatResponse; onSource: (c: Citation) => v
   return (
     <div className="answer-block">
       {/* 고정 응답·서버 문구는 본문에 이미 안내가 있으므로 배너를 붙이지 않는다 */}
-      {r.kind === "answer" && r.refer_to_expert && (
-        <div className="notice notice-caution">
-          <Stethoscope size={18} />
-          <span>전문가 확인이 필요한 질문이에요. KADA 또는 팀 닥터에게 확인하세요.</span>
-        </div>
-      )}
-      {r.kind === "answer" && !r.refer_to_expert && r.out_of_scope && (
+      {r.kind === "answer" && r.out_of_scope && (
         <div className="notice notice-neutral">
           <CircleHelp size={18} />
           <span>교육 자료 범위 밖의 질문이에요.</span>

@@ -58,6 +58,20 @@ export interface AthleteProfile {
   checks: { tag: ProfileTag; label: string; met: boolean; detail: string }[];
   recommendations: Recommendation[];
   residuals: ResidualPoint[];
+  model_result: ModelResult | null; // 연구진 모델 결과 모양(D35)
+}
+
+export interface ModelResult {
+  athlete_id: string;
+  model_version: string;
+  source: "researchers" | "platform_temporary" | "synthetic" | "none";
+  prediction: { target: "total"; unit: "kg"; value: number | null };
+  observed: { value: number | null };
+  residual_observed_minus_predicted: number | null;
+  history_count: number;
+  prediction_interval_kg: number | null;
+  data_warnings: string[];
+  profile_purpose: string;
 }
 
 export interface ResidualPoint {
@@ -142,6 +156,31 @@ export interface CheckResult {
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  token?: string; // assistant 턴: 서버가 그 답을 줄 때 붙인 서명(D33)
+}
+
+export interface LibrarySection {
+  id: string;
+  heading: string;
+  text: string;
+}
+
+export interface LibraryDocSummary {
+  doc_id: string;
+  title: string;
+  source: string;
+  url: string;
+  version: string;
+  roles: Role[];
+  topic: string | null;
+  summary: string | null;
+  reviewed: boolean;
+  section_headings: string[];
+  length: number;
+}
+
+export interface LibraryDoc extends Omit<LibraryDocSummary, "section_headings" | "length"> {
+  sections: LibrarySection[];
 }
 
 export interface Citation {
@@ -157,6 +196,7 @@ export interface ChatResponse {
   citations: Citation[];
   refer_to_expert: boolean;
   out_of_scope: boolean;
+  token: string;
 }
 
 export class ApiError extends Error {
@@ -205,6 +245,9 @@ export const api = {
   demoScenarios: () => call<DemoScenarios>("GET", "/api/demo/examples"),
   demoExample: (athleteId: string) => call<ComputeRequest>("GET", `/api/demo/examples/${encodeURIComponent(athleteId)}`),
   check: (query: string, country: string, timing: Timing) => call<CheckResult>("POST", "/api/check", { query, country, timing }),
+  library: () => call<LibraryDocSummary[]>("GET", "/api/library"),
+  libraryDoc: (docId: string) => call<LibraryDoc>("GET", `/api/library/${encodeURIComponent(docId)}`),
+  survey: () => call<{ url: string }>("GET", "/api/survey"),
   chat: (messages: ChatMessage[], check_result?: CheckResult) =>
     call<ChatResponse>("POST", "/api/chat", { messages, context: check_result ? { check_result } : null }),
 };

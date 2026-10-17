@@ -1,0 +1,9 @@
+# 교육 프로그램 단계 기본값 (D37). 관리자가 화면에서 바꾸면 운영 DB의 값이 우선한다.
+# 줄 세우기: 연구진 모델의 "관측 − 예측"이 큰 선수(예측보다 기록이 많이 오른 선수)일수록 높은 단계.
+# 모델 결과가 없는 선수(기록 부족 등)는 줄 맨 뒤 → 가장 낮은 단계. 전체 인원을 단계 수로 고르게 나눈다.
+tiers:
+  - {tier: 1, lessons_per_week: 3,  quiz_probability: 0.2,  quiz_questions: 1}
+  - {tier: 2, lessons_per_week: 6,  quiz_probability: 0.35, quiz_questions: 2}
+  - {tier: 3, lessons_per_week: 9,  quiz_probability: 0.5,  quiz_questions: 2}
+  - {tier: 4, lessons_per_week: 12, quiz_probability: 0.65, quiz_questions: 3}
+  - {tier: 5, lessons_per_week: 15, quiz_probability: 0.8,  quiz_questions: 3}

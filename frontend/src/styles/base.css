@@ -643,6 +643,11 @@ button.card-soft:active {
   justify-content: center;
 }
 
+.records-remove-cell {
+  display: flex;
+  justify-content: center;
+}
+
 .records-remove:disabled {
   opacity: 0.3;
   cursor: default;
@@ -846,7 +851,7 @@ button.card-soft:active {
     font-weight: 500;
   }
 
-  .records-remove {
+  .records-remove-cell {
     position: absolute;
     top: 6px;
     right: 6px;
@@ -1252,5 +1257,94 @@ button.card-soft:active {
     font-size: var(--fs-caption);
     color: var(--muted);
     margin-top: 6px;
+  }
+}
+
+/* ---------- 교육 자료 ---------- */
+
+.lib-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--gap);
+}
+
+.lib-card {
+  text-decoration: none;
+  color: inherit;
+  gap: 8px;
+  transition: border-color 0.15s ease;
+}
+
+.lib-card:hover {
+  border-color: var(--ink);
+}
+
+.lib-card strong {
+  font-size: var(--fs-heading);
+  color: var(--ink);
+}
+
+.lib-toc {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: var(--fs-label);
+}
+
+.lib-toc a {
+  color: var(--body);
+  text-decoration: none;
+}
+
+.lib-toc a:hover,
+.lib-toc a[aria-current] {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+.lib-section {
+  scroll-margin-top: 88px;
+}
+
+.lib-section.is-target {
+  border-color: var(--app-ink);
+  box-shadow: 0 0 0 2px var(--app-line);
+}
+
+.lib-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  line-height: 1.75;
+  max-width: 68ch;
+}
+
+.lib-body ul {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lib-body a {
+  overflow-wrap: anywhere;
+}
+
+.lib-source {
+  color: var(--muted);
+}
+
+@media (max-width: 1023px) {
+  .lib-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .lib-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

@@ -1,5 +1,6 @@
 import { LogOut } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { api } from "../api";
 import { NavLink, Outlet } from "react-router";
 import { TABS_BY_ROLE, useSession, type TabKey } from "../session";
 import { Dialog } from "./Dialog";
@@ -8,12 +9,18 @@ const NAV: Record<TabKey, { path: string; label: string }> = {
   performance: { path: "/performance", label: "경기력" },
   check: { path: "/check", label: "약물 확인" },
   learn: { path: "/learn", label: "AI 교육" },
+  library: { path: "/library", label: "교육 자료" },
   architecture: { path: "/architecture", label: "시스템 구성" },
 };
 
 export function Shell() {
   const { who, demo, logout } = useSession();
   const [confirming, setConfirming] = useState(false);
+  const [survey, setSurvey] = useState("");
+
+  useEffect(() => {
+    api.survey().then((s) => setSurvey(s.url), () => setSurvey(""));
+  }, []);
 
   return (
     <>
@@ -41,7 +48,17 @@ export function Shell() {
       </main>
 
       <footer className="footer">
-        <p className="container caption">{demo && "합성 데이터 · "}연구용 프로토타입 · 최종 확인은 KADA</p>
+        <p className="container caption">
+          {demo && "합성 데이터 · "}연구용 프로토타입
+          {survey && (
+            <>
+              {" · "}
+              <a href={survey} target="_blank" rel="noreferrer">
+                연구 설문 참여하기
+              </a>
+            </>
+          )}
+        </p>
       </footer>
 
       {confirming && (
