@@ -1,12 +1,12 @@
-# 실행하면 생기는 것 · 서버에만 있는 것(약물 DB, 운영 기록, 접근 코드) — 통째로 올리지 않는다 (D23, §10)
+# 실행하면 생기는 것(운영 DB, 약물 DB, 더미 로그인 코드) — 통째로 올리지 않는다 (D37)
 var/
-logs/
 
 # Python
 __pycache__/
 *.pyc
 .venv/
 .pytest_cache/
+*.egg-info/
 
 # Node
 node_modules/

@@ -2,7 +2,7 @@
 
 mock   : 키 없이 UI 개발용. 첫 근거를 인용하는 고정 응답. guard·S5는 이 모드로 검증되지 않는다.
 live   : 매번 호출.
-record : 호출하고 결과를 backend/demo/llm_cache/에 저장.
+record : 호출하고 결과를 var/llm_cache/(config.LLM_CACHE_DIR)에 저장.
 replay : 캐시만 사용. 없으면 CacheMiss.
 
 정상 답이 아닌 경우는 예외로 알린다. 호출하는 쪽이 서버 고정 문구로 바꾼다.

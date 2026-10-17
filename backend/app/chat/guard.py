@@ -8,12 +8,8 @@
 """
 
 import re
-from functools import cache
 from typing import Literal
 
-import yaml
-
-from app import config
 from app.schemas import ChatResponse, CheckResult, Chunk, Citation, LlmAnswer
 
 NO_EVIDENCE = "교육 자료에서 이 질문에 대한 근거를 찾지 못했어요."

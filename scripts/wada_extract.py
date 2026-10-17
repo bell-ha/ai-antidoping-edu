@@ -1,6 +1,6 @@
 """WADA 금지목록 PDF → 구조화 JSON (D10 조회표의 원천 자료).
 
-    <PyMuPDF·PyYAML이 있는 가상환경>/bin/python analysis/wada_extract.py --pdf knowledge/drugs/wada/raw/2026list_en_final_clean_september_2025.pdf \\
+    <PyMuPDF·PyYAML이 있는 가상환경>/bin/python scripts/wada_extract.py --pdf knowledge/drugs/wada/raw/2026list_en_final_clean_september_2025.pdf \\
         --year 2026 --url <원문 URL> --manual knowledge/drugs/wada/processed/wada_manual_2026.yaml --out knowledge/drugs/wada/processed/prohibited_list_2026.json
 
 WADA는 금지목록을 PDF로만 배포한다(기계용 형식 없음). 원문 PDF는 레포에 넣지 않고 sha256과 URL만 기록한다.
@@ -433,7 +433,7 @@ def main() -> None:
         list_version=args.year, list_effective=f"{args.year}-01-01", list_expires=f"{args.year}-12-31",
         source_url=args.url,
         source_sha256=hashlib.sha256(args.pdf.read_bytes()).hexdigest(),
-        extracted_by=f"analysis/wada_extract.py (PyMuPDF 좌표 기반 자동 추출) + {args.manual.as_posix().split('analysis/')[-1]} (손 보정)",
+        extracted_by=f"scripts/wada_extract.py (PyMuPDF 좌표 기반 자동 추출) + {args.manual.name} (손 보정)",
         reviewed=False,
         caution="닫힌 목록이 아님: 여기 없는 이름을 허용으로 해석하지 말 것. 조건은 항목의 condition과 sections[*].footnotes.",
         section_conditions=manual["section_conditions"],

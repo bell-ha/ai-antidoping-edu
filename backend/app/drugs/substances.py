@@ -1,8 +1,8 @@
 """약물·보충제 확인 (D10, D11, D12). 판정은 조회표가 하고 LLM은 설명만 한다.
 
 조회표: knowledge/drugs/curated/substances.json(성분, 손으로 정리), knowledge/drugs/curated/products.json(제품·제품군),
-knowledge/drugs/wada/processed/prohibited_list_<연도>.json(WADA 금지목록 PDF 자동 추출, analysis/wada_extract.py),
-knowledge/drugs/kr_source/processed/kr_products.json.gz(한글 제품명 → 영문 성분명, 심평원 약가마스터, analysis/kr_drug_names.py).
+knowledge/drugs/wada/processed/prohibited_list_<연도>.json(WADA 금지목록 PDF 자동 추출, scripts/wada_extract.py),
+knowledge/drugs/kr_source/processed/kr_products.json.gz(한글 제품명 → 영문 성분명, 심평원 약가마스터, scripts/kr_drug_names.py).
 찾는 순서: 손 조회표의 성분 → 손 조회표의 제품군 → 한글 제품명(약가마스터) → 손 조회표의 제품 → WADA 추출본 →
 한글 성분명(약가마스터 제품명 안에 들어 있는 경우) → 부분 일치(판정 없이 주의 성분만).
 - 한글 제품명은 정확히 일치 → 앞부분 일치. 후보들의 성분 구성이 서로 다르면 판정하지 않는다(category + 후보 목록).

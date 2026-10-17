@@ -1,7 +1,5 @@
 -- 운영 DB (var/app.sqlite, Git 제외). D37.
 -- 선수 이름·번호·출생연도·경기 기록·질문 원문이 들어간다. 로그인 코드는 HMAC 해시만.
-CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-
 CREATE TABLE IF NOT EXISTS admins (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
