@@ -431,7 +431,8 @@ def check(query: str, country: str, timing: Timing) -> CheckResult:
     kind, supplement, reviewed, note, extra = "unmatched", False, False, None, []
     candidates: list[ProductCandidate] = []
     sources: list[DataSource] = []
-    kr = None if (hit and hit[0] == "substance") or (hand_product and hand_product["kind"] == "category") \
+    # 한약재(herbal: true, KADA 한약재 가이드라인)는 약가마스터의 같은 이름 제품보다 먼저 — 예: "마황"
+    kr = None if (hit and hit[0] == "substance") or (hand_product and (hand_product["kind"] == "category" or hand_product.get("herbal"))) \
         else _kr_lookup(query)
     if hit and hit[0] == "substance":
         kind = "substance"

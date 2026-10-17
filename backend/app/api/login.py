@@ -100,7 +100,7 @@ def logout(request: Request) -> None:
 @router.get("/demo/codes", response_model=list[DemoCode])
 def demo_codes() -> list[DemoCode]:
     """데모에서 로그인을 쉽게: scripts/seed_dummy.py가 남긴 var/dummy_codes.csv. 시범(DEMO_MODE=0)에서는 없다."""
-    path = config.VAR / "dummy_codes.csv"
+    path = config.APP_DB.parent / "dummy_codes.csv"
     if not config.DEMO_MODE or not path.exists():
         raise HTTPException(404)
     with path.open(encoding="utf-8") as f:

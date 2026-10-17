@@ -1419,3 +1419,11 @@ button.chip { cursor: pointer; }
 .page-head-row { display: flex; flex-direction: row; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
 .data-table .icon-btn { background: transparent; color: var(--muted); border: 1px solid var(--hairline); width: 32px; height: 32px; }
 .data-table .icon-btn:hover { color: var(--st-prohibited); border-color: var(--st-prohibited); }
+.lesson-text { flex: 1; display: flex; gap: 12px; align-items: baseline; min-width: 0; }
+@media (max-width: 767px) {
+  .lesson-text { flex-direction: column; gap: 2px; }
+  .lesson-cat { min-width: 0; }
+  .nav-links { overflow-x: auto; scrollbar-width: none; white-space: nowrap; max-width: 100%; }
+  .nav-links::-webkit-scrollbar { display: none; }
+  .home-actions .action-card { padding: 20px; }
+}

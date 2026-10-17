@@ -611,6 +611,16 @@
       "note": "S9는 모든 당질코르티코이드를 금지(이 이름은 목록에 예시로 나오지 않음). 경기기간 중 주사·경구·직장 투여가 금지이고, 흡입·국소 사용은 허가 용량 안에서 가능.",
       "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
       "reviewed": false
+    },
+    "strychnine": {
+      "name_ko": "스트리크닌",
+      "name_en": "strychnine",
+      "aliases": [],
+      "status": "IN_COMPETITION_ONLY",
+      "wada_class": "S6.B",
+      "note": null,
+      "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
+      "reviewed": false
     }
   }
 }

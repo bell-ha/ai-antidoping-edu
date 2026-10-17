@@ -3,7 +3,7 @@
     cd backend && .venv/bin/python ../scripts/seed_dummy.py
 
 - 운영 DB(var/app.sqlite)에 선수가 이미 있으면 아무것도 하지 않는다(덮어쓰지 않음).
-- 관리자 1명 + 남자 역도 선수 100명. 로그인 코드는 var/dummy_codes.csv에만 남는다(DB에는 해시만).
+- 관리자 1명 + 남자 역도 선수 100명. 로그인 코드는 운영 DB 옆 dummy_codes.csv(로컬은 var/)에만 남는다(DB에는 해시만).
 - 기록이 1~2개뿐인 선수도 섞는다 → 모델 결과가 없어 가장 낮은 단계.
 - 마지막 대회에서 기록이 크게 오른 선수, 내려간 선수도 섞는다 → 줄 세우기가 실제로 갈리게.
 """
@@ -66,7 +66,7 @@ def _athlete(i: int, rng: random.Random) -> dict:
 
 def main() -> None:
     rng = random.Random()
-    out = config.VAR / "dummy_codes.csv"
+    out = config.APP_DB.parent / "dummy_codes.csv"  # 운영 DB 옆(Docker에서도 볼륨에 함께 남게)
     with db.connect() as con:
         if con.execute("SELECT COUNT(*) FROM athletes").fetchone()[0]:
             sys.exit(f"이미 선수가 있어요. 다시 만들려면 {config.APP_DB}를 지우고 실행하세요.")

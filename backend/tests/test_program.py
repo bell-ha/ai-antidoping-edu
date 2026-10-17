@@ -163,7 +163,7 @@ def test_future_record_is_rejected(people):
 def test_demo_codes_only_in_demo_mode(monkeypatch, tmp_path):
     from app import config
     (tmp_path / "dummy_codes.csv").write_text("number,name,role,code\nADMIN,관리자,admin,ADMIN-x\n", encoding="utf-8")
-    monkeypatch.setattr(config, "VAR", tmp_path)
+    monkeypatch.setattr(config, "APP_DB", tmp_path / "app.sqlite")
     c = TestClient(app)
     assert c.get("/api/demo/codes").json()[0]["code"] == "ADMIN-x"
     monkeypatch.setattr(config, "DEMO_MODE", False)

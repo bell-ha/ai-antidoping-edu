@@ -88,12 +88,11 @@ def test_supplements_always_warn_even_if_ingredient_not_listed():
     assert any("성분표에 없는" in s for s in r.steps)
 
 
-def test_herbal_medicine_is_not_judged():
-    """KADA는 한약 성분을 판정하지 않는다 → 한약·마황은 UNKNOWN + KADA 한약 안내."""
-    for q in ("한약", "마황"):
-        r = check(q, "KR", "in_competition")
-        assert r.status == "UNKNOWN"
-        assert any("한약" in link.label for link in r.links)
+def test_herbal_medicine_in_general_is_not_judged():
+    """한약 일반은 처방마다 달라 판정하지 않는다(UNKNOWN). 가이드라인의 한약재 11종은 따로 판정(아래)."""
+    r = check("한약", "KR", "in_competition")
+    assert r.status == "UNKNOWN"
+    assert any("한약" in link.label for link in r.links)
 
 
 def test_weightlifting_is_not_a_beta_blocker_sport():
@@ -325,3 +324,11 @@ def test_korean_ingredient_name_found_inside_product_names(query, en, status):
 def test_korean_ingredient_name_shared_by_several_ingredients_is_not_judged(query):
     """'펜타닐'은 레미펜타닐·수펜타닐 제품명에도 들어 있다. 성분을 하나로 특정할 수 없으면 판정하지 않는다."""
     assert check(query, "KR", "in_competition").status == "UNKNOWN"
+
+
+@pytest.mark.parametrize("herb, status, ingredient", [("마황", "THRESHOLD", "ephedrine"), ("부자", "PROHIBITED", "higenamine"),
+                                                      ("마전자", "IN_COMPETITION_ONLY", "strychnine")])
+def test_kada_herbs_are_judged_by_detected_ingredients(herb, status, ingredient):
+    """KADA 한약재 가이드라인(KIST 2024 분석)의 11종: 검출 성분으로 판정."""
+    r = check(herb, "KR", "unknown")
+    assert r.status == status and ingredient in [i.name_en for i in r.ingredients]

@@ -58,8 +58,10 @@ export function Home() {
           {home.lessons.map((l) => (
             <Link key={l.lesson_id} className={`lesson-row${l.completed ? " done" : ""}`} to={`/lesson/${l.lesson_id}`}>
               {l.completed ? <CircleCheck size={18} /> : <span className="lesson-dot" />}
-              <span className="lesson-cat">{l.category}</span>
-              <span className="lesson-title">{l.title}</span>
+              <span className="lesson-text">
+                <span className="lesson-cat">{l.category}</span>
+                <span className="lesson-title">{l.title}</span>
+              </span>
               <ArrowRight size={16} />
             </Link>
           ))}
