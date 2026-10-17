@@ -1,7 +1,7 @@
 # WADA 2026 금지목록 추출본 검토 기록
 
 대상: [knowledge/drugs/wada/processed/prohibited_list_2026.json](../knowledge/drugs/wada/processed/prohibited_list_2026.json)
-만든 방법: [analysis/wada_extract.py](../analysis/wada_extract.py)(원문 PDF 자동 추출) + [knowledge/drugs/wada/processed/wada_manual_2026.yaml](../knowledge/drugs/wada/processed/wada_manual_2026.yaml)(손 보정)
+만든 방법: [scripts/wada_extract.py](../scripts/wada_extract.py)(원문 PDF 자동 추출) + [knowledge/drugs/wada/processed/wada_manual_2026.yaml](../knowledge/drugs/wada/processed/wada_manual_2026.yaml)(손 보정)
 원문: WADA 2026 Prohibited List(영문), sha256 `f0b3fcb0dc48477868983eaddac08c132b5c079d941eaa8d40aa6ff9064ece5a`
 
 **상태: `reviewed: false`.** 아래 1~2는 AI가 한 검토입니다. AI가 만든 추출본을 AI가 검토했으므로 독립 검토가 아닙니다. 사람 검토자가 3의 표본을 원문과 대조하고 4에 서명해야 `reviewed: true`로 바꿉니다. 그전에는 시범 서버(`DEMO_MODE=0`)가 시작되지 않습니다(G2).

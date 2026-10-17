@@ -1,6 +1,6 @@
 # 교육 레슨
 
-`lessons/<대분류>/<id>.md` — 레슨 하나 = 파일 하나 = 텍스트 설명 + 객관식 퀴즈 1문항. 목표 300개(대분류 13개).
+`lessons/<대분류>/<id>.md` — 레슨 하나 = 파일 하나 = 텍스트 설명 + 객관식 퀴즈 1문항. 300개(대분류 13개, A~M). 선수에게는 A→M, 대분류 안에서는 order 순서로 배정된다.
 `raw/`는 근거 원본(Git 제외, 목록은 raw/README.md).
 
 ```yaml
@@ -13,8 +13,8 @@ source: KADA             # 근거 기관: WADA · KADA · ADEL
 reference: ...           # 근거 문서 이름·조항(raw에 있는 것)
 url: ...
 version: 2026
-roles: [athlete, support]
-topic: list              # 열람 화면 묶음: basics · violations · list · testing · roles
+roles: [athlete]
+topic: list              # 관리자 '교육 자료' 화면의 묶음(basics · violations · list · testing · roles). 선수 화면은 category로 묶는다
 summary: ...             # 한 줄 요약
 reviewed: false          # 사람이 검토하면 true
 quiz:
