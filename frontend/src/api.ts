@@ -1,68 +1,25 @@
 // backend/app/schemas.py와 같은 모양. 바꾸면 양쪽을 같이 고친다.
 
-export type Role = "athlete" | "coach" | "support";
-export type ProfileTag = "rapid_improvement" | "decline" | "weight_change" | "high_level" | "baseline";
+export type Role = "athlete" | "admin";
 export type CheckStatus = "PROHIBITED" | "IN_COMPETITION_ONLY" | "THRESHOLD" | "CONDITIONAL" | "NOT_LISTED_VERIFY" | "UNKNOWN";
 export type Timing = "in_competition" | "out_of_competition" | "unknown";
+export type CompetitionCategory = "world" | "continent" | "other_international" | "domestic";
 
 export interface SessionInfo {
   role: Role;
-  athlete_id: string | null;
+  athlete_id: number | null;
   label: string;
 }
 
-export interface DemoPersona {
+export interface DemoCode {
+  number: string;
+  name: string;
+  role: Role;
   code: string;
-  info: SessionInfo;
-  description: string;
-}
-
-export interface RecordPoint {
-  date: string;
-  competition_category: CompetitionCategory;
-  weight_class: number;
-  body_weight: number;
-  snatch: number;
-  clean_jerk: number;
-  total: number;
-}
-
-export interface ForecastPoint {
-  date: string;
-  mean: number;
-  lo: number;
-  hi: number;
-}
-
-export interface Recommendation {
-  content_id: string;
-  title: string;
-  summary: string;
-  suggested_question: string;
-}
-
-export interface AthleteProfile {
-  athlete_id: string;
-  sport: string;
-  sex: "M" | "F";
-  age: number;
-  weight_class: number;
-  competition_category: CompetitionCategory;
-  model: "rnn" | "synthetic_trend" | "none";
-  notices: string[];
-  records: RecordPoint[];
-  forecast: ForecastPoint[];
-  tags: ProfileTag[];
-  tag_labels: string[];
-  reasons: { tag: ProfileTag; text: string }[];
-  checks: { tag: ProfileTag; label: string; met: boolean; detail: string }[];
-  recommendations: Recommendation[];
-  residuals: ResidualPoint[];
-  model_result: ModelResult | null; // 연구진 모델 결과 모양(D35)
+  tier: number | null;
 }
 
 export interface ModelResult {
-  athlete_id: string;
   model_version: string;
   source: "researchers" | "platform_temporary" | "synthetic" | "none";
   prediction: { target: "total"; unit: "kg"; value: number | null };
@@ -71,18 +28,7 @@ export interface ModelResult {
   history_count: number;
   prediction_interval_kg: number | null;
   data_warnings: string[];
-  profile_purpose: string;
 }
-
-export interface ResidualPoint {
-  date: string;
-  observed: number;
-  predicted: number;
-  diff_kg: number;
-}
-
-
-export type CompetitionCategory = "world" | "continent" | "other_international" | "domestic";
 
 export interface RecordInput {
   date: string; // "YYYY-MM"
@@ -92,38 +38,99 @@ export interface RecordInput {
   clean_jerk: number;
 }
 
-export interface DemoScenario {
-  id: string;
-  label: string;
-  description: string;
-  sex: "M" | "F";
-  expect: ProfileTag[];
-  expect_labels: string[];
-  warnings: ("ratio" | "jump")[];
+export interface RecordRow extends RecordInput {
+  id: number;
+  weight_class: number;
+  total: number;
 }
 
-export interface DemoScenarios {
-  model: "synthetic_trend" | "rnn";
-  scenarios: DemoScenario[];
+// ---------- 교육 프로그램 ----------
+
+export interface TierSetting {
+  tier: number;
+  lessons_per_week: number;
+  quiz_probability: number;
+  quiz_questions: number;
 }
 
-export interface ComputeRequest {
-  sex: "M" | "F";
+export interface ProgramSettings {
+  tiers: TierSetting[];
+}
+
+export interface QuizQuestion {
+  lesson_id: string;
+  question: string;
+  choices: string[];
+}
+
+export interface QuizResult {
+  lesson_id: string;
+  correct: boolean;
+  answer: number;
+  explanation: string;
+}
+
+export interface LessonCard {
+  lesson_id: string;
+  title: string;
+  category: string;
+  completed: boolean;
+}
+
+export interface LessonView {
+  lesson_id: string;
+  title: string;
+  category: string;
+  sections: LibrarySection[];
+  quiz: QuizQuestion;
+  completed: boolean;
+}
+
+export interface AthleteHome {
+  name: string;
+  week_start: string;
+  lessons: LessonCard[];
+  completed_total: number;
+  lesson_total: number;
+  surprise_quiz: QuizQuestion[];
+}
+
+export interface AthleteRow {
+  id: number;
+  number: string;
+  name: string;
   birth_year: number;
-  records: RecordInput[];
-  confirmed?: boolean;
+  weight_class: number | null;
+  tier: number | null;
+  rank: number | null;
+  residual: number | null;
+  records: number;
+  lessons_completed: number;
+  quiz_correct: number;
+  quiz_wrong: number;
+  questions: number;
+  last_visit: string | null;
 }
 
-export interface InputWarning {
-  row: number | null;
-  field: string | null;
-  code: "ratio" | "jump";
-  message: string;
+export interface AthleteDetail {
+  athlete: AthleteRow;
+  records: RecordRow[];
+  model_result: ModelResult | null;
+  lessons: { lesson_id: string; title: string; week_start: string; completed_at: string | null }[];
+  quizzes: { lesson_id: string; title: string; context: "lesson" | "surprise"; choice: number; correct: boolean; at: string }[];
+  chats: { question: string; answer: string; at: string }[];
 }
 
-export interface ComputeResponse {
-  profile: AthleteProfile | null;
-  warnings: InputWarning[];
+export interface Overview {
+  athletes: AthleteRow[];
+  settings: ProgramSettings;
+  model_version: string;
+}
+
+export interface IssuedCode {
+  athlete_id: number;
+  number: string;
+  code: string;
 }
 
 export interface Ingredient {
@@ -171,7 +178,7 @@ export interface LibraryDocSummary {
   source: string;
   url: string;
   version: string;
-  roles: Role[];
+  roles: string[];
   topic: string | null;
   summary: string | null;
   reviewed: boolean;
@@ -210,13 +217,7 @@ export class ApiError extends Error {
 
 // 422(pydantic) 오류를 사람이 읽을 문장으로. 행 번호는 1부터.
 function validationMessage(errors: { loc: (string | number)[]; msg: string }[]): string {
-  return errors
-    .map((e) => {
-      const row = e.loc.indexOf("records") >= 0 ? e.loc[e.loc.indexOf("records") + 1] : undefined;
-      const msg = e.msg.replace(/^Value error, /, "");
-      return typeof row === "number" ? `${row + 1}번째 기록: ${msg}` : msg;
-    })
-    .join(" / ");
+  return errors.map((e) => e.msg.replace(/^Value error, /, "")).join(" / ");
 }
 
 async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -240,14 +241,27 @@ export const api = {
   login: (code: string) => call<SessionInfo>("POST", "/api/session", { code }),
   whoami: () => call<SessionInfo>("GET", "/api/session"),
   logout: () => call<void>("DELETE", "/api/session"),
-  personas: () => call<DemoPersona[]>("GET", "/api/demo/personas"),
-  compute: (req: ComputeRequest) => call<ComputeResponse>("POST", "/api/profile/compute", req),
-  demoScenarios: () => call<DemoScenarios>("GET", "/api/demo/examples"),
-  demoExample: (athleteId: string) => call<ComputeRequest>("GET", `/api/demo/examples/${encodeURIComponent(athleteId)}`),
-  check: (query: string, country: string, timing: Timing) => call<CheckResult>("POST", "/api/check", { query, country, timing }),
+  demoCodes: () => call<DemoCode[]>("GET", "/api/demo/codes"),
+  // 선수
+  home: () => call<AthleteHome>("GET", "/api/athlete/home"),
+  lesson: (id: string) => call<LessonView>("GET", `/api/athlete/lessons/${encodeURIComponent(id)}`),
+  answerLesson: (id: string, choice: number) =>
+    call<QuizResult>("POST", `/api/athlete/lessons/${encodeURIComponent(id)}/answer`, { lesson_id: id, choice }),
+  answerSurprise: (id: string, choice: number) => call<QuizResult>("POST", "/api/athlete/quiz/answer", { lesson_id: id, choice }),
+  survey: () => call<{ url: string }>("GET", "/api/athlete/survey"),
+  // 관리자
+  overview: () => call<Overview>("GET", "/api/admin/overview"),
+  athlete: (id: number) => call<AthleteDetail>("GET", `/api/admin/athletes/${id}`),
+  createAthlete: (name: string, birth_year: number) => call<IssuedCode>("POST", "/api/admin/athletes", { name, birth_year }),
+  reissueCode: (id: number) => call<IssuedCode>("POST", `/api/admin/athletes/${id}/code`),
+  addRecord: (id: number, r: RecordInput) => call<AthleteDetail>("POST", `/api/admin/athletes/${id}/records`, r),
+  deleteRecord: (id: number, recordId: number) => call<AthleteDetail>("DELETE", `/api/admin/athletes/${id}/records/${recordId}`),
+  saveSettings: (s: ProgramSettings) => call<Overview>("PUT", "/api/admin/settings", s),
+  rerank: () => call<Overview>("POST", "/api/admin/rerank"),
+  check: (query: string, country: string, timing: Timing) => call<CheckResult>("POST", "/api/admin/check", { query, country, timing }),
   library: () => call<LibraryDocSummary[]>("GET", "/api/library"),
   libraryDoc: (docId: string) => call<LibraryDoc>("GET", `/api/library/${encodeURIComponent(docId)}`),
-  survey: () => call<{ url: string }>("GET", "/api/survey"),
+  // 공통
   chat: (messages: ChatMessage[], check_result?: CheckResult) =>
     call<ChatResponse>("POST", "/api/chat", { messages, context: check_result ? { check_result } : null }),
 };

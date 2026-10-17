@@ -66,3 +66,15 @@ def test_token_from_another_session_is_rejected(llm, people):
         {"role": "user", "content": "질문"}, {"role": "assistant", "content": first["answer"], "token": first["token"]},
         {"role": "user", "content": "다음"}]})
     assert r.status_code == 422
+
+
+def test_only_last_two_turns_are_sent(llm, people):
+    a = people.login("athlete")
+    messages = []
+    for i in range(4):
+        messages.append({"role": "user", "content": f"질문{i}"})
+        r = a.post("/api/chat", json={"messages": messages}).json()
+        messages.append({"role": "assistant", "content": r["answer"], "token": r["token"]})
+    a.post("/api/chat", json={"messages": [*messages, {"role": "user", "content": "마지막"}]})
+    sent = llm[-1]
+    assert len(sent) == 5 and sent[0]["content"] == "질문2"

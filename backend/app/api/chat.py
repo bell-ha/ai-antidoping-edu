@@ -20,6 +20,7 @@ from app.schemas import ChatMessage, ChatRequest, ChatResponse, Chunk, SessionIn
 
 router = APIRouter(prefix="/api")
 log = logging.getLogger(__name__)
+HISTORY_TURNS = 2  # AI에 다시 보내는 이전 대화(질문+답) 수. 토큰 절약(2026-10-18 사용자)
 
 
 def sign(request: Request, text: str) -> str:
@@ -74,7 +75,7 @@ def _answer(body: ChatRequest, who: SessionInfo) -> tuple[ChatResponse, str]:
 
     checks = drugs.lookup(question)
     chunks = retrieve(question)
-    history = [m.model_dump(exclude={"token"}) for m in body.messages[:-1]]
+    history = [m.model_dump(exclude={"token"}) for m in body.messages[:-1][-2 * HISTORY_TURNS:]]
     messages = [*history, {"role": "user", "content": f"{prompts.evidence_block(chunks, checks)}\n\n질문: {question}"}]
     try:
         answer = client.generate(prompts.system_prompt(who.role), messages, [c.id for c in chunks])

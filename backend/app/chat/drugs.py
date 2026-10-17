@@ -35,4 +35,15 @@ def lookup(question: str) -> list[CheckResult]:
             found.append(result)
         if len(found) >= MAX:
             break
+    # 같은 이름의 제품 후보가 여럿이면(예: 타이레놀정 · 타이레놀콜드) 후보들의 성분도 하나씩 판정해 함께 넣는다
+    seen = {i.name_en.lower() for r in found for i in r.ingredients}
+    for r in list(found):
+        for name in dict.fromkeys(i for c in r.candidates for i in c.ingredients):
+            base = name.split("(")[0].strip()
+            if base.lower() in seen or len(found) >= MAX + 6:
+                continue
+            seen.add(base.lower())
+            sub = substances.check(base, "KR", "unknown")
+            if sub.matched_kind == "substance" and sub.ingredients:
+                found.append(sub)
     return found

@@ -24,55 +24,56 @@ interface Lane {
 
 const LANES: Lane[] = [
   {
-    id: "profile",
-    title: "① 교육 프로파일",
-    users: "선수",
-    screen: ["최근 대회 기록 3~10개 직접 입력", "태그 · 추천 이유 · 추천 교육"],
+    id: "tier",
+    title: "① 단계 나누기",
+    users: "관리자",
+    screen: ["선수 등록 · 로그인 코드 발급", "경기 기록 입력 · 단계 설정 · 진행 현황"],
     steps: [
-      { label: "입력 검증", kind: "rule" },
       { label: "경기력 예측", kind: "ai" },
-      { label: "태그 규칙", kind: "rule" },
-      { label: "교육 추천", kind: "rule" },
+      { label: "관측 − 예측", kind: "rule" },
+      { label: "줄 세우기", kind: "rule" },
+      { label: "단계 배정", kind: "rule" },
     ],
     sources: [
-      { label: "연구진 RNN", detail: "LSTM · IWF 국제대회 기록으로 학습", kind: "ai" },
-      { label: "태그·추천 규칙", detail: "±2σ · 계체 ±5kg · 세계·대륙대회", kind: "data" },
+      { label: "연구진 RNN", detail: "LSTM · 연구진이 학습 · 플랫폼은 결과만 사용", kind: "ai" },
+      { label: "단계 설정", detail: "단계 수 · 주당 교육 수 · 퀴즈 빈도 (관리자)", kind: "data" },
     ],
-    note: "기록은 저장하지 않음 · 세션에는 태그·나이대·대회 수준만",
+    note: "예측보다 기록이 많이 오른 선수일수록 높은 단계 · 결과 없으면 가장 낮은 단계",
   },
   {
-    id: "check",
-    title: "② 약물 확인",
-    users: "선수 · 지도자 · 지원인력",
-    screen: ["국내 제품명·성분명 · 구매 국가 · 사용 시기", "상태 배지 · 확인 절차 · 공식 링크"],
+    id: "lesson",
+    title: "② 교육 시작하기",
+    users: "선수",
+    screen: ["이번 주 교육 목록", "교육 글 · 객관식 퀴즈 · 갑자기 퀴즈"],
     steps: [
-      { label: "제품·성분 찾기", kind: "rule" },
-      { label: "조회표 판정", kind: "rule" },
-      { label: "확인 절차 안내", kind: "rule" },
+      { label: "주간 배정", kind: "rule" },
+      { label: "교육 읽기", kind: "rule" },
+      { label: "퀴즈 채점", kind: "rule" },
+      { label: "갑자기 퀴즈", kind: "rule" },
     ],
     sources: [
-      { label: "WADA 2026 금지목록", detail: "원문 PDF에서 추출 · 원문 색인 전수 대조", kind: "data" },
-      { label: "국내 의약품 목록", detail: "심평원 약가마스터 · 제품명 → 성분 · 투여 경로", kind: "data" },
-      { label: "성분·제품 조회표", detail: "자주 묻는 성분과 제품군", kind: "data" },
+      { label: "교육 300개", detail: "WADA ISE·Athlete Curriculum·ADEL 구조 · KADA 자료 근거", kind: "data" },
+      { label: "학습 기록", detail: "이수 · 정답/오답 · 접속 (운영 DB)", kind: "data" },
     ],
-    note: "판정은 조회표가 함 · AI는 판정하지 않음 · ‘허용’ 판정 없음",
+    note: "단계가 높을수록 한 주 교육 수 · 퀴즈 확률 · 문항 수가 많음 · 갑자기 퀴즈는 배운 교육에서만",
   },
   {
-    id: "learn",
-    title: "③ AI 교육",
-    users: "선수 · 지도자 · 지원인력",
-    screen: ["질문 · 추천 질문", "답변 · 출처 표시 · 전문가 안내"],
+    id: "ask",
+    title: "③ 질문하기",
+    users: "선수 · 관리자",
+    screen: ["약 이름(제품명·성분명) · 규정 질문", "답변 · 출처 표시"],
     steps: [
       { label: "질문 점검", kind: "rule" },
+      { label: "약 이름 찾기", kind: "rule" },
       { label: "자료 검색", kind: "rule" },
       { label: "답변 생성", kind: "ai" },
-      { label: "인용 검증", kind: "rule" },
     ],
     sources: [
-      { label: "반도핑 교육 자료", detail: "KADA · WADA · Global DRO 문서 발췌", kind: "data" },
+      { label: "WADA 2026 금지목록", detail: "원문 PDF에서 추출 · S0~S9 · P1 · M1~M3", kind: "data" },
+      { label: "국내 의약품 목록", detail: "심평원 약가마스터 · 제품명 → 성분", kind: "data" },
       { label: "Claude API", detail: "Anthropic 생성형 AI", kind: "ai" },
     ],
-    note: "회피·강요 질문은 AI를 부르지 않고 고정 응답 · 출처 없는 답은 내보내지 않음",
+    note: "선수 이름·기록·단계는 AI에 보내지 않음 · 종목마다 다른 규정은 ‘종목마다 다르다’ · 경기기간 중/외 둘 다",
   },
 ];
 
@@ -80,25 +81,25 @@ const AI_ROLES = [
   {
     name: "연구진 RNN",
     type: "예측 모델 (LSTM)",
-    does: "지난 대회 기록으로 다음 대회 합계와 예측 범위를 계산",
+    does: "지난 대회 기록으로 마지막 대회 합계를 예측 → 실제와의 차이(관측 − 예측)",
     input: "대회별 합계 · 대회 수준 · 나이 · 연도",
-    not: "도핑 여부를 판단하지 않음 · 제재 이력을 입력으로 쓰지 않음",
+    not: "도핑 여부를 판단하지 않음 · 플랫폼이 학습·조정하지 않음",
   },
   {
     name: "Claude",
     type: "생성형 AI (LLM)",
-    does: "교육 프로파일과 검색된 공식 자료를 바탕으로 질문에 답하고 출처를 붙임",
-    input: "질문 · 태그 · 나이대 · 대회 수준 · 검색된 자료",
-    not: "약물 허용 여부를 판정하지 않음 · 원 기록을 받지 않음 · 근거 없는 답은 차단",
+    does: "검색된 교육 자료와 약물 판정을 바탕으로 질문에 답하고 출처를 붙임",
+    input: "질문 · 검색된 교육 자료 · 약물 조회표 판정",
+    not: "약물 판정을 바꾸지 않음 · 선수 개인정보를 받지 않음 · 근거 없는 답은 차단",
   },
 ];
 
 const NOT_AI = [
-  { name: "태그 규칙", does: "예측과 실제 기록의 차이(±2σ), 체중 변화, 국제대회 출전으로 태그를 붙임" },
-  { name: "약물 판정", does: "제품명을 성분으로 바꾼 뒤 금지목록으로 상태를 정함 (금지 · 경기기간 중 금지 · 기준치 · 조건부 · 확인 필요). 같은 성분도 투여 경로(먹는 약 · 흡입 · 바르는 약)에 따라 달라짐" },
-  { name: "자료 검색", does: "질문과 가까운 공식 자료 조각을 찾음 (BM25, 한국어 글자 단위)" },
-  { name: "모델은 연구진 소관", does: "플랫폼은 연구진 예측 모델의 출력만 받아 교육을 구성함. 학습·성능 조정을 하지 않고, 도핑 분류·확률은 쓰지 않음" },
-  { name: "질문 점검", does: "검사 회피·강요 질문을 걸러 고정 응답과 전문가 안내로 보냄" },
+  { name: "줄 세우기 · 단계", does: "모델의 관측 − 예측으로 전원을 줄 세우고 단계 수만큼 고르게 나눔" },
+  { name: "주간 배정 · 퀴즈", does: "단계별 개수만큼 교육을 순서대로 배정, 객관식 채점, 갑자기 퀴즈는 틀린 것 먼저" },
+  { name: "약물 판정", does: "제품명을 성분으로 바꾼 뒤 금지목록으로 상태를 정함 (상시 금지 · 경기기간 중 금지 · 기준치 · 조건부 · 목록에 없음)" },
+  { name: "자료 검색", does: "질문과 가까운 교육 조각을 찾음 (BM25, 한국어 글자 단위)" },
+  { name: "질문 점검", does: "검사 회피·강요 질문을 걸러 고정 응답으로 보냄" },
 ];
 
 const STACK = [
@@ -107,7 +108,8 @@ const STACK = [
   { layer: "경기력 예측", tech: "연구진 RNN 가중치 · numpy 추론", note: "모델 파일은 레포 밖 비공개 폴더" },
   { layer: "자료 검색", tech: "BM25 · 동의어 사전", note: "외부 검색 서비스 없음" },
   { layer: "생성형 AI", tech: "Claude API (Anthropic)", note: "구조화 응답 · 인용 검증" },
-  { layer: "배포", tech: "Docker Compose", note: "컨테이너 1개 · 접근 코드" },
+  { layer: "운영 DB", tech: "SQLite", note: "선수 · 기록 · 단계 · 이수 · 퀴즈 · 질문" },
+  { layer: "배포", tech: "Docker Compose", note: "서버 1개 · 로그인 코드" },
 ];
 
 function KindTag({ kind }: { kind: Kind }) {
@@ -134,7 +136,7 @@ export function Architecture() {
             {(Object.keys(KIND) as Kind[]).map((k) => (
               <KindTag key={k} kind={k} />
             ))}
-            <span className="caption">AI는 두 곳(경기력 예측, 답변 생성)에만 쓰고, 판정·태그는 규칙이 정해요.</span>
+            <span className="caption">AI는 두 곳(경기력 예측, 답변 생성)에만 쓰고, 단계·판정·채점은 규칙이 정해요.</span>
           </div>
 
           <div className="arch" role="table" aria-label="시스템 구성도">
@@ -155,7 +157,7 @@ export function Architecture() {
             <div className="arch-session" role="row">
               <Lock size={16} aria-hidden />
               <span role="cell">
-                <strong>접근 코드 로그인</strong> · 역할(선수 · 지도자 · 지원인력)과 선수 ID는 서버 세션에만 두고 화면에서 받지 않음
+                <strong>로그인 코드</strong> · 가입 없음, 관리자가 발급 · 역할(선수 · 관리자)은 서버가 정함
               </span>
             </div>
 
@@ -205,7 +207,7 @@ export function Architecture() {
             <div className="arch-link" role="row">
               <ArrowDown size={16} aria-hidden />
               <span role="cell">
-                ①의 <strong>태그 · 나이대 · 대회 수준</strong>만 ③ AI 교육으로 넘어가 답변을 맞춤화해요. 대회 기록 원본은 넘어가지 않아요.
+                ①의 <strong>단계</strong>가 ②의 교육량과 퀴즈 빈도를 정해요. ③ 질문하기에는 선수 정보가 넘어가지 않아요.
               </span>
             </div>
           </div>
@@ -276,16 +278,16 @@ export function Architecture() {
             </h2>
             <ul className="arch-plain">
               <li>
-                <strong>저장하지 않음 (시범 운영 기준)</strong>
-                <span>입력한 대회 기록 · 약물 검색어 · 질문 내용</span>
+                <strong>운영 DB에 저장</strong>
+                <span>선수 이름 · 출생연도 · 경기 기록 · 모델 결과 · 단계 · 교육 이수 · 퀴즈 · 질문과 답 · 접속</span>
               </li>
               <li>
-                <strong>서명된 세션 쿠키에만 (나가기를 누르면 삭제)</strong>
-                <span>역할 · 태그 · 나이대 · 대회 수준</span>
+                <strong>저장하지 않음</strong>
+                <span>로그인 코드 원문 (해시만)</span>
               </li>
               <li>
                 <strong>Claude API로 보내는 것</strong>
-                <span>질문 · 태그 · 나이대 · 대회 수준 · 검색된 공식 자료 (이름 · 기록 원본은 보내지 않음)</span>
+                <span>질문 · 검색된 교육 자료 · 약물 판정 (이름 · 기록 · 단계는 보내지 않음)</span>
               </li>
             </ul>
           </section>

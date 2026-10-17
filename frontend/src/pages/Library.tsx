@@ -162,7 +162,7 @@ function DocView({ docId }: { docId: string }) {
                 type="button"
                 className="btn-sub small"
                 style={{ alignSelf: "flex-start" }}
-                onClick={() => navigate("/learn", { state: { question: `${s.heading}에 대해 더 알려줘` } })}
+                onClick={() => navigate("/ask", { state: { question: `${s.heading}에 대해 더 알려줘` } })}
               >
                 <MessageCircle size={14} /> 이 내용 AI에게 묻기
               </button>

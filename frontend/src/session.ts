@@ -1,13 +1,10 @@
 import { createContext, useContext } from "react";
-import type { AthleteProfile, CompetitionCategory, Role, SessionInfo } from "./api";
+import type { CompetitionCategory, Role, SessionInfo } from "./api";
 
 export interface SessionState {
   who: SessionInfo;
   demo: boolean;
   logout: () => void;
-  // 직접 입력으로 계산한 프로파일. 브라우저 메모리에만 있고 새로고침하면 사라진다 (D25)
-  profile: AthleteProfile | null;
-  setProfile: (p: AthleteProfile | null) => void;
 }
 
 export const SessionContext = createContext<SessionState | null>(null);
@@ -18,23 +15,28 @@ export function useSession(): SessionState {
   return s;
 }
 
-// DESIGN.md 2절 역할별 탭
-export type TabKey = "performance" | "check" | "learn" | "library" | "architecture";
-
-export const TABS_BY_ROLE: Record<Role, TabKey[]> = {
-  athlete: ["performance", "check", "learn", "library", "architecture"],
-  coach: ["check", "learn", "library", "architecture"],
-  support: ["check", "learn", "library", "architecture"],
+// 역할별 메뉴 (D37): 선수는 교육·질문만, 관리자는 선수 관리와 도구
+export const NAV_BY_ROLE: Record<Role, { path: string; label: string }[]> = {
+  athlete: [
+    { path: "/home", label: "교육 시작하기" },
+    { path: "/ask", label: "질문하기" },
+    { path: "/guide", label: "사용 설명서" },
+  ],
+  admin: [
+    { path: "/admin", label: "선수 관리" },
+    { path: "/admin/settings", label: "단계 설정" },
+    { path: "/check", label: "약물 확인" },
+    { path: "/library", label: "교육 자료" },
+    { path: "/ask", label: "질문하기" },
+    { path: "/architecture", label: "시스템 구성" },
+  ],
 };
 
-export const HOME_BY_ROLE: Record<Role, string> = {
-  athlete: "/performance",
-  coach: "/check",
-  support: "/check",
-};
+export const HOME_BY_ROLE: Record<Role, string> = { athlete: "/home", admin: "/admin" };
 
-export function weightClassLabel(sex: "M" | "F", wc: number): string {
-  if (wc === 999) return sex === "M" ? "+109kg급" : "+87kg급"; // 2018 IWF 최상위 체급
+export function weightClassLabel(wc: number | null): string {
+  if (wc === null) return "—";
+  if (wc === 999) return "+109kg급"; // 2018 IWF 남자 최상위 체급
   return `${wc}kg급`;
 }
 

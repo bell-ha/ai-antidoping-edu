@@ -33,6 +33,10 @@ ANSWER_SCHEMA = {
 }
 
 
+# 토큰 절약(2026-10-18 사용자): 근거를 전하는 2~4문단 답이라 생각 수준은 low, 답 길이 상한 1200 토큰
+MAX_TOKENS = 1200
+
+
 class CacheMiss(Exception):
     pass
 
@@ -64,10 +68,10 @@ def _live(system: str, messages: list[dict]) -> LlmAnswer:
         headers = {"anthropic-workspace-id": config.ANTHROPIC_WORKSPACE_ID} if config.ANTHROPIC_WORKSPACE_ID else None
         response = anthropic.Anthropic(default_headers=headers).beta.messages.create(
             model=config.CLAUDE_MODEL,
-            max_tokens=4000,
+            max_tokens=MAX_TOKENS,
             system=system,
             messages=messages,
-            output_config={"effort": "medium", "format": {"type": "json_schema", "schema": ANSWER_SCHEMA}},
+            output_config={"effort": "low", "format": {"type": "json_schema", "schema": ANSWER_SCHEMA}},
             betas=["server-side-fallback-2026-07-01"],
             fallbacks="default",
         )

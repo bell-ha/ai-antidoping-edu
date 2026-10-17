@@ -358,3 +358,12 @@ class Overview(BaseModel):
     athletes: list[AthleteRow]
     settings: ProgramSettings
     model_version: str
+
+
+class DemoCode(BaseModel):
+    """로그인 화면 오른쪽 데모 코드 목록(DEMO_MODE=1일 때만)."""
+    number: str
+    name: str
+    role: Role
+    code: str
+    tier: int | None = None

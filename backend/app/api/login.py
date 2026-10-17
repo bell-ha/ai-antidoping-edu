@@ -3,13 +3,14 @@
 세션에는 역할과 id만 둔다. 요청마다 DB에서 다시 확인하므로 코드를 새로 발급하거나 선수를 끄면 기존 세션도 끊긴다.
 """
 
+import csv
 import time
 from collections import defaultdict
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from app import db
-from app.schemas import LoginRequest, SessionInfo
+from app import config, db
+from app.schemas import DemoCode, LoginRequest, SessionInfo
 
 router = APIRouter(prefix="/api")
 
@@ -94,3 +95,17 @@ def whoami(who: SessionInfo = Depends(current)) -> SessionInfo:
 @router.delete("/session", status_code=204)
 def logout(request: Request) -> None:
     request.session.clear()
+
+
+@router.get("/demo/codes", response_model=list[DemoCode])
+def demo_codes() -> list[DemoCode]:
+    """데모에서 로그인을 쉽게: scripts/seed_dummy.py가 남긴 var/dummy_codes.csv. 시범(DEMO_MODE=0)에서는 없다."""
+    path = config.VAR / "dummy_codes.csv"
+    if not config.DEMO_MODE or not path.exists():
+        raise HTTPException(404)
+    with path.open(encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    with db.connect() as con:
+        tier = {r["number"]: r["tier"] for r in con.execute("""SELECT a.number, t.tier FROM athletes a JOIN tier_assignments t
+            ON t.athlete_id = a.id AND t.batch = (SELECT MAX(batch) FROM tier_assignments)""")}
+    return [DemoCode(number=r["number"], name=r["name"], role=r["role"], code=r["code"], tier=tier.get(r["number"])) for r in rows]

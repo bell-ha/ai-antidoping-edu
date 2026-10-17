@@ -158,3 +158,13 @@ def test_future_record_is_rejected(people):
     r = people.login("admin").post(f"/api/admin/athletes/{people.athlete_ids[0]}/records",
                                    json={"date": "2999-01", "competition_category": "domestic", "body_weight": 72, "snatch": 100, "clean_jerk": 120})
     assert r.status_code == 422
+
+
+def test_demo_codes_only_in_demo_mode(monkeypatch, tmp_path):
+    from app import config
+    (tmp_path / "dummy_codes.csv").write_text("number,name,role,code\nADMIN,관리자,admin,ADMIN-x\n", encoding="utf-8")
+    monkeypatch.setattr(config, "VAR", tmp_path)
+    c = TestClient(app)
+    assert c.get("/api/demo/codes").json()[0]["code"] == "ADMIN-x"
+    monkeypatch.setattr(config, "DEMO_MODE", False)
+    assert c.get("/api/demo/codes").status_code == 404

@@ -46,7 +46,7 @@ export function Check() {
     if (query.trim()) run(query.trim());
   };
 
-  const showCodes = who.role === "support"; // 선수지원인력에게는 조항 코드 (DESIGN.md 6절)
+  const showCodes = who.role === "admin"; // 관리자에게는 조항 코드 (DESIGN.md 6절)
 
   return (
     <>
@@ -179,7 +179,7 @@ export function Check() {
               </div>
 
               <div className="row wrap">
-                <button type="button" className="btn-sub" onClick={() => navigate("/learn", { state: { check: result } })}>
+                <button type="button" className="btn-sub" onClick={() => navigate("/ask", { state: { check: result } })}>
                   <MessageCircle size={16} /> AI에게 더 묻기
                 </button>
               </div>
