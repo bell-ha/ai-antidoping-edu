@@ -18,7 +18,8 @@ def ensure_week(con: sqlite3.Connection, athlete_id: int) -> str:
     count = tiers.tier_setting(con, row["tier"] if row else None).lessons_per_week
     done = {r["lesson_id"] for r in con.execute("SELECT lesson_id FROM lesson_assignments WHERE athlete_id = ?", (athlete_id,))}
     for lesson_id in [i for i in lessons.curriculum() if i not in done][:count]:
-        con.execute("INSERT INTO lesson_assignments (athlete_id, lesson_id, week_start) VALUES (?, ?, ?)", (athlete_id, lesson_id, week))
+        # 같은 주 첫 접속 요청이 동시에 두 번 와도 겹쳐 넣지 않는다
+        con.execute("INSERT OR IGNORE INTO lesson_assignments (athlete_id, lesson_id, week_start) VALUES (?, ?, ?)", (athlete_id, lesson_id, week))
     return week
 
 

@@ -25,6 +25,8 @@ def first_visit_today(con: sqlite3.Connection, athlete_id: int) -> bool:
 
 
 def roll_surprise(con: sqlite3.Connection, athlete_id: int, rng: random.Random | None = None) -> None:
+    """그날 첫 접속 때 한 번. 전날까지 풀지 않은 갑자기 퀴즈는 버리고 새로 뽑는다(쌓이지 않게)."""
+    con.execute("DELETE FROM surprise_quizzes WHERE athlete_id = ? AND answered_at IS NULL", (athlete_id,))
     rng = rng or random.Random()
     row = tiers.current(con, athlete_id)
     setting = tiers.tier_setting(con, row["tier"] if row else None)
