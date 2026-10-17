@@ -91,7 +91,7 @@ export function AdminAthletes() {
               {th("lessons", "이수", true)}
               {th("quiz", "퀴즈 정답/오답", true)}
               {th("questions", "질문", true)}
-              {th("visit", "마지막 접속")}
+              {th("visit", "마지막 접속일")}
             </tr>
           </thead>
           <tbody>
@@ -113,7 +113,7 @@ export function AdminAthletes() {
                   {a.quiz_correct}/{a.quiz_wrong}
                 </td>
                 <td className="num">{a.questions}</td>
-                <td>{a.last_visit ? a.last_visit.slice(0, 16).replace("T", " ") : "—"}</td>
+                <td>{a.last_visit ? a.last_visit.slice(0, 10) : "—"}</td>
               </tr>
             ))}
           </tbody>

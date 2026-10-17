@@ -36,9 +36,7 @@ export function Lesson() {
         <ArrowLeft size={14} /> 이번 주 목록
       </Link>
       <div className="stack" style={{ gap: 6 }}>
-        <span className="caption">
-          {lesson.category} · {lesson.lesson_id}
-        </span>
+        <span className="caption">{lesson.category}</span>
         <h1 className="title">{lesson.title}</h1>
       </div>
 

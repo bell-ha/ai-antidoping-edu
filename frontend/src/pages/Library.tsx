@@ -3,7 +3,7 @@ import { Fragment, useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { api, type LibraryDoc, type LibraryDocSummary } from "../api";
 
-// 교육 자료 열람. AI 교육이 근거로 쓰는 knowledge/ 문서를 그대로 보여 준다(같은 파일, 같은 섹션 번호).
+// 교육 자료 열람(관리자). 질문하기가 근거로 쓰는 레슨 파일을 그대로 보여 준다(같은 파일, 같은 섹션 번호).
 
 const SOURCE_LABEL: Record<string, string> = { WADA: "WADA", KADA: "KADA", ADEL: "ADEL", GlobalDRO: "Global DRO" };
 // 주제 묶음(문서 frontmatter의 topic) — WADA 교육 국제표준의 주제 순서
@@ -71,7 +71,7 @@ function DocList() {
     <>
       <div className="page-head">
         <h1 className="title">교육 자료</h1>
-        <p className="muted">AI 교육이 답할 때 근거로 쓰는 자료예요. 공식 기관 안내를 바탕으로 정리했고, 문서마다 원문 링크가 있어요.</p>
+        <p className="muted">선수가 듣는 교육 300개이자, 질문하기가 답할 때 근거로 쓰는 자료예요. WADA·KADA 자료를 바탕으로 썼고, 교육마다 원문 링크가 있어요.</p>
       </div>
       {error && <p className="error">{error}</p>}
       <div className="stack-lg">

@@ -35,14 +35,18 @@ export function AdminAthlete() {
             {a.name} <span className="muted">{a.number}</span>
           </h1>
           <p className="muted">
-            {a.birth_year}년생 · {weightClassLabel(a.weight_class)} · {a.tier !== null ? `${a.tier}단계 (순위 ${a.rank})` : "단계 없음"} · 마지막 접속{" "}
-            {a.last_visit ? a.last_visit.slice(0, 16).replace("T", " ") : "없음"}
+            {a.birth_year}년생 · {weightClassLabel(a.weight_class)} · {a.tier !== null ? `${a.tier}단계 (순위 ${a.rank})` : "단계 없음"} · 마지막 접속일{" "}
+            {a.last_visit ? a.last_visit.slice(0, 10) : "없음"}
           </p>
         </div>
-        <button className="btn-sub" onClick={() => api.reissueCode(id).then(setIssued, (e) => setError(e.message))}>
+        <button
+          className="btn-sub"
+          onClick={() => window.confirm("새 코드를 발급하면 지금 코드는 바로 쓸 수 없어요. 발급할까요?") && api.reissueCode(id).then(setIssued, (e) => setError(e.message))}
+        >
           <KeyRound size={14} /> 로그인 코드 새로 발급
         </button>
       </div>
+      {error && <p className="error" style={{ marginBottom: 16 }}>{error}</p>}
 
       <div className="grid">
         <section className="span-4 stack-lg">
@@ -217,7 +221,7 @@ function Records({ d, onChange }: { d: AthleteDetail; onChange: (d: AthleteDetai
                   <b>{x.total}</b>
                 </td>
                 <td>
-                  <button className="icon-btn" aria-label="기록 지우기" onClick={() => api.deleteRecord(id, x.id).then(onChange, (e) => setError(e.message))}>
+                  <button className="icon-btn" aria-label="기록 지우기" onClick={() => window.confirm(`${x.date} 기록을 지울까요? 전체 선수를 다시 줄 세워요.`) && api.deleteRecord(id, x.id).then(onChange, (e) => setError(e.message))}>
                     <Trash2 size={14} />
                   </button>
                 </td>

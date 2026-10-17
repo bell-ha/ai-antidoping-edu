@@ -74,7 +74,7 @@ export function Home() {
             갑자기 퀴즈! ({quizIndex + 1}/{home.surprise_quiz.length})
           </h2>
           <p className="caption">지금까지 배운 교육에서 나온 문제예요.</p>
-          <QuizBox key={quiz.lesson_id} q={quiz} onAnswer={(c) => api.answerSurprise(quiz.lesson_id, c)} label={quiz.lesson_id} />
+          <QuizBox key={quiz.lesson_id} q={quiz} onAnswer={(c) => api.answerSurprise(quiz.lesson_id, c)} label="배운 교육에서 나온 문제" />
           <div className="row" style={{ justifyContent: "flex-end" }}>
             {quizIndex + 1 < home.surprise_quiz.length ? (
               <button className="btn" style={{ height: 40 }} onClick={() => setQuizIndex((i) => i + 1)}>
