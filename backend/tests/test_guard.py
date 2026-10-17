@@ -32,7 +32,7 @@ def captured(monkeypatch):
         return seen.get("answer") or LlmAnswer(answer="답", citations=evidence_ids[:1], refer_to_expert=False, out_of_scope=False)
 
     monkeypatch.setattr(chat.client, "generate", fake_generate)
-    monkeypatch.setattr(chat, "retrieve", lambda q, k=6, role=None: CHUNKS)
+    monkeypatch.setattr(chat, "retrieve", lambda q, k=6: CHUNKS)
     return seen
 
 
@@ -248,3 +248,15 @@ def test_pilot_gate_rejects_synthetic_params(monkeypatch):
     assert any("D26" in p for p in problems)
     monkeypatch.setattr(main.predict, "params_source", lambda: "real")
     assert main.pilot_problems(main.substances.list_expires(), "x" * 32) == []
+
+
+def test_drug_verdicts_come_back_as_cards(captured, people):
+    """판정 카드(D38): AI 설명과 별도로 조회표 판정 원본을 화면에 준다."""
+    r = ask(people.login("athlete"), "에페드린은 평소에 먹어도 돼?").json()
+    assert [c["ingredients"][0]["name_en"] for c in r["drug_checks"]] == ["ephedrine"]
+    assert ask(people.login("athlete"), "소변검사에서 검출 안 되려면?").json()["drug_checks"] == []
+
+
+def test_cited_lessons_are_recommended(captured, people):
+    r = ask(people.login("athlete"), "프로틴 먹어도 돼?").json()
+    assert [l["lesson_id"] for l in r["related_lessons"]] == ["I-002"]

@@ -23,9 +23,6 @@ ROLE_TONE: dict[Role, str] = {
     "admin": "사용자는 교육 관리자입니다. 관련 조항(예: S6)과 근거를 정확히 밝히세요.",
 }
 
-TIMING_KO = {"in_competition": "경기기간 중", "out_of_competition": "경기기간 외", "unknown": "시기 모름"}
-
-
 def system_prompt(role: Role) -> str:
     return "\n\n".join([RULES, ROLE_TONE[role]])
 

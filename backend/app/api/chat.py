@@ -16,7 +16,8 @@ from app import config, db
 from app.api.login import current
 from app.chat import client, drugs, guard, prompts
 from app.chat.retrieve import get_chunk, retrieve
-from app.schemas import ChatMessage, ChatRequest, ChatResponse, Chunk, SessionInfo
+from app.program import lessons
+from app.schemas import ChatMessage, ChatRequest, ChatResponse, Chunk, RelatedLesson, SessionInfo
 
 router = APIRouter(prefix="/api")
 log = logging.getLogger(__name__)
@@ -74,7 +75,9 @@ def _answer(body: ChatRequest, who: SessionInfo) -> tuple[ChatResponse, str]:
         return guard.server_message(guard.DAILY_LIMIT), "chat_limit"
 
     checks = drugs.lookup(question)
-    chunks = retrieve(question)
+    # 약 이름이 있으면 성분 이름으로도 찾고(예: 타이레놀 → 슈도에페드린 레슨), 판정이 이미 근거라 레슨은 3개만
+    names = " ".join(dict.fromkeys(i.name_ko for c in checks for i in c.ingredients))
+    chunks = retrieve(f"{question} {names}", k=3) if checks else retrieve(question)
     history = [m.model_dump(exclude={"token"}) for m in body.messages[:-1][-2 * HISTORY_TURNS:]]
     messages = [*history, {"role": "user", "content": f"{prompts.evidence_block(chunks, checks)}\n\n질문: {question}"}]
     try:
@@ -85,7 +88,12 @@ def _answer(body: ChatRequest, who: SessionInfo) -> tuple[ChatResponse, str]:
         return guard.server_message(guard.REFUSED).model_copy(update={"refer_to_expert": True}), "chat_llm"
     except client.Unavailable:
         return guard.server_message(guard.UNAVAILABLE), "chat_server"
-    return guard.apply(answer, chunks, question, checks[0] if checks else None), "chat_llm"
+    result = guard.apply(answer, chunks, question, checks[0] if checks else None)
+    if result.kind != "answer":
+        return result, "chat_llm"
+    related = [RelatedLesson(lesson_id=d, title=lessons.title(d), category=lessons.meta(d)["category"])
+               for d in dict.fromkeys(c.chunk_id.split("#")[0] for c in result.citations) if lessons.exists(d)]
+    return result.model_copy(update={"drug_checks": checks, "related_lessons": related}), "chat_llm"
 
 
 @router.get("/sources/{chunk_id:path}", response_model=Chunk)

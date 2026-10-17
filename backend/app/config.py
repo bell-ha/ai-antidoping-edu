@@ -7,12 +7,11 @@ from typing import Literal, cast
 ROOT = Path(__file__).resolve().parents[2]
 # 앱이 쓰는 원자료: knowledge/drugs(약물 정보)와 knowledge/education(교육)
 KNOWLEDGE = ROOT / "knowledge"
-EDUCATION = KNOWLEDGE / "education"  # 교육 문서(.md) — AI 교육의 근거, 교육 자료 화면
+EDUCATION = KNOWLEDGE / "education"  # 교육 레슨과 그 원자료 — 질문하기의 근거, 교육 자료 화면
 DRUGS = KNOWLEDGE / "drugs"  # 약물 판정용 목록 — 판정 규칙이 씀(AI 아님)
 LESSONS = EDUCATION / "lessons"  # 레슨 300개(텍스트 + 객관식 퀴즈 1문항)
 # 앱 설정(knowledge가 아님): 단계 기본값(program.yaml), 검색 동의어(synonyms.yaml), 공개용 합성 모델
 SETTINGS = ROOT / "backend" / "settings"
-RULES = SETTINGS
 # 실행하면 생기는 것(Git 제외): 운영 DB, 약물 DB, 더미 로그인 코드
 VAR = Path(os.environ.get("VAR_DIR", ROOT / "var"))
 # 예측 모델 파일(model_params.json, rnn_*.npz/json). private/models(연구진 모델, 비공개)가 있으면 그것을,

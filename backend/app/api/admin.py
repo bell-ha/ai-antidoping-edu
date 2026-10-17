@@ -1,4 +1,4 @@
-"""관리자 화면 (D37): 선수 목록·상세, 선수 등록과 코드 발급, 경기 기록 입력, 단계 설정, 약물 확인.
+"""관리자 화면 (D37): 선수 목록·상세, 선수 등록과 코드 발급, 경기 기록 입력, 단계 설정.
 
 기록을 넣거나 지우면 그 선수의 모델을 다시 돌리고 전원을 다시 줄 세운다. 단계 설정을 바꿔도 다시 줄 세운다.
 """
@@ -10,11 +10,10 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app import db
 from app.api.login import admin, admin_id
-from app.drugs import substances
 from app.model import predict
 from app.program import lessons, tiers
-from app.schemas import (AthleteCreate, AthleteDetail, AthleteRow, ChatLog, CheckRequest, CheckResult, IssuedCode, LessonLog,
-                         Overview, ProgramSettings, QuizLog, RecordInput, SessionInfo)
+from app.schemas import (AthleteCreate, AthleteDetail, AthleteRow, ChatLog, IssuedCode, LessonLog,
+                         Overview, ProgramSettings, QuizLog, RecordInput)
 
 router = APIRouter(prefix="/api/admin", dependencies=[Depends(admin)])
 CODE_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789"  # 헷갈리는 글자(l·1·o·0·i) 뺌
@@ -142,14 +141,12 @@ def update_settings(body: ProgramSettings, request: Request) -> Overview:
 
 @router.post("/rerank", response_model=Overview)
 def rerank() -> Overview:
-    """모든 선수의 모델을 지금 모델 파일로 다시 돌리고 다시 줄 세운다(모델 파일을 바꿨을 때)."""
+    """모든 선수의 모델을 지금 모델 파일로 다시 돌리고 다시 줄 세운다(모델 파일 내용을 바꿨을 때).
+    읽어 둔 모델을 비우고 파일을 다시 읽는다. 모델 폴더 자체(private/models 유무)가 바뀌면 서버를 다시 켜야 한다."""
+    predict.params.cache_clear()
+    predict._rnn.cache_clear()
     with db.connect() as con:
         for r in con.execute("SELECT id FROM athletes WHERE active = 1").fetchall():
             tiers.compute_model(con, r["id"])
         tiers.rank_all(con)
     return overview()
-
-
-@router.post("/check", response_model=CheckResult)
-def check(body: CheckRequest, who: SessionInfo = Depends(admin)) -> CheckResult:
-    return substances.check(body.query, body.country, body.timing)

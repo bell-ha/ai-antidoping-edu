@@ -64,7 +64,8 @@ class RecordInput(BaseModel):
     @field_validator("date")
     @classmethod
     def _not_future(cls, v: str) -> str:
-        if v > date.today().strftime("%Y-%m"):
+        from app.db import now  # 한국 시간 기준(서버가 UTC로 돌아도 매달 1일 아침에 이번 달이 막히지 않게)
+        if v > now().strftime("%Y-%m"):
             raise ValueError("아직 오지 않은 달의 기록은 입력할 수 없어요.")
         return v
 
@@ -80,12 +81,6 @@ class RecordRow(RecordInput):
 Timing = Literal["in_competition", "out_of_competition", "unknown"]
 CheckStatus = Literal["PROHIBITED", "IN_COMPETITION_ONLY", "THRESHOLD", "CONDITIONAL", "NOT_LISTED_VERIFY", "UNKNOWN"]
 CountryRoute = Literal["kada", "globaldro", "local_unverified"]
-
-
-class CheckRequest(BaseModel):
-    query: str = Field(min_length=1, max_length=100)
-    country: str = Field(min_length=2, max_length=2)  # ISO 3166-1 alpha-2
-    timing: Timing
 
 
 class Ingredient(BaseModel):
@@ -151,7 +146,7 @@ class Chunk(BaseModel):
     reviewed: bool
 
 
-# ---------- AI 교육 (D15) ----------
+# ---------- 질문하기 (D15, D37) ----------
 
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
@@ -160,16 +155,11 @@ class ChatMessage(BaseModel):
     token: str | None = Field(default=None, max_length=64)
 
 
-class ChatContext(BaseModel):
-    check_result: CheckResult | None = None  # "AI에게 더 묻기"
-    content_id: str | None = None  # 추천 카드에서 진입
-
-
 class ChatRequest(BaseModel):
-    """role·athlete_id는 세션에서만 (D23). 본문에 넣어도 무시된다."""
+    """누가 묻는지는 세션에서만 안다. 본문에 다른 필드를 넣어도 무시된다.
+    서버는 마지막 질문과 그 앞 대화 2번(api.chat.HISTORY_TURNS)만 AI에 보낸다."""
     model_config = ConfigDict(extra="ignore")
     messages: list[ChatMessage] = Field(min_length=1, max_length=20)
-    context: ChatContext | None = None
 
 
 class LlmAnswer(BaseModel):
@@ -194,6 +184,14 @@ class ChatResponse(BaseModel):
     refer_to_expert: bool  # LLM 판단 OR 서버 규칙
     out_of_scope: bool
     token: str = ""  # 다음 요청에서 이 답을 대화 기록으로 보낼 때 함께 보내는 서명 (D33)
+    drug_checks: list["CheckResult"] = []  # 질문 속 약 이름의 조회표 판정(AI 설명과 함께 화면에 카드로, D38)
+    related_lessons: list["RelatedLesson"] = []  # 답에 인용된 레슨 = 더 읽어 볼 교육(D39)
+
+
+class RelatedLesson(BaseModel):
+    lesson_id: str
+    title: str
+    category: str
 
 
 class LibrarySection(BaseModel):
@@ -345,6 +343,13 @@ class AthleteDetail(BaseModel):
 class AthleteCreate(BaseModel):
     name: str = Field(min_length=1, max_length=30)
     birth_year: int = Field(ge=1940, le=date.today().year - 8)
+
+    @field_validator("name")
+    @classmethod
+    def _strip(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("이름을 입력해 주세요.")
+        return v.strip()
 
 
 class IssuedCode(BaseModel):

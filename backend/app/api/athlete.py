@@ -29,11 +29,11 @@ def home(who: SessionInfo = Depends(athlete)) -> AthleteHome:
 
 
 def _assignment(con, athlete_id: int, lesson_id: str):
-    row = con.execute("SELECT completed_at FROM lesson_assignments WHERE athlete_id = ? AND lesson_id = ?",
-                      (athlete_id, lesson_id)).fetchone()
-    if row is None or not lessons.exists(lesson_id):
-        raise HTTPException(404, "배정된 교육이 아니에요.")
-    return row
+    """배정된 레슨이면 그 행, 아니면 None. 질문하기에서 추천된 레슨처럼 이번 주 목록 밖의 레슨도 읽을 수 있다(D39)."""
+    if not lessons.exists(lesson_id):
+        raise HTTPException(404, "교육을 찾지 못했어요.")
+    return con.execute("SELECT completed_at FROM lesson_assignments WHERE athlete_id = ? AND lesson_id = ?",
+                       (athlete_id, lesson_id)).fetchone()
 
 
 @router.get("/lessons/{lesson_id}", response_model=LessonView)
@@ -42,14 +42,18 @@ def lesson(lesson_id: str, who: SessionInfo = Depends(athlete)) -> LessonView:
         row = _assignment(con, who.athlete_id, lesson_id)
     m = lessons.meta(lesson_id)
     return LessonView(lesson_id=lesson_id, title=m["title"], category=m["category"], sections=lessons.sections(lesson_id),
-                      quiz=lessons.question(lesson_id), completed=row["completed_at"] is not None)
+                      quiz=lessons.question(lesson_id), completed=bool(row and row["completed_at"]))
 
 
 @router.post("/lessons/{lesson_id}/answer", response_model=QuizResult)
 def lesson_answer(lesson_id: str, body: QuizAnswer, who: SessionInfo = Depends(athlete)) -> QuizResult:
-    """레슨 끝 퀴즈. 답하면(맞든 틀리든) 그 레슨은 이수."""
+    """레슨 끝 퀴즈. 답하면(맞든 틀리든) 그 레슨은 이수. 목록 밖 레슨이면 이번 주 배정을 먼저 만든 뒤 이 레슨을 더한다
+    (이수한 레슨은 나중에 다시 배정되지 않는다)."""
     with db.connect() as con:
-        _assignment(con, who.athlete_id, lesson_id)
+        if _assignment(con, who.athlete_id, lesson_id) is None:
+            week = weekly.ensure_week(con, who.athlete_id)
+            con.execute("INSERT OR IGNORE INTO lesson_assignments (athlete_id, lesson_id, week_start) VALUES (?, ?, ?)",
+                        (who.athlete_id, lesson_id, week))
         result = quiz.answer(con, who.athlete_id, lesson_id, body.choice, "lesson")
         con.execute("UPDATE lesson_assignments SET completed_at = COALESCE(completed_at, ?) WHERE athlete_id = ? AND lesson_id = ?",
                     (db.now_iso(), who.athlete_id, lesson_id))

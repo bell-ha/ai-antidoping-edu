@@ -1,4 +1,4 @@
-"""근거 검색 (D13). knowledge/education/<출처>/*.md 를 H2 섹션 단위 청크로 나눠 BM25로 찾는다.
+"""근거 검색 (D13). knowledge/education/lessons/<대분류>/*.md 를 H2 섹션 단위 청크로 나눠 BM25로 찾는다.
 
 문서 형식: YAML frontmatter(doc_id, source, title, url, version, roles, reviewed) + 본문의 `## 섹션`.
 청크 id = "{doc_id}#s{n}" (n은 문서 안 섹션 순서, 1부터). URL 경로에 넣을 때는 '#'을 인코딩해야 한다.
@@ -15,8 +15,8 @@ from pathlib import Path
 import yaml
 from rank_bm25 import BM25Okapi
 
-from app.config import LESSONS, RULES
-from app.schemas import Chunk, Role
+from app.config import LESSONS, SETTINGS
+from app.schemas import Chunk
 
 FRONTMATTER = re.compile(r"\A---\n(.*?)\n---\n(.*)\Z", re.S)
 
@@ -76,7 +76,7 @@ class Index:
 @cache
 def _index() -> Index:
     chunks = tuple(c for path in _doc_paths() for c in parse(path))
-    synonyms_path = RULES / "synonyms.yaml"
+    synonyms_path = SETTINGS / "synonyms.yaml"
     synonyms = yaml.safe_load(synonyms_path.read_text(encoding="utf-8")) if synonyms_path.exists() else {}
     if not chunks:  # 교육 자료를 다시 모으는 중이면 검색은 빈 결과(AI는 "근거 없음" 안내)
         return Index((), None, (), None, synonyms or {})
@@ -101,20 +101,29 @@ def get_chunk(chunk_id: str) -> Chunk | None:
     return next((c for c in _index().chunks if c.id == chunk_id), None)
 
 
-def retrieve(query: str, k: int = K, role: Role | None = None) -> list[Chunk]:
+# 질문에 흔히 붙는 말. 두 글자 조각 검색에서 이 말만 겹친 엉뚱한 레슨이 올라오지 않게 질문에서 뺀다
+QUESTION_WORDS = re.compile(r"(먹어도|마셔도|써도|맞아도|발라도|해도|돼요?|되나요|될까요?|되는|괜찮아요?|괜찮나요|괜찮을까요?|알려줘|알려\s*주세요|뭐야|뭐예요|어떻게|있어요?|없어요?)")
+# 가장 높은 점수의 이 비율보다 낮은 청크는 근거로 넣지 않는다(질문과 상관없는 조각으로 토큰을 쓰지 않게)
+MIN_RELATIVE = 0.6
+
+
+def retrieve(query: str, k: int = K) -> list[Chunk]:
     """상위 k개 청크. 점수 = 섹션 BM25 + DOC_WEIGHT × 문서 BM25(각각 최댓값으로 정규화).
-    role은 점수가 같을 때 역할이 맞는 청크를 앞에 두는 데만 쓴다. 섹션 자체 점수가 0인 청크는 내지 않는다."""
+    섹션 자체 점수가 0이거나 최고점의 MIN_RELATIVE배 미만인 청크는 내지 않는다."""
     index = _index()
     if index.bm25 is None:
         return []
-    tokens = tokenize(expand(query))
+    tokens = tokenize(expand(QUESTION_WORDS.sub(" ", query)))
+    if not tokens:
+        return []
     scores = index.bm25.get_scores(tokens)
     doc_scores = dict(zip(index.doc_ids, index.doc_bm25.get_scores(tokens)))
     top, doc_top = max(scores) or 1.0, max(doc_scores.values()) or 1.0
     final = [scores[i] / top + DOC_WEIGHT * doc_scores[c.doc_id] / doc_top for i, c in enumerate(index.chunks)]
     order = sorted(range(len(index.chunks)),
-                   key=lambda i: (-round(float(final[i]), 6), role is not None and role not in index.chunks[i].roles, i))
-    return [index.chunks[i] for i in order[:k] if scores[i] > 0]
+                   key=lambda i: (-round(float(final[i]), 6), i))
+    best = float(final[order[0]]) if order else 0.0
+    return [index.chunks[i] for i in order[:k] if scores[i] > 0 and final[i] >= MIN_RELATIVE * best]
 
 
 @cache

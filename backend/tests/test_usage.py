@@ -17,7 +17,7 @@ def llm(monkeypatch):
         return LlmAnswer(answer="답", citations=ids[:1], refer_to_expert=False, out_of_scope=False)
 
     monkeypatch.setattr(chat.client, "generate", fake)
-    monkeypatch.setattr(chat, "retrieve", lambda q, k=6, role=None: CHUNKS)
+    monkeypatch.setattr(chat, "retrieve", lambda q, k=6: CHUNKS)
     return calls
 
 

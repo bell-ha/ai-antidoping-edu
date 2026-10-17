@@ -99,8 +99,14 @@ def test_lesson_hides_answer_and_answering_completes_it(people):
     assert r["correct"] and a.get("/api/athlete/home").json()["completed_total"] == 1
 
 
-def test_unassigned_lesson_is_404(people):
-    assert people.login("athlete").get("/api/athlete/lessons/M-010").status_code == 404
+def test_unassigned_lesson_can_be_read_and_counts_when_answered(people):
+    """질문하기에서 추천된 레슨(이번 주 목록 밖)도 읽고 퀴즈를 풀면 이수로 남는다(D39)."""
+    a = people.login("athlete")
+    assert a.get("/api/athlete/lessons/M-010").json()["completed"] is False
+    a.post("/api/athlete/lessons/M-010/answer", json={"lesson_id": "M-010", "choice": 1})
+    home = a.get("/api/athlete/home").json()
+    assert home["completed_total"] == 1 and len([l for l in home["lessons"] if not l["completed"]]) == 15
+    assert a.get("/api/athlete/lessons/none").status_code == 404
 
 
 def test_surprise_quiz_only_from_learned_lessons_wrong_first(people):
@@ -168,3 +174,29 @@ def test_demo_codes_only_in_demo_mode(monkeypatch, tmp_path):
     assert c.get("/api/demo/codes").json()[0]["code"] == "ADMIN-x"
     monkeypatch.setattr(config, "DEMO_MODE", False)
     assert c.get("/api/demo/codes").status_code == 404
+
+
+def test_unanswered_surprise_quiz_does_not_pile_up(people):
+    aid = people.athlete_ids[0]
+    with db.connect() as con:
+        weekly.ensure_week(con, aid)
+        con.execute("UPDATE lesson_assignments SET completed_at = 'x' WHERE athlete_id = ?", (aid,))
+        tiers.save_settings(con, ProgramSettings(tiers=[{"tier": i, "lessons_per_week": 15, "quiz_probability": 1.0, "quiz_questions": 3}
+                                                         for i in range(1, 6)]), None)
+        quiz.roll_surprise(con, aid, random.Random(1))
+        quiz.roll_surprise(con, aid, random.Random(2))  # 다음 날
+        assert len(quiz.pending(con, aid)) == 3
+
+
+def test_week_assignment_is_idempotent(people):
+    aid = people.athlete_ids[0]
+    with db.connect() as con:
+        con.execute("INSERT INTO lesson_assignments (athlete_id, lesson_id, week_start) VALUES (?, ?, ?)", (aid, lessons.curriculum()[0], "2000-01-03"))
+        weekly.ensure_week(con, aid)
+        weekly.ensure_week(con, aid)
+        n = con.execute("SELECT COUNT(*) FROM lesson_assignments WHERE athlete_id = ?", (aid,)).fetchone()[0]
+    assert n == 16
+
+
+def test_blank_name_is_rejected(people):
+    assert people.login("admin").post("/api/admin/athletes", json={"name": "   ", "birth_year": 2005}).status_code == 422
