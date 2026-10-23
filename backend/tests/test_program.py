@@ -1,4 +1,4 @@
-"""교육 프로그램 (D37): 로그인·권한, 줄 세우기·단계, 주간 배정, 퀴즈, 관리자 기능."""
+"""교육 프로그램: 로그인·권한, 줄 세우기·단계, 주간 배정, 퀴즈, 관리자 기능."""
 
 import random
 
@@ -100,7 +100,7 @@ def test_lesson_hides_answer_and_answering_completes_it(people):
 
 
 def test_unassigned_lesson_can_be_read_and_counts_when_answered(people):
-    """질문하기에서 추천된 레슨(이번 주 목록 밖)도 읽고 퀴즈를 풀면 이수로 남는다(D39)."""
+    """질문하기에서 추천된 레슨(이번 주 목록 밖)도 읽고 퀴즈를 풀면 이수로 남는다."""
     a = people.login("athlete")
     assert a.get("/api/athlete/lessons/M-010").json()["completed"] is False
     a.post("/api/athlete/lessons/M-010/answer", json={"lesson_id": "M-010", "choice": 1})
@@ -200,3 +200,37 @@ def test_week_assignment_is_idempotent(people):
 
 def test_blank_name_is_rejected(people):
     assert people.login("admin").post("/api/admin/athletes", json={"name": "   ", "birth_year": 2005}).status_code == 422
+
+
+# ---------- 내 학습 기록 · 오답 다시 풀기 · CSV ----------
+
+def _wrong_choice(lesson_id: str) -> int:
+    return 1 if lessons.meta(lesson_id)["quiz"]["answer"] != 1 else 2
+
+
+def test_history_and_wrong_answer_review(people):
+    a = people.login("athlete")
+    lids = [l["lesson_id"] for l in a.get("/api/athlete/home").json()["lessons"][:2]]
+    a.post(f"/api/athlete/lessons/{lids[0]}/answer", json={"lesson_id": lids[0], "choice": _wrong_choice(lids[0])})
+    a.post(f"/api/athlete/lessons/{lids[1]}/answer", json={"lesson_id": lids[1], "choice": lessons.meta(lids[1])["quiz"]["answer"]})
+    h = a.get("/api/athlete/history").json()
+    assert h["completed"] == 2 and [w["lesson_id"] for w in h["wrong"]] == [lids[0]] and "answer" not in h["wrong"][0]
+    assert people.login("admin").get(f"/api/admin/athletes/{people.athlete_ids[0]}").json()["athlete"]["wrong_open"] == 1
+    r = a.post("/api/athlete/review/answer", json={"lesson_id": lids[0], "choice": lessons.meta(lids[0])["quiz"]["answer"]}).json()
+    assert r["correct"] and a.get("/api/athlete/history").json()["wrong"] == []
+    quizzes = people.login("admin").get(f"/api/admin/athletes/{people.athlete_ids[0]}").json()["quizzes"]
+    assert quizzes[0]["context"] == "review"
+
+
+def test_review_only_for_completed_lessons(people):
+    assert people.login("athlete").post("/api/athlete/review/answer", json={"lesson_id": "A-001", "choice": 1}).status_code == 404
+
+
+def test_csv_export(people):
+    admin = people.login("admin")
+    r = admin.get("/api/admin/export/athletes.csv")
+    assert r.status_code == 200 and r.text.startswith("﻿번호,이름") and "WL-001" in r.text and "test" not in r.text.lower().split("\n")[0]
+    for kind in ("quizzes", "lessons", "chats", "records"):
+        assert admin.get(f"/api/admin/export/{kind}.csv").status_code == 200
+    assert admin.get("/api/admin/export/codes.csv").status_code == 404
+    assert people.login("athlete").get("/api/admin/export/athletes.csv").status_code == 403

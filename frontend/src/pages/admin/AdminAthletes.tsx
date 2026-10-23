@@ -1,4 +1,4 @@
-import { Plus, Search } from "lucide-react";
+import { Download, Plus, Search } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { api, type IssuedCode, type Overview } from "../../api";
@@ -77,6 +77,23 @@ export function AdminAthletes() {
         </div>
       </div>
 
+      <div className="export-menu" style={{ marginBottom: 16 }}>
+        <span className="caption">CSV 내보내기(엑셀에서 열림)</span>
+        {(
+          [
+            ["athletes", "선수별 요약"],
+            ["quizzes", "퀴즈 풀이"],
+            ["lessons", "교육 이수"],
+            ["chats", "질문과 답"],
+            ["records", "경기 기록"],
+          ] as const
+        ).map(([kind, label]) => (
+          <a key={kind} className="btn-sub small" href={`/api/admin/export/${kind}.csv`} download>
+            <Download size={14} /> {label}
+          </a>
+        ))}
+      </div>
+
       <div className="table-scroll card" style={{ padding: 0 }}>
         <table className="data-table">
           <thead>
@@ -90,6 +107,7 @@ export function AdminAthletes() {
               <th className="num">기록</th>
               {th("lessons", "이수", true)}
               {th("quiz", "퀴즈 정답/오답", true)}
+              <th className="num">오답 남음</th>
               {th("questions", "질문", true)}
               {th("visit", "마지막 접속일")}
             </tr>
@@ -112,6 +130,7 @@ export function AdminAthletes() {
                 <td className="num">
                   {a.quiz_correct}/{a.quiz_wrong}
                 </td>
+                <td className="num">{a.wrong_open}</td>
                 <td className="num">{a.questions}</td>
                 <td>{a.last_visit ? a.last_visit.slice(0, 10) : "—"}</td>
               </tr>

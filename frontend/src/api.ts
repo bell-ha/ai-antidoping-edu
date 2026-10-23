@@ -108,6 +108,7 @@ export interface AthleteRow {
   lessons_completed: number;
   quiz_correct: number;
   quiz_wrong: number;
+  wrong_open: number;
   questions: number;
   last_visit: string | null;
 }
@@ -117,8 +118,17 @@ export interface AthleteDetail {
   records: RecordRow[];
   model_result: ModelResult | null;
   lessons: { lesson_id: string; title: string; week_start: string; completed_at: string | null }[];
-  quizzes: { lesson_id: string; title: string; context: "lesson" | "surprise"; choice: number; correct: boolean; at: string }[];
+  quizzes: { lesson_id: string; title: string; context: "lesson" | "surprise" | "review"; choice: number; correct: boolean; at: string }[];
   chats: { question: string; answer: string; at: string }[];
+}
+
+export interface AthleteHistory {
+  completed: number;
+  lesson_total: number;
+  quiz_correct: number;
+  quiz_wrong: number;
+  items: { lesson_id: string; title: string; category: string; completed_at: string; attempts: number; last_correct: boolean | null }[];
+  wrong: QuizQuestion[];
 }
 
 export interface Overview {
@@ -159,13 +169,13 @@ export interface CheckResult {
   list_version: string;
   reviewed: boolean;
   data_sources: { label: string; url: string }[];
-  candidates: { name: string; otc: string; ingredients: string[] }[];
+  candidates: { name: string; otc: string; ingredients: string[]; status: CheckStatus | null }[];
 }
 
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
-  token?: string; // assistant 턴: 서버가 그 답을 줄 때 붙인 서명(D33)
+  token?: string; // assistant 턴: 서버가 그 답을 줄 때 붙인 서명
 }
 
 export interface LibrarySection {
@@ -205,8 +215,8 @@ export interface ChatResponse {
   refer_to_expert: boolean;
   out_of_scope: boolean;
   token: string;
-  drug_checks: CheckResult[]; // 질문 속 약 이름의 조회표 판정(D38)
-  related_lessons: { lesson_id: string; title: string; category: string }[]; // 답에 인용된 레슨(D39)
+  drug_checks: CheckResult[]; // 질문 속 약 이름의 조회표 판정
+  related_lessons: { lesson_id: string; title: string; category: string }[]; // 답에 인용된 레슨
 }
 
 export class ApiError extends Error {
@@ -259,6 +269,8 @@ export const api = {
     call<QuizResult>("POST", `/api/athlete/lessons/${encodeURIComponent(id)}/answer`, { lesson_id: id, choice }),
   answerSurprise: (id: string, choice: number) => call<QuizResult>("POST", "/api/athlete/quiz/answer", { lesson_id: id, choice }),
   survey: () => call<{ url: string }>("GET", "/api/athlete/survey"),
+  history: () => call<AthleteHistory>("GET", "/api/athlete/history"),
+  answerReview: (id: string, choice: number) => call<QuizResult>("POST", "/api/athlete/review/answer", { lesson_id: id, choice }),
   // 관리자
   overview: () => call<Overview>("GET", "/api/admin/overview"),
   athlete: (id: number) => call<AthleteDetail>("GET", `/api/admin/athletes/${id}`),

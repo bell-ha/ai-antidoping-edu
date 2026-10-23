@@ -493,7 +493,7 @@ a {
   gap: 6px;
 }
 
-/* ---------- 기록 입력 표 (D25) ---------- */
+/* ---------- 기록 입력 표 ---------- */
 
 .records {
   display: flex;
@@ -1097,7 +1097,7 @@ a {
   }
 }
 
-/* ---------- D37: 로그인 데모 코드 · 선수 홈 · 레슨 · 퀴즈 · 관리자 표 ---------- */
+/* ---------- 로그인 데모 코드 · 선수 홈 · 레슨 · 퀴즈 · 관리자 표 ---------- */
 .chip-on { background: var(--ink); color: var(--on-primary); border: 1px solid var(--ink); }
 button.chip { cursor: pointer; }
 .demo-search { position: relative; display: flex; align-items: center; }
@@ -1186,3 +1186,10 @@ button.chip { cursor: pointer; }
 .related-lesson span:nth-child(2) { flex: 1; }
 .notice-supplement { background: var(--st-threshold-bg); color: var(--st-threshold); font-size: var(--fs-label); padding: 8px 10px; }
 .notice-supplement span { color: var(--body); }
+.stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.stat { display: flex; flex-direction: column; gap: 4px; }
+.stat strong { font-size: 28px; color: var(--ink); }
+@media (max-width: 767px) { .stat-row { grid-template-columns: 1fr; } }
+.mark-wrong { color: var(--st-prohibited); }
+.export-menu { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.drug-candidate { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }

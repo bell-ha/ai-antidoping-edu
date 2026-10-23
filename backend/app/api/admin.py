@@ -1,17 +1,20 @@
-"""관리자 화면 (D37): 선수 목록·상세, 선수 등록과 코드 발급, 경기 기록 입력, 단계 설정.
+"""관리자 화면: 선수 목록·상세, 선수 등록과 코드 발급, 경기 기록 입력, 단계 설정, CSV 내보내기.
 
 기록을 넣거나 지우면 그 선수의 모델을 다시 돌리고 전원을 다시 줄 세운다. 단계 설정을 바꿔도 다시 줄 세운다.
 """
 
+import csv
+import io
 import secrets
 import sqlite3
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import Response
 
 from app import db
 from app.api.login import admin, admin_id
 from app.model import predict
-from app.program import lessons, tiers
+from app.program import lessons, quiz, tiers
 from app.schemas import (AthleteCreate, AthleteDetail, AthleteRow, ChatLog, IssuedCode, LessonLog,
                          Overview, ProgramSettings, QuizLog, RecordInput)
 
@@ -45,7 +48,7 @@ def _rows(con: sqlite3.Connection, athlete_id: int | None = None) -> list[Athlet
             tier=t["tier"] if t else None, rank=t["rank"] if t else None,
             residual=latest[1].residual_observed_minus_predicted if latest else None,
             records=a["n_records"], lessons_completed=a["done"], quiz_correct=a["qc"], quiz_wrong=a["qw"],
-            questions=a["nq"], last_visit=a["last_visit"]))
+            wrong_open=len(quiz.wrong_open(con, a["id"])), questions=a["nq"], last_visit=a["last_visit"]))
     return out
 
 
@@ -150,3 +153,70 @@ def rerank() -> Overview:
             tiers.compute_model(con, r["id"])
         tiers.rank_all(con)
     return overview()
+
+
+# ---------- CSV 내보내기(논문 분석용) ----------
+# 엑셀에서 한글이 깨지지 않게 UTF-8 BOM을 붙인다. 로그인 코드(해시 포함)는 내보내지 않는다.
+EXPORTS = {
+    "athletes": "선수별 요약(단계·관측−예측·이수·퀴즈·오답 남음·질문·마지막 접속일)",
+    "quizzes": "퀴즈 풀이 전부(교육 퀴즈·갑자기 퀴즈·다시 풀기)",
+    "lessons": "교육 배정과 이수",
+    "chats": "질문과 답",
+    "records": "경기 기록과 체급",
+}
+
+
+def _csv(header: list[str], rows: list[list]) -> str:
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(header)
+    w.writerows(rows)
+    return "\ufeff" + buf.getvalue()
+
+
+@router.get("/export/{kind}.csv")
+def export(kind: str) -> Response:
+    if kind not in EXPORTS:
+        raise HTTPException(404, "내보낼 수 없는 종류예요.")
+    with db.connect() as con:
+        if kind == "athletes":
+            header = ["번호", "이름", "출생연도", "체급", "단계", "순위", "관측-예측(kg)", "기록 수", "이수", "퀴즈 정답", "퀴즈 오답",
+                      "오답 남음", "질문 수", "마지막 접속일"]
+            rows = [[a.number, a.name, a.birth_year, a.weight_class, a.tier, a.rank, a.residual, a.records, a.lessons_completed,
+                     a.quiz_correct, a.quiz_wrong, a.wrong_open, a.questions, (a.last_visit or "")[:10]] for a in _rows(con)]
+        elif kind == "quizzes":
+            header = ["번호", "이름", "단계", "교육", "대분류", "종류", "고른 답", "정답 여부", "시각"]
+            label = {"lesson": "교육 퀴즈", "surprise": "갑자기 퀴즈", "review": "다시 풀기"}
+            rows = [[r["number"], r["name"], _tier(con, r["athlete_id"]), r["lesson_id"], _category(r["lesson_id"]), label.get(r["context"], r["context"]),
+                     r["choice"], int(r["correct"]), r["at"]]
+                    for r in con.execute("""SELECT a.number, a.name, q.* FROM quiz_attempts q JOIN athletes a ON a.id = q.athlete_id
+                                            ORDER BY q.id""")]
+        elif kind == "lessons":
+            header = ["번호", "이름", "단계", "교육", "대분류", "배정 주", "이수 시각"]
+            rows = [[r["number"], r["name"], _tier(con, r["athlete_id"]), r["lesson_id"], _category(r["lesson_id"]), r["week_start"],
+                     r["completed_at"] or ""]
+                    for r in con.execute("""SELECT a.number, a.name, l.* FROM lesson_assignments l JOIN athletes a ON a.id = l.athlete_id
+                                            ORDER BY l.athlete_id, l.id""")]
+        elif kind == "chats":
+            header = ["번호", "이름", "시각", "질문", "답", "종류"]
+            rows = [[r["number"] or "관리자", r["name"] or "", r["at"], r["question"], r["answer"], r["kind"]]
+                    for r in con.execute("""SELECT a.number, a.name, c.* FROM chat_logs c LEFT JOIN athletes a ON a.id = c.athlete_id
+                                            ORDER BY c.id""")]
+        else:
+            header = ["번호", "이름", "대회 날짜", "대회", "계체", "체급", "인상", "용상", "합계"]
+            rows = []
+            for a in con.execute("SELECT id, number, name FROM athletes ORDER BY id").fetchall():
+                rows += [[a["number"], a["name"], r.date, r.competition_category, r.body_weight, r.weight_class, r.snatch, r.clean_jerk,
+                          r.total] for r in tiers.records(con, a["id"])]
+    stamp = db.today()
+    return Response(_csv(header, rows), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="{kind}-{stamp}.csv"'})
+
+
+def _tier(con: sqlite3.Connection, athlete_id: int) -> int | None:
+    t = tiers.current(con, athlete_id)
+    return t["tier"] if t else None
+
+
+def _category(lesson_id: str) -> str:
+    return lessons.meta(lesson_id)["category"] if lessons.exists(lesson_id) else ""
