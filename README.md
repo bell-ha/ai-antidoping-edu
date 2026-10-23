@@ -55,7 +55,7 @@ ai-antidoping-edu/
 ├── knowledge/             자료. 출처마다 raw/(받은 원본, Git 제외) → processed/(가공본) — 자세한 지도는 knowledge/README.md
 │   ├── drugs/             wada · kada · kr_source(심평원) + curated(사람이 만든 조회표)
 │   └── education/         lessons/(교육 300개, A~M 13개 대분류) + raw/(WADA ISE·Athlete Curriculum·ADEL·KADA 자료)
-├── scripts/               run.sh(서버 켜기) · seed_dummy.py(더미 선수 100명) · redteam.py(까다로운 질문 50개를 실제 AI로) · apply_reviews.py(화면의 검토 표시를 레슨 파일에 반영)
+├── scripts/               run.sh(서버 켜기) · seed_dummy.py(더미 선수 100명) · redteam.py(까다로운 질문 50개를 실제 AI로) · apply_reviews.py(화면의 검토 표시를 레슨 파일에 반영) · create_admin.py(관리자 만들기) · backup_db.py(운영 DB 백업)
 │                          build_wada.py · build_kada.py · build_kr_source.py(raw → processed)
 ├── private/               비공개(Git 제외): 연구진 인계 자료 · 원고 · 실제 모델
 └── var/                   실행하면 생김(Git 제외): 운영 DB · 약물 DB · 더미 로그인 코드
@@ -113,7 +113,8 @@ cd ../frontend && npm ci
 
 - 처음 실행하면 더미 선수 100명(남자 역도, 경기 기록만)을 넣고 모델을 돌려 단계를 매깁니다. 로그인 코드는 `var/dummy_codes.csv`, 데모에서는 로그인 화면 오른쪽에도 보입니다.
 - 모델: `private/models`(연구진 모델, 비공개)가 있으면 그것을, 없으면 공개용 합성 모델을 씁니다.
-- AI 답변: 기본은 키 없이 도는 mock. 레포 루트 `.env`에 `ANTHROPIC_API_KEY=…`와 `LLM_MODE=live`를 넣으면 실제 답변.
+- AI 답변: 기본은 키 없이 도는 mock. `.env.example`을 레포 루트 `.env`로 복사해 `ANTHROPIC_API_KEY=…`와 `LLM_MODE=live`를 넣으면 실제 답변. 다른 설정(시범 모드·비밀키·설문 주소 등)도 이 파일에 설명.
+- 시범 운영(더미 없이): 첫 관리자는 `cd backend && .venv/bin/python ../scripts/create_admin.py 이름`(코드는 한 번만 보여 줌). 운영 DB 백업은 `scripts/backup_db.py` → `var/backups/`.
 - 테스트: `cd backend && .venv/bin/python -m pytest -q`
 - Docker: `docker compose up --build` → http://localhost:8100, 더미 선수는 `docker compose exec app python /app/scripts/seed_dummy.py`
 
