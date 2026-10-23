@@ -1,4 +1,4 @@
-"""근거 검색 (D13). knowledge/education/lessons/<대분류>/*.md 를 H2 섹션 단위 청크로 나눠 BM25로 찾는다.
+"""근거 검색. knowledge/education/lessons/<대분류>/*.md 를 H2 섹션 단위 청크로 나눠 BM25로 찾는다.
 
 문서 형식: YAML frontmatter(doc_id, category, title, source, url, version, reviewed, quiz …) + 본문의 `## 섹션`(knowledge/education/README.md).
 청크 id = "{doc_id}#s{n}" (n은 문서 안 섹션 순서, 1부터). URL 경로에 넣을 때는 '#'을 인코딩해야 한다.

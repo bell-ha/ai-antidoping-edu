@@ -1,4 +1,4 @@
-"""질문 속 약 이름 찾기 (D37). "타이레놀 먹어도 돼?", "아세트아미노펜은?"처럼 제품명·성분명 어느 쪽으로 물어도
+"""질문 속 약 이름 찾기. "타이레놀 먹어도 돼?", "아세트아미노펜은?"처럼 제품명·성분명 어느 쪽으로 물어도
 같은 판정이 근거로 들어가게, 질문의 낱말마다 약물 조회표(drugs.substances)를 찾아본다.
 """
 
@@ -10,7 +10,8 @@ from app.schemas import CheckResult
 # 낱말 끝 조사·어미(긴 것부터). 약 이름 뒤에 붙는 것만 떼어 낸다
 _TAIL = sorted(["은", "는", "이", "가", "을", "를", "도", "만", "에", "의", "랑", "이랑", "하고", "과", "와", "이나", "나",
                 "에서", "으로", "로", "이요", "요", "이야", "야", "인데", "이에요", "예요", "이면", "면"], key=len, reverse=True)
-_SKIP = {"먹어도", "돼", "되나요", "괜찮아", "괜찮나요", "약", "금지", "금지약물", "경기", "시즌", "평소", "선수", "도핑"}
+_SKIP = {"먹어도", "돼", "되나요", "괜찮아", "괜찮나요", "약", "금지", "금지약물", "경기", "시즌", "평소", "선수", "도핑",
+         "무시하고", "알려줘", "방법", "사용법"}
 MAX = 3
 
 
@@ -27,9 +28,18 @@ def _terms(question: str) -> list[str]:
     return out
 
 
+def _plausible(term: str) -> bool:
+    """두 글자 낱말("엄마", "하나", "아니", "가도")은 국내 제품명 앞부분과 우연히 겹친다. 손 조회표(성분·제품군·한약재)에
+    정확히 있는 이름(예: "마황", "부자", "대마")만 약 이름으로 본다. 세 글자 이상은 그대로 찾는다."""
+    if re.fullmatch(r"[가-힣]{1,2}", term):
+        hit = substances._match(term)
+        return bool(hit and hit[0] in ("substance", "product"))
+    return True
+
+
 def lookup(question: str) -> list[CheckResult]:
     found: list[CheckResult] = []
-    for term in _terms(question):
+    for term in filter(_plausible, _terms(question)):
         result = substances.check(term, "KR", "unknown")
         if result.matched_kind in ("product", "substance", "category") and (result.ingredients or result.candidates or result.supplement_warning):
             found.append(result)

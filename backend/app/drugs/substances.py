@@ -1,4 +1,4 @@
-"""약물·보충제 확인 (D10, D11, D12). 판정은 조회표가 하고 LLM은 설명만 한다.
+"""약물·보충제 확인. 판정은 조회표가 하고 LLM은 설명만 한다.
 
 조회표: knowledge/drugs/curated/substances.json(성분, 손으로 정리), knowledge/drugs/curated/products.json(제품·제품군),
 knowledge/drugs/wada/processed/prohibited_list_<연도>.json(WADA 금지목록 PDF 자동 추출, scripts/build_wada.py),
@@ -15,7 +15,7 @@ knowledge/drugs/kr_source/processed/kr_products.json.gz(한글 제품명 → 영
 - WADA 추출 항목의 예외(용량·경로·용도 조건)는 조건 충족 여부를 알 수 없으므로 CONDITIONAL + 조건 안내.
   조건 없이 "금지 아님"인 항목(모니터링 대상 등)만 NOT_LISTED_VERIFY.
 - 사용 시기는 상태를 낮추지 않는다. 경기기간 중에만 금지인 성분을 경기기간 외에 쓴다고 해도
-  상태는 그대로 두고, 절차에서 경기 전 잔류 가능성을 안내한다(D11 "모름 = 경기기간 중"의 연장).
+  상태는 그대로 두고, 절차에서 경기 전 잔류 가능성을 안내한다("모름 = 경기기간 중"의 연장).
 """
 
 import bisect
@@ -339,7 +339,8 @@ def _kr_lookup(query: str) -> dict | None:
             if ing.status in FLAGGED:
                 flagged.setdefault(ing.name_en, ing)
         if len(candidates) < MAX_CANDIDATES:
-            candidates.append(ProductCandidate(name=row[0], otc=row[2], ingredients=[i.name_en for i in ings or ()]))
+            candidates.append(ProductCandidate(name=row[0], otc=row[2], ingredients=[i.name_en for i in ings or ()],
+                                               status=min((i.status for i in ings), key=STRICTNESS.index) if ings else None))
     note = "이 이름으로 시작하는 제품이 여러 개이고 판정이 서로 달라요. 포장에 적힌 제품명 전체로 다시 검색하세요."
     if None in groups:
         note += " 성분 정보를 찾지 못한 제품도 있어요."

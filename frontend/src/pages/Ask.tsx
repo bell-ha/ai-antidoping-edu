@@ -158,7 +158,7 @@ function Answer({ r }: { r: ChatResponse }) {
 
 const KIND_LABEL: Record<CheckResult["matched_kind"], string> = { product: "제품", category: "제품군 · 여러 제품", substance: "성분", unmatched: "" };
 
-/** 조회표 판정 원본(D38). AI 설명과 따로, 금지목록 조회표가 낸 그대로 보여 준다. */
+/** 조회표 판정 원본. AI 설명과 따로, 금지목록 조회표가 낸 그대로 보여 준다. */
 function DrugCards({ checks }: { checks: CheckResult[] }) {
   return (
     <div className="drug-cards">
@@ -197,8 +197,11 @@ function DrugCards({ checks }: { checks: CheckResult[] }) {
           {c.candidates.length > 0 && (
             <ul className="drug-candidates">
               {c.candidates.map((p) => (
-                <li key={p.name}>
-                  {p.name} <span className="caption">— {p.ingredients.join(", ")}</span>
+                <li key={p.name} className="drug-candidate">
+                  <span>
+                    {p.name} <span className="caption">— {p.ingredients.join(", ")}</span>
+                  </span>
+                  {p.status && <StatusBadge status={p.status} small />}
                 </li>
               ))}
             </ul>
