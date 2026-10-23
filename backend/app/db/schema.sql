@@ -108,3 +108,12 @@ CREATE TABLE IF NOT EXISTS visits (
     first_at TEXT NOT NULL,
     PRIMARY KEY (athlete_id, day)
 );
+
+-- 사람 검토(관리자 '교육 자료' 화면). 파일의 reviewed는 scripts/apply_reviews.py로 사람이 반영한다
+CREATE TABLE IF NOT EXISTS lesson_reviews (
+    lesson_id TEXT PRIMARY KEY,
+    status TEXT NOT NULL,              -- reviewed(검토 완료) | needs_fix(고칠 곳 있음)
+    note TEXT,
+    admin_id INTEGER REFERENCES admins(id),
+    at TEXT NOT NULL
+);

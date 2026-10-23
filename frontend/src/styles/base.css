@@ -1193,3 +1193,10 @@ button.chip { cursor: pointer; }
 .mark-wrong { color: var(--st-prohibited); }
 .export-menu { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .drug-candidate { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.review-mark { font-size: var(--fs-caption); padding: 2px 8px; border-radius: var(--radius-pill); border: 1px solid var(--hairline); }
+.review-mark.reviewed { color: #1f7a57; border-color: #bfe3d3; background: #edf7f2; }
+.review-mark.needs_fix { color: var(--st-threshold); border-color: #f0dfb0; background: var(--st-threshold-bg); }
+.review-choices { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
+.review-choices li.right { color: #1f7a57; }
+.review-note { height: auto; padding: 10px 12px; resize: vertical; font: inherit; }
+.review-panel { border-color: var(--ink); }

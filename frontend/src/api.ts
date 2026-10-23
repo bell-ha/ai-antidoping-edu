@@ -199,6 +199,14 @@ export interface LibraryDocSummary {
 
 export interface LibraryDoc extends Omit<LibraryDocSummary, "section_headings" | "length"> {
   sections: LibrarySection[];
+  quiz: { question: string; choices: string[]; answer: number; explanation: string } | null;
+}
+
+export type ReviewStatus = "reviewed" | "needs_fix" | "none";
+export interface LessonReview {
+  status: ReviewStatus;
+  note: string | null;
+  at: string | null;
 }
 
 export interface Citation {
@@ -282,6 +290,9 @@ export const api = {
   rerank: () => call<Overview>("POST", "/api/admin/rerank"),
   library: () => call<LibraryDocSummary[]>("GET", "/api/library"),
   libraryDoc: (docId: string) => call<LibraryDoc>("GET", `/api/library/${encodeURIComponent(docId)}`),
+  reviews: () => call<Record<string, LessonReview>>("GET", "/api/admin/reviews"),
+  setReview: (id: string, status: ReviewStatus, note?: string) =>
+    call<LessonReview>("PUT", `/api/admin/reviews/${encodeURIComponent(id)}`, { status, note: note ?? null }),
   // 공통
   chat: (messages: ChatMessage[]) => call<ChatResponse>("POST", "/api/chat", { messages }),
 };

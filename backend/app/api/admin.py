@@ -15,7 +15,7 @@ from app import db
 from app.api.login import admin, admin_id
 from app.model import predict
 from app.program import lessons, quiz, tiers
-from app.schemas import (AthleteCreate, AthleteDetail, AthleteRow, ChatLog, IssuedCode, LessonLog,
+from app.schemas import (AthleteCreate, AthleteDetail, AthleteRow, ChatLog, IssuedCode, LessonLog, LessonReview,
                          Overview, ProgramSettings, QuizLog, RecordInput)
 
 router = APIRouter(prefix="/api/admin", dependencies=[Depends(admin)])
@@ -220,3 +220,29 @@ def _tier(con: sqlite3.Connection, athlete_id: int) -> int | None:
 
 def _category(lesson_id: str) -> str:
     return lessons.meta(lesson_id)["category"] if lessons.exists(lesson_id) else ""
+
+
+# ---------- 사람 검토(교육 자료 화면) ----------
+# 화면에서 누른 표시는 운영 DB에만 남는다. 레슨 파일의 reviewed: true는 사람이 scripts/apply_reviews.py로 반영한다.
+
+@router.get("/reviews", response_model=dict[str, LessonReview])
+def reviews() -> dict[str, LessonReview]:
+    with db.connect() as con:
+        return {r["lesson_id"]: LessonReview(status=r["status"], note=r["note"], at=r["at"])
+                for r in con.execute("SELECT * FROM lesson_reviews")}
+
+
+@router.put("/reviews/{lesson_id}", response_model=LessonReview)
+def set_review(lesson_id: str, body: LessonReview, request: Request) -> LessonReview:
+    if not lessons.exists(lesson_id):
+        raise HTTPException(404, "교육을 찾지 못했어요.")
+    with db.connect() as con:
+        if body.status == "none":
+            con.execute("DELETE FROM lesson_reviews WHERE lesson_id = ?", (lesson_id,))
+            return LessonReview(status="none")
+        at = db.now_iso()
+        con.execute("""INSERT INTO lesson_reviews (lesson_id, status, note, admin_id, at) VALUES (?, ?, ?, ?, ?)
+                       ON CONFLICT(lesson_id) DO UPDATE SET status = excluded.status, note = excluded.note,
+                       admin_id = excluded.admin_id, at = excluded.at""",
+                    (lesson_id, body.status, (body.note or "").strip() or None, admin_id(request), at))
+    return LessonReview(status=body.status, note=body.note, at=at)

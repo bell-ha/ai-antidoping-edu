@@ -227,6 +227,21 @@ class LibraryDoc(BaseModel):
     summary: str | None = None
     reviewed: bool
     sections: list[LibrarySection]
+    quiz: "LessonQuiz | None" = None  # 관리자 검토용(정답·해설 포함)
+
+
+class LessonQuiz(BaseModel):
+    question: str
+    choices: list[str]
+    answer: int
+    explanation: str
+
+
+class LessonReview(BaseModel):
+    """사람 검토 표시. status none은 표시 지우기."""
+    status: Literal["reviewed", "needs_fix", "none"]
+    note: str | None = Field(default=None, max_length=1000)
+    at: str | None = None
 
 
 class Survey(BaseModel):
