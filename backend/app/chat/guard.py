@@ -12,8 +12,8 @@ from typing import Literal
 
 from app.schemas import ChatResponse, CheckResult, Chunk, Citation, LlmAnswer
 
-NO_EVIDENCE = "교육 자료에서 이 질문에 대한 근거를 찾지 못했어요."
-OUT_OF_SCOPE = "반도핑 교육 자료 범위 밖의 질문이에요. 도핑 규정, 약·보충제 확인, 검사 절차에 대해 물어봐 주세요."
+NO_EVIDENCE = "교육 자료에서 이 질문에 대한 내용을 찾지 못했어요."
+OUT_OF_SCOPE = "교육 자료에는 이 질문에 대한 내용이 없어요. 도핑 규정, 약·보충제, 검사 절차를 물어보면 자료로 답해 드려요."
 EVASION = (
     "검사를 피하거나 결과를 바꾸는 방법은 알려드릴 수 없어요.\n\n"
     "금지물질은 끊은 뒤에도 오랫동안 검출될 수 있고, 검사를 피하거나 방해하는 행위 자체도 도핑방지규정 위반이에요. "
@@ -95,7 +95,9 @@ def apply(answer: LlmAnswer, chunks: list[Chunk], question: str, check: CheckRes
     refer = answer.refer_to_expert or needs_expert(question, check)
     if not cited and (check is None or answer.out_of_scope):  # 약물 판정만 근거인 답(레슨 인용 없음)은 둔다
         text = OUT_OF_SCOPE if answer.out_of_scope else NO_EVIDENCE
-        return ChatResponse(kind="server", answer=text, citations=[], refer_to_expert=refer, out_of_scope=True)
+        # 자료로 답한 문장은 버려도 AI 추측은 'AI 추측' 표시와 함께 보여 준다(사용자, 2026-10-23)
+        return ChatResponse(kind="server", answer=text, citations=[], refer_to_expert=refer, out_of_scope=True,
+                            guess=answer.guess.strip())
     citations = [Citation(chunk_id=c.id, source=c.source, title=f"{c.title} — {c.section}", url=c.url) for c in cited]
     return ChatResponse(answer=answer.answer, citations=citations, refer_to_expert=refer, out_of_scope=answer.out_of_scope,
                         guess=answer.guess.strip())

@@ -78,9 +78,11 @@ def test_citations_limited_to_given_chunks():
 @pytest.mark.parametrize("out_of_scope", [False, True])
 def test_answer_without_evidence_is_replaced(out_of_scope):
     """LLM이 out_of_scope=true로 표시하고 자기 지식으로 써도 그 문장은 나가지 않는다 (46 리뷰 1)."""
-    answer = LlmAnswer(answer="(근거 없이 지어낸 답)", citations=[], refer_to_expert=False, out_of_scope=out_of_scope)
+    answer = LlmAnswer(answer="(근거 없이 지어낸 답)", citations=[], refer_to_expert=False, out_of_scope=out_of_scope,
+                       guess="일반적으로 알려진 추측")
     r = guard.apply(answer, CHUNKS, "질문", None)
     assert r.answer in (guard.NO_EVIDENCE, guard.OUT_OF_SCOPE) and r.citations == [] and r.out_of_scope and r.kind == "server"
+    assert r.guess == "일반적으로 알려진 추측"  # 추측은 표시와 함께 남긴다
 
 
 @pytest.mark.parametrize("question", [
