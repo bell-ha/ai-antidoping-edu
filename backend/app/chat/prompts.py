@@ -32,11 +32,15 @@ def _drug(check: CheckResult) -> str:
     for i in check.ingredients:
         line = f"{i.name_ko}({i.name_en}) 상태 {i.status}"
         if i.wada_class:
-            line += f", 분류 {i.wada_class}"
+            line += f", 분류 {i.wada_class}" + (f"({i.wada_class_ko})" if i.wada_class_ko else "")
         if i.note:
             line += f", {i.note}"
         parts.append(line)
     out = f"입력 '{check.query}' → {check.matched_kind}, 종합 상태 {check.status}; 성분: {'; '.join(parts) or '없음'}"
+    if check.note:
+        out += f"; 조회표 설명: {check.note}"
+    if check.supplement_warning:
+        out += "; 보충제: 성분표에 없는 금지물질이 섞여 있을 수 있음(오염)"
     if check.candidates:
         out += "; 같은 이름의 제품 후보: " + ", ".join(f"{c.name}({'/'.join(c.ingredients)})" for c in check.candidates[:5])
     return out

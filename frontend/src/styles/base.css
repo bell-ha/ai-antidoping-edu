@@ -1184,4 +1184,5 @@ button.chip { cursor: pointer; }
   color: var(--ink); text-decoration: none; }
 .related-lesson:hover { border-color: var(--ink); }
 .related-lesson span:nth-child(2) { flex: 1; }
-.source-link { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-caption); color: var(--app-ink); }
+.notice-supplement { background: var(--st-threshold-bg); color: var(--st-threshold); font-size: var(--fs-label); padding: 8px 10px; }
+.notice-supplement span { color: var(--body); }

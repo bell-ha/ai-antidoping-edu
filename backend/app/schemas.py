@@ -80,14 +80,15 @@ class RecordRow(RecordInput):
 
 Timing = Literal["in_competition", "out_of_competition", "unknown"]
 CheckStatus = Literal["PROHIBITED", "IN_COMPETITION_ONLY", "THRESHOLD", "CONDITIONAL", "NOT_LISTED_VERIFY", "UNKNOWN"]
-CountryRoute = Literal["kada", "globaldro", "local_unverified"]
+CountryRoute = Literal["kada", "local_unverified"]
 
 
 class Ingredient(BaseModel):
     name_ko: str
     name_en: str
     status: CheckStatus
-    wada_class: str | None = None  # "S6" 등
+    wada_class: str | None = None  # "S6.B" 등
+    wada_class_ko: str | None = None  # "특정 흥분제" — KADA 국문판 분류 이름(kada/processed)
     note: str | None = None  # 기준치 설명 등
     source_url: str
 
@@ -118,6 +119,7 @@ class CheckResult(BaseModel):
     timing: Timing
     country: str
     route: CountryRoute
+    note: str | None = None  # 조회표 항목의 설명(한약재 출처, 보충제 안내 등)
     steps: list[str]
     links: list[OfficialLink]  # 항상 하나 이상
     supplement_warning: bool
@@ -130,7 +132,7 @@ class CheckResult(BaseModel):
 
 # ---------- RAG (D13) ----------
 
-Source = Literal["WADA", "KADA", "ADEL", "GlobalDRO"]
+Source = Literal["WADA", "KADA", "ADEL"]
 
 
 class Chunk(BaseModel):
@@ -141,7 +143,6 @@ class Chunk(BaseModel):
     section: str
     url: str
     version: str
-    roles: list[str]  # 레슨 frontmatter 그대로(검색 정렬에는 쓰지 않음)
     text: str
     reviewed: bool
 
@@ -207,8 +208,7 @@ class LibraryDocSummary(BaseModel):
     source: Source
     url: str
     version: str
-    roles: list[str]  # 레슨 frontmatter 그대로(검색 정렬에는 쓰지 않음)
-    topic: str | None = None  # 교육 주제 묶음(문서 frontmatter의 topic)
+    category: str  # 대분류("G 금지목록") — 선수 화면과 같은 묶음
     summary: str | None = None
     reviewed: bool
     section_headings: list[str]
@@ -222,8 +222,7 @@ class LibraryDoc(BaseModel):
     source: Source
     url: str
     version: str
-    roles: list[str]  # 레슨 frontmatter 그대로(검색 정렬에는 쓰지 않음)
-    topic: str | None = None
+    category: str
     summary: str | None = None
     reviewed: bool
     sections: list[LibrarySection]

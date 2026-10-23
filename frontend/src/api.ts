@@ -138,6 +138,7 @@ export interface Ingredient {
   name_en: string;
   status: CheckStatus;
   wada_class: string | null;
+  wada_class_ko: string | null;
   note: string | null;
   source_url: string;
 }
@@ -149,7 +150,8 @@ export interface CheckResult {
   ingredients: Ingredient[];
   timing: Timing;
   country: string;
-  route: "kada" | "globaldro" | "local_unverified";
+  route: "kada" | "local_unverified";
+  note: string | null;
   steps: string[];
   links: { label: string; url: string }[];
   supplement_warning: boolean;
@@ -178,8 +180,7 @@ export interface LibraryDocSummary {
   source: string;
   url: string;
   version: string;
-  roles: string[];
-  topic: string | null;
+  category: string;
   summary: string | null;
   reviewed: boolean;
   section_headings: string[];
@@ -192,7 +193,7 @@ export interface LibraryDoc extends Omit<LibraryDocSummary, "section_headings" |
 
 export interface Citation {
   chunk_id: string;
-  source: "WADA" | "KADA" | "ADEL" | "GlobalDRO";
+  source: "WADA" | "KADA" | "ADEL";
   title: string;
   url: string;
 }

@@ -10,6 +10,7 @@ from app.drugs.substances import check
 
 TABLES = {name: json.loads((DRUGS / "curated" / name).read_text(encoding="utf-8"))
           for name in ("substances.json", "products.json")}
+HERBS = json.loads((DRUGS / "kada" / "processed" / "herbal_medicine_2025.json").read_text(encoding="utf-8"))["herbs"]
 
 
 def test_no_allowed_status_exists():
@@ -22,7 +23,7 @@ def test_every_entry_has_source_and_review_flag():
     for s in TABLES["substances.json"]["substances"].values():
         assert s["source_url"].startswith("https://www.wada-ama.org/")
         assert isinstance(s["reviewed"], bool)
-    for p in TABLES["products.json"]["products"].values():
+    for p in [*TABLES["products.json"]["products"].values(), *HERBS.values()]:
         assert isinstance(p["reviewed"], bool)
         assert all(i in TABLES["substances.json"]["substances"] for i in p["ingredients"])
 
@@ -77,7 +78,7 @@ def test_country_routes_and_no_confirm_elsewhere_links(country, route):
     """다른 기관에서 다시 확인하라는 링크는 붙이지 않는다(2026-10-17 사용자). 해외 제품이면 성분이 다를 수 있다는 사실만."""
     r = check("감기약", country, "unknown")
     assert r.route == route
-    assert not any(link.label.startswith(("KADA", "Global DRO")) for link in r.links)
+    assert r.links == []  # 확인처 링크 없음(제품군·한약재 자료 출처 링크만 붙는다)
 
 
 
@@ -113,7 +114,7 @@ def test_names_are_unique_across_tables():
         for name in [s["name_ko"], s["name_en"], *s["aliases"]]:
             key = substances.normalize(name)
             assert seen.setdefault(key, sid) == sid, name
-    for pid, p in TABLES["products.json"]["products"].items():
+    for pid, p in [*TABLES["products.json"]["products"].items(), *HERBS.items()]:
         for name in [pid, *p["aliases"]]:
             key = substances.normalize(name)
             assert seen.setdefault(key, pid) == pid, name
@@ -122,8 +123,10 @@ def test_names_are_unique_across_tables():
 def test_unreviewed_lists_every_pending_entry():
     """§10 G2: 지금은 전 항목이 검토 전이다. 연구진이 reviewed:true로 바꾸면 이 목록에서 빠진다."""
     pending = substances.unreviewed()
-    # + 한글 제품명 조회표 + WADA 추출본(파일 단위 검토)
-    assert len(pending) == len(TABLES["substances.json"]["substances"]) + len(TABLES["products.json"]["products"]) + 2
+    # + KADA 한약재 11종 + 한글 제품명 조회표 + WADA 추출본 + KADA 분류 이름(파일 단위 검토)
+    assert len(pending) == (len(TABLES["substances.json"]["substances"]) + len(TABLES["products.json"]["products"])
+                            + len(HERBS) + 3)
+    assert "herbal_medicine_2025.json:마황" in pending
     assert "kr_products.json.gz" in pending
     assert "wada/processed/prohibited_list_2026.json" in pending
 
@@ -332,3 +335,17 @@ def test_kada_herbs_are_judged_by_detected_ingredients(herb, status, ingredient)
     """KADA 한약재 가이드라인(KIST 2024 분석)의 11종: 검출 성분으로 판정."""
     r = check(herb, "KR", "unknown")
     assert r.status == status and ingredient in [i.name_en for i in r.ingredients]
+
+
+def test_korean_class_names_come_from_kada_list():
+    """판정 카드의 한글 분류명(KADA 2026 금지목록 국문판, scripts/build_kada.py)."""
+    r = check("에페드린", "KR", "unknown")
+    assert (r.ingredients[0].wada_class, r.ingredients[0].wada_class_ko) == ("S6.B", "특정 흥분제")
+    assert substances.class_ko("S2.1.3") == "GATA 억제제"
+    assert substances.class_ko("S2.1.9") == substances.class_ko("S2.1")  # 세부 이름이 없으면 상위 분류
+
+
+def test_supplement_products_carry_contamination_warning():
+    for q in ("프로틴", "단백질", "보충제", "크레아틴", "히게나민"):  # 제품군 이름이든, 보충제에 들어 있는 성분 이름이든
+        assert check(q, "KR", "unknown").supplement_warning, q
+    assert not check("슈도에페드린", "KR", "unknown").supplement_warning

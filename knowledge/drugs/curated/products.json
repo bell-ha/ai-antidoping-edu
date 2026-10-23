@@ -56,27 +56,6 @@
       ],
       "reviewed": false
     },
-    "마황": {
-      "kind": "product",
-      "aliases": [
-        "麻黃"
-      ],
-      "ingredients": [
-        "ephedrine",
-        "methylephedrine",
-        "pseudoephedrine"
-      ],
-      "supplement": false,
-      "note": "KADA 한약재 도핑방지 가이드라인(2025): KIST 도핑콘트롤센터 2024년 분석에서 이 한약재에서 검출. 약재마다 함량이 일정하지 않다.",
-      "links": [
-        {
-          "label": "KADA 한약재 도핑방지 가이드라인",
-          "url": "https://www.kada-ad.or.kr/kada?where=drug/drug_chinese_medic"
-        }
-      ],
-      "reviewed": false,
-      "herbal": true
-    },
     "다이어트보조제": {
       "kind": "category",
       "aliases": [
@@ -121,7 +100,8 @@
         "프로틴보충제",
         "단백질보충제",
         "웨이프로틴",
-        "단백질파우더"
+        "단백질파우더",
+        "단백질"
       ],
       "ingredients": [],
       "supplement": true,
@@ -286,194 +266,19 @@
       "links": [],
       "reviewed": false
     },
-    "백굴채": {
-      "kind": "product",
+    "보충제": {
+      "kind": "category",
       "aliases": [
-        "白屈菜"
+        "건강기능식품",
+        "건강보조식품",
+        "영양제",
+        "보충제품"
       ],
-      "ingredients": [
-        "higenamine"
-      ],
-      "supplement": false,
-      "note": "KADA 한약재 도핑방지 가이드라인(2025): KIST 도핑콘트롤센터 2024년 분석에서 이 한약재에서 검출. 약재마다 함량이 일정하지 않다.",
-      "links": [
-        {
-          "label": "KADA 한약재 도핑방지 가이드라인",
-          "url": "https://www.kada-ad.or.kr/kada?where=drug/drug_chinese_medic"
-        }
-      ],
-      "reviewed": false,
-      "herbal": true
-    },
-    "부자": {
-      "kind": "product",
-      "aliases": [
-        "附子"
-      ],
-      "ingredients": [
-        "higenamine"
-      ],
-      "supplement": false,
-      "note": "KADA 한약재 도핑방지 가이드라인(2025): KIST 도핑콘트롤센터 2024년 분석에서 이 한약재에서 검출. 약재마다 함량이 일정하지 않다.",
-      "links": [
-        {
-          "label": "KADA 한약재 도핑방지 가이드라인",
-          "url": "https://www.kada-ad.or.kr/kada?where=drug/drug_chinese_medic"
-        }
-      ],
-      "reviewed": false,
-      "herbal": true
-    },
-    "세신": {
-      "kind": "product",
-      "aliases": [
-        "細辛"
-      ],
-      "ingredients": [
-        "higenamine"
-      ],
-      "supplement": false,
-      "note": "KADA 한약재 도핑방지 가이드라인(2025): KIST 도핑콘트롤센터 2024년 분석에서 이 한약재에서 검출. 약재마다 함량이 일정하지 않다.",
-      "links": [
-        {
-          "label": "KADA 한약재 도핑방지 가이드라인",
-          "url": "https://www.kada-ad.or.kr/kada?where=drug/drug_chinese_medic"
-        }
-      ],
-      "reviewed": false,
-      "herbal": true
-    },
-    "연자육": {
-      "kind": "product",
-      "aliases": [
-        "蓮子肉",
-        "연밥"
-      ],
-      "ingredients": [
-        "higenamine"
-      ],
-      "supplement": false,
-      "note": "KADA 한약재 도핑방지 가이드라인(2025): KIST 도핑콘트롤센터 2024년 분석에서 이 한약재에서 검출. 약재마다 함량이 일정하지 않다.",
-      "links": [
-        {
-          "label": "KADA 한약재 도핑방지 가이드라인",
-          "url": "https://www.kada-ad.or.kr/kada?where=drug/drug_chinese_medic"
-        }
-      ],
-      "reviewed": false,
-      "herbal": true
-    },
-    "오수유": {
-      "kind": "product",
-      "aliases": [
-        "吳茱萸"
-      ],
-      "ingredients": [
-        "higenamine"
-      ],
-      "supplement": false,
-      "note": "KADA 한약재 도핑방지 가이드라인(2025): KIST 도핑콘트롤센터 2024년 분석에서 이 한약재에서 검출. 약재마다 함량이 일정하지 않다.",
-      "links": [
-        {
-          "label": "KADA 한약재 도핑방지 가이드라인",
-          "url": "https://www.kada-ad.or.kr/kada?where=drug/drug_chinese_medic"
-        }
-      ],
-      "reviewed": false,
-      "herbal": true
-    },
-    "오약": {
-      "kind": "product",
-      "aliases": [
-        "烏藥"
-      ],
-      "ingredients": [
-        "higenamine"
-      ],
-      "supplement": false,
-      "note": "KADA 한약재 도핑방지 가이드라인(2025): KIST 도핑콘트롤센터 2024년 분석에서 이 한약재에서 검출. 약재마다 함량이 일정하지 않다.",
-      "links": [
-        {
-          "label": "KADA 한약재 도핑방지 가이드라인",
-          "url": "https://www.kada-ad.or.kr/kada?where=drug/drug_chinese_medic"
-        }
-      ],
-      "reviewed": false,
-      "herbal": true
-    },
-    "지부자": {
-      "kind": "product",
-      "aliases": [
-        "地膚子"
-      ],
-      "ingredients": [
-        "higenamine"
-      ],
-      "supplement": false,
-      "note": "KADA 한약재 도핑방지 가이드라인(2025): KIST 도핑콘트롤센터 2024년 분석에서 이 한약재에서 검출. 약재마다 함량이 일정하지 않다.",
-      "links": [
-        {
-          "label": "KADA 한약재 도핑방지 가이드라인",
-          "url": "https://www.kada-ad.or.kr/kada?where=drug/drug_chinese_medic"
-        }
-      ],
-      "reviewed": false,
-      "herbal": true
-    },
-    "산초": {
-      "kind": "product",
-      "aliases": [
-        "山椒"
-      ],
-      "ingredients": [
-        "higenamine"
-      ],
-      "supplement": false,
-      "note": "KADA 한약재 도핑방지 가이드라인(2025): KIST 도핑콘트롤센터 2024년 분석에서 이 한약재에서 검출. 약재마다 함량이 일정하지 않다.",
-      "links": [
-        {
-          "label": "KADA 한약재 도핑방지 가이드라인",
-          "url": "https://www.kada-ad.or.kr/kada?where=drug/drug_chinese_medic"
-        }
-      ],
-      "reviewed": false,
-      "herbal": true
-    },
-    "마전자": {
-      "kind": "product",
-      "aliases": [
-        "馬錢子"
-      ],
-      "ingredients": [
-        "strychnine"
-      ],
-      "supplement": false,
-      "note": "KADA 한약재 도핑방지 가이드라인(2025): KIST 도핑콘트롤센터 2024년 분석에서 이 한약재에서 검출. 약재마다 함량이 일정하지 않다.",
-      "links": [
-        {
-          "label": "KADA 한약재 도핑방지 가이드라인",
-          "url": "https://www.kada-ad.or.kr/kada?where=drug/drug_chinese_medic"
-        }
-      ],
-      "reviewed": false,
-      "herbal": true
-    },
-    "보두": {
-      "kind": "product",
-      "aliases": [],
-      "ingredients": [
-        "strychnine"
-      ],
-      "supplement": false,
-      "note": "KADA 한약재 도핑방지 가이드라인(2025): KIST 도핑콘트롤센터 2024년 분석에서 이 한약재에서 검출. 약재마다 함량이 일정하지 않다.",
-      "links": [
-        {
-          "label": "KADA 한약재 도핑방지 가이드라인",
-          "url": "https://www.kada-ad.or.kr/kada?where=drug/drug_chinese_medic"
-        }
-      ],
-      "reviewed": false,
-      "herbal": true
+      "ingredients": [],
+      "supplement": true,
+      "note": "보충제는 제품마다 성분이 다르고, 성분표에 없는 금지물질이 섞여 있을 수 있다(KADA 보충제 안내).",
+      "links": [],
+      "reviewed": false
     }
   }
 }

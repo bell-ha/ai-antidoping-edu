@@ -1,11 +1,11 @@
-import { ArrowRight, CircleHelp, ExternalLink, Send } from "lucide-react";
+import { ArrowRight, CircleHelp, ExternalLink, Send, TriangleAlert } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useLocation } from "react-router";
 import { api, type ChatMessage, type ChatResponse, type CheckResult, type Citation } from "../api";
 import { StatusBadge } from "../components/StatusBadge";
 import { useSession } from "../session";
 
-const SOURCE_LABEL: Record<Citation["source"], string> = { WADA: "WADA", KADA: "KADA", ADEL: "ADEL", GlobalDRO: "Global DRO" };
+const SOURCE_LABEL: Record<Citation["source"], string> = { WADA: "WADA", KADA: "KADA", ADEL: "ADEL" };
 
 const SUGGESTED = [
   "타이레놀 먹어도 돼?",
@@ -170,10 +170,26 @@ function DrugCards({ checks }: { checks: CheckResult[] }) {
             <span className="caption">{KIND_LABEL[c.matched_kind]}</span>
           </div>
           {c.matched_kind === "category" && c.ingredients.length > 0 && <span className="caption">일부 제품에 들어 있는 주의 성분</span>}
+          {c.note && <span className="caption">{c.note}</span>}
+          {c.links.length > 0 && (
+            <div className="row wrap" style={{ gap: 8 }}>
+              {c.links.map((l) => (
+                <a key={l.url} className="caption" href={l.url} target="_blank" rel="noreferrer">
+                  {l.label} <ExternalLink size={12} />
+                </a>
+              ))}
+            </div>
+          )}
+          {c.supplement_warning && (
+            <div className="notice notice-supplement">
+              <TriangleAlert size={16} />
+              <span>보충제는 성분표에 없는 금지물질이 섞여 있을 수 있어요(오염).</span>
+            </div>
+          )}
           {c.ingredients.map((i) => (
             <div key={i.name_en} className="drug-row">
               <span>
-                {i.name_ko} <span className="caption">{i.name_en}{i.wada_class ? ` · ${i.wada_class}` : ""}</span>
+                {i.name_ko} <span className="caption">{i.name_en}{i.wada_class ? ` · ${i.wada_class}${i.wada_class_ko ? ` ${i.wada_class_ko}` : ""}` : ""}</span>
               </span>
               <StatusBadge status={i.status} small />
             </div>

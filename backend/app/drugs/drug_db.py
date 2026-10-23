@@ -1,11 +1,12 @@
 """약물 DB (SQLite). 원천 JSON(검토 대상, 레포에 커밋) → var/drugs.sqlite(생성물, .gitignore).
 
-    cd backend && .venv/bin/python -m app.drug_db         # 빌드
+    cd backend && .venv/bin/python -m app.drugs.drug_db   # 빌드
     sqlite3 ../var/drugs.sqlite "select * from name_index where norm like 'pseudo%'"   # 조회 예
 
 원천:
   knowledge/drugs/curated/substances.json            손 조회표(성분)
   knowledge/drugs/curated/products.json              손 조회표(제품·제품군)
+  knowledge/drugs/kada/processed/herbal_medicine_2025.json   KADA 한약재 가이드라인의 11종(한약재 → 검출 성분)
   knowledge/drugs/wada/processed/prohibited_list_<연도>.json   WADA 금지목록 추출본
   knowledge/drugs/kr_source/processed/kr_products.json.gz                한글 제품명 → 성분(심평원 약가마스터)
 원천 파일의 sha256을 meta에 기록하고, 서버는 시작할 때 원천과 다르면 데모 모드에서는 다시 빌드하고
@@ -22,14 +23,14 @@ from pathlib import Path
 from app.config import DRUGS, VAR
 
 DB = VAR / "drugs.sqlite"
-SCHEMA_VERSION = "1"
+SCHEMA_VERSION = "2"  # 2: hand_products.herbal
 
 SCHEMA = """
 create table meta(key text primary key, value text not null);
 create table substances(id text primary key, name_ko text, name_en text, status text, wada_class text, note text,
                         source_url text, reviewed integer);
 create table substance_aliases(substance_id text references substances(id), alias text);
-create table hand_products(id text primary key, kind text, supplement integer, note text, links text,
+create table hand_products(id text primary key, kind text, supplement integer, herbal integer, note text, links text,
                            reviewed integer);
 create table hand_product_aliases(product_id text references hand_products(id), alias text);
 create table hand_product_ingredients(product_id text references hand_products(id),
@@ -51,6 +52,7 @@ create index kr_groups_code on kr_groups(group_code);
 def sources() -> dict[str, Path]:
     version = json.loads((DRUGS / "curated/substances.json").read_text(encoding="utf-8"))["list_version"]
     return {"substances": DRUGS / "curated/substances.json", "products": DRUGS / "curated/products.json",
+            "herbs": DRUGS / "kada/processed/herbal_medicine_2025.json",
             "wada": DRUGS / f"wada/processed/prohibited_list_{version}.json", "kr_products": DRUGS / "kr_source/processed/kr_products.json.gz"}
 
 
@@ -64,6 +66,14 @@ def build(path: Path = DB) -> Path:
     src = sources()
     substances = json.loads(src["substances"].read_text(encoding="utf-8"))
     products = json.loads(src["products"].read_text(encoding="utf-8"))
+    herbs = json.loads(src["herbs"].read_text(encoding="utf-8"))
+    note = herbs["note"]
+    links = [{"label": "KADA 한약재 도핑방지 가이드라인", "url": herbs["board_page"]}]
+    for name, h in herbs["herbs"].items():  # 한약재도 손 조회표 제품처럼 다룬다(herbal 표시만 다름)
+        if name in products["products"]:
+            raise ValueError(f"한약재 '{name}'이 curated/products.json에도 있어요. 한 곳에만 두세요.")
+        products["products"][name] = dict(kind="product", aliases=h["aliases"], ingredients=h["ingredients"],
+                                          supplement=False, herbal=True, note=note, links=links, reviewed=h["reviewed"])
     wada = json.loads(src["wada"].read_text(encoding="utf-8"))
     with gzip.open(src["kr_products"], "rt", encoding="utf-8") as f:
         kr = json.load(f)
@@ -88,8 +98,8 @@ def build(path: Path = DB) -> Path:
         names += [(k, "substance", sid) for n in [s["name_ko"], s["name_en"], *s.get("aliases", [])]
                   for k in name_variants(n)]
     for pid, p in products["products"].items():
-        con.execute("insert into hand_products values (?,?,?,?,?,?)",
-                    (pid, p["kind"], int(p.get("supplement", False)), p.get("note"),
+        con.execute("insert into hand_products values (?,?,?,?,?,?,?)",
+                    (pid, p["kind"], int(p.get("supplement", False)), int(p.get("herbal", False)), p.get("note"),
                      json.dumps(p.get("links", []), ensure_ascii=False), int(p["reviewed"])))
         con.executemany("insert into hand_product_aliases values (?,?)", [(pid, a) for a in p.get("aliases", [])])
         con.executemany("insert into hand_product_ingredients values (?,?,?)",
@@ -136,7 +146,7 @@ def ensure(demo_mode: bool, path: Path = DB) -> None:
     if is_current(path):
         return
     if not demo_mode:
-        raise RuntimeError("약물 DB가 없거나 원천 JSON과 다릅니다. `python -m app.drug_db`로 빌드한 뒤 시작하세요.")
+        raise RuntimeError("약물 DB가 없거나 원천 JSON과 다릅니다. `python -m app.drugs.drug_db`로 빌드한 뒤 시작하세요.")
     build(path)
 
 
@@ -161,8 +171,8 @@ def load(path: Path = DB) -> dict:
         p_ing.setdefault(pid, []).append(sid)
     products = {"products": {
         pid: dict(kind=kind, aliases=p_alias.get(pid, []), ingredients=p_ing.get(pid, []), supplement=bool(sup),
-                  note=note, links=json.loads(links), reviewed=bool(rev))
-        for pid, kind, sup, note, links, rev in q("select * from hand_products order by rowid")}}
+                  herbal=bool(herb), note=note, links=json.loads(links), reviewed=bool(rev))
+        for pid, kind, sup, herb, note, links, rev in q("select * from hand_products order by rowid")}}
 
     w_names: dict[int, dict[str, list[str]]] = {}
     for iid, name, typ in q("select item_id, name, type from wada_item_names order by rowid"):

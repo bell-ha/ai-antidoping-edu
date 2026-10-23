@@ -1,6 +1,8 @@
 # KADA 약물 원자료 (raw)
 
-한국도핑방지위원회(kada-ad.or.kr)에서 2026-10-17에 받은 원본 그대로. 고치지 않는다 — 가공본은 `../processed/`.
+한국도핑방지위원회(kada-ad.or.kr)에서 2026-10-17에 받은 원본 그대로. 고치지 않는다 — 가공본은 `../processed/`:
+`prohibited_sections_ko_2026.json`(금지목록 국문 분류 이름)·`documents.json`(문서 목록·게시판 주소)은 `scripts/build_kada.py`가 만들고,
+`herbal_medicine_2025.json`(한약재 11종)은 이미지 PDF라 사람이 옮겼다.
 파일 자체는 Git에 올리지 않는다(.gitignore). 이 표로 같은 파일을 다시 받아 sha256으로 맞춰 볼 수 있다.
 
 - 한약재 가이드라인은 이미지 PDF라 글자를 쓰려면 OCR이 필요하다.

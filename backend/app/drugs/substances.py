@@ -1,8 +1,8 @@
 """약물·보충제 확인 (D10, D11, D12). 판정은 조회표가 하고 LLM은 설명만 한다.
 
 조회표: knowledge/drugs/curated/substances.json(성분, 손으로 정리), knowledge/drugs/curated/products.json(제품·제품군),
-knowledge/drugs/wada/processed/prohibited_list_<연도>.json(WADA 금지목록 PDF 자동 추출, scripts/wada_extract.py),
-knowledge/drugs/kr_source/processed/kr_products.json.gz(한글 제품명 → 영문 성분명, 심평원 약가마스터, scripts/kr_drug_names.py).
+knowledge/drugs/wada/processed/prohibited_list_<연도>.json(WADA 금지목록 PDF 자동 추출, scripts/build_wada.py),
+knowledge/drugs/kr_source/processed/kr_products.json.gz(한글 제품명 → 영문 성분명, 심평원 약가마스터, scripts/build_kr_source.py).
 찾는 순서: 손 조회표의 성분 → 손 조회표의 제품군 → 한글 제품명(약가마스터) → 손 조회표의 제품 → WADA 추출본 →
 한글 성분명(약가마스터 제품명 안에 들어 있는 경우) → 부분 일치(판정 없이 주의 성분만).
 - 한글 제품명은 정확히 일치 → 앞부분 일치. 후보들의 성분 구성이 서로 다르면 판정하지 않는다(category + 후보 목록).
@@ -121,9 +121,8 @@ def _wada_ingredient(items: list[dict]) -> Ingredient:
 
 
 @cache
-def _tables() -> tuple[dict, dict, dict, dict]:
+def _tables() -> tuple[dict, dict, dict]:
     substances, products = _store()["substances"], _store()["products"]
-    dro: dict = {}  # (예전 국가 경로 설정 — 확인처 안내를 빼면서 파일 삭제)
     index: dict[str, tuple[str, str]] = {}
     for sid, s in substances["substances"].items():
         for name in [s["name_ko"], s["name_en"], *s.get("aliases", [])]:
@@ -133,19 +132,19 @@ def _tables() -> tuple[dict, dict, dict, dict]:
     for pid, p in products["products"].items():
         for name in [pid, *p.get("aliases", [])]:
             index[normalize(name)] = ("product", pid)
-    return substances, products, dro, index
+    return substances, products, index
 
 
 def _match(query: str) -> tuple[str, str] | None:
     """정확히 일치하면 ("substance"|"product", id). 이름이 일부만 들어 있으면 ("partial", ...)로 따로 처리한다."""
-    _, _, _, index = _tables()
+    _, _, index = _tables()
     return index.get(normalize(query))
 
 
 def _partial(query: str) -> list[str]:
     """'타이레놀 콜드', '슈도에페드린 시럽'처럼 이름이 섞인 입력. 다른 성분이 더 있을 수 있으므로
     판정하지 않고 주의 성분만 모은다(가장 보수적인 처리)."""
-    substances, products, _, index = _tables()
+    substances, products, index = _tables()
     q = normalize(query)
     ids: list[str] = []
     for name, (kind, key) in index.items():
@@ -203,7 +202,7 @@ def clean_english(name: str) -> str:
 def _substring_keys() -> list[tuple[str, tuple[str, str]]]:
     """부분 일치용 이름(영문, 6자 이상), 긴 것부터. 손 조회표가 같은 이름을 가지면 손 조회표."""
     keys: dict[str, tuple[str, str]] = {}
-    for k, (kind, sid) in _tables()[3].items():
+    for k, (kind, sid) in _tables()[2].items():
         if kind == "substance" and k.isascii() and len(k) >= 6:
             keys[k] = ("hand", sid)
     for k in _wada()[1]:
@@ -215,7 +214,7 @@ def _substring_keys() -> list[tuple[str, tuple[str, str]]]:
 @cache
 def resolve_english(name: str) -> Ingredient:
     """제품의 영문 성분명 하나 → 성분 상태. 화면에는 약가마스터의 원래 이름을 name_en으로 보여준다."""
-    hand, wada = _tables()[3], _wada()[1]
+    hand, wada = _tables()[2], _wada()[1]
     # 원래 이름("triamcinolone acetonide"는 WADA에 이 이름 그대로 있음)을 먼저, 그다음 염을 뗀 이름으로 찾는다
     keys = [k for k in dict.fromkeys([normalize(re.sub(r"\(as [^)]*\)", "", name)), normalize(clean_english(name))]) if k]
     hand_key = next((k for k in keys if hand.get(k, ("",))[0] == "substance"), None)
@@ -386,11 +385,6 @@ def _route(country: str) -> CountryRoute:
     return "kada" if country == "KR" else "local_unverified"
 
 
-def _links(route: CountryRoute, status: CheckStatus, extra: list[dict]) -> list[OfficialLink]:
-    """다른 기관에서 다시 확인하라는 링크는 붙이지 않는다(2026-10-17 사용자). 제품 표에 적힌 링크만 그대로."""
-    return [OfficialLink(**e) for e in extra]
-
-
 def _steps(status: CheckStatus, kind: str, route: CountryRoute, timing: Timing, supplement: bool,
            note: str | None) -> list[str]:
     steps: list[str] = []
@@ -422,7 +416,7 @@ def _steps(status: CheckStatus, kind: str, route: CountryRoute, timing: Timing, 
 
 
 def check(query: str, country: str, timing: Timing) -> CheckResult:
-    substances, products, _, _ = _tables()
+    substances, products, _ = _tables()
     country = country.upper()
     route = _route(country)
     hit = _match(query)
@@ -438,6 +432,8 @@ def check(query: str, country: str, timing: Timing) -> CheckResult:
         kind = "substance"
         pairs = [_ingredient(hit[1])]
         reviewed = pairs[0][1]
+        # 보충제 제품군에 들어 있는 성분(크레아틴, 히게나민 등)은 성분 이름으로 물어도 오염 경고를 붙인다
+        supplement = any(p.get("supplement") and hit[1] in p["ingredients"] for p in products["products"].values())
     elif kr:
         kind, note, candidates = kr["kind"], kr["note"], kr.get("candidates", [])
         pairs = [(i, False) for i in kr["ingredients"]]
@@ -457,7 +453,7 @@ def check(query: str, country: str, timing: Timing) -> CheckResult:
     else:
         pairs = [_ingredient(i) for i in _partial(query)]  # 판정 없이 주의 성분만
 
-    ingredients = [ing for ing, _ in pairs]
+    ingredients = [ing.model_copy(update={"wada_class_ko": class_ko(ing.wada_class)}) for ing, _ in pairs]
     if kr:
         status: CheckStatus = kr["status"]
     elif kind in ("substance", "product"):
@@ -473,8 +469,9 @@ def check(query: str, country: str, timing: Timing) -> CheckResult:
         timing=timing,
         country=country,
         route=route,
+        note=note,
         steps=_steps(status, kind, route, timing, supplement, note),
-        links=_links(route, status, extra),
+        links=[OfficialLink(**e) for e in extra],  # 표에 적힌 자료 출처만(다시 확인하라는 링크는 붙이지 않음)
         supplement_warning=supplement,
         list_version=substances["list_version"],
         reviewed=reviewed,
@@ -483,16 +480,38 @@ def check(query: str, country: str, timing: Timing) -> CheckResult:
     )
 
 
+@cache
+def _sections_ko() -> dict[str, str]:
+    """KADA 국문판의 분류 이름(scripts/build_kada.py가 만든 kada/processed/prohibited_sections_ko_<연도>.json)."""
+    version = _tables()[0]["list_version"]
+    path = DRUGS / "kada" / "processed" / f"prohibited_sections_ko_{version}.json"
+    return json.loads(path.read_text(encoding="utf-8"))["sections"] if path.exists() else {}
+
+
+def class_ko(code: str | None) -> str | None:
+    """"S6.B" → "특정 흥분제". 세부 분류 이름이 없으면 상위 분류 이름("S2.1.3" → S2.1)."""
+    names = _sections_ko()
+    while code:
+        if code in names:
+            return names[code]
+        code = code.rsplit(".", 1)[0] if "." in code else None
+    return None
+
+
 def unreviewed() -> list[str]:
     """§10 G2: 연구진 검토 전 항목. DEMO_MODE=0에서 하나라도 있으면 서버가 시작을 거부한다."""
-    substances, products, _, _ = _tables()
+    substances, products, _ = _tables()
     out = [f"substances.json:{k}" for k, v in substances["substances"].items() if not v["reviewed"]]
-    out += [f"products.json:{k}" for k, v in products["products"].items() if not v["reviewed"]]
+    out += [f"{'herbal_medicine_2025.json' if v.get('herbal') else 'products.json'}:{k}"
+            for k, v in products["products"].items() if not v["reviewed"]]
     # 자동 추출본은 파일 단위로 검토한다(추출 방법 + 섹션별 표본 + 예외 테스트) — 사용자·연구진 승인 대기
     if not _kr()[0]["meta"]["reviewed"]:
         out.append("kr_products.json.gz")
     if not _wada()[0]["reviewed"]:
         out.append(f"wada/processed/prohibited_list_{substances['list_version']}.json")
+    sections = DRUGS / "kada" / "processed" / f"prohibited_sections_ko_{substances['list_version']}.json"
+    if sections.exists() and not json.loads(sections.read_text(encoding="utf-8"))["reviewed"]:
+        out.append(sections.name)
     return out
 
 

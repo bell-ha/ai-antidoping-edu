@@ -31,7 +31,7 @@ def lookup(question: str) -> list[CheckResult]:
     found: list[CheckResult] = []
     for term in _terms(question):
         result = substances.check(term, "KR", "unknown")
-        if result.matched_kind in ("product", "substance", "category") and (result.ingredients or result.candidates):
+        if result.matched_kind in ("product", "substance", "category") and (result.ingredients or result.candidates or result.supplement_warning):
             found.append(result)
         if len(found) >= MAX:
             break

@@ -4,7 +4,7 @@
  "list_expires": "2026-12-31",
  "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
  "source_sha256": "f0b3fcb0dc48477868983eaddac08c132b5c079d941eaa8d40aa6ff9064ece5a",
- "extracted_by": "analysis/wada_extract.py (PyMuPDF 좌표 기반 자동 추출) + wada_manual_2026.yaml (손 보정)",
+ "extracted_by": "scripts/build_wada.py (PyMuPDF 좌표 기반 자동 추출) + wada_manual_2026.yaml (손 보정)",
  "reviewed": false,
  "caution": "닫힌 목록이 아님: 여기 없는 이름을 허용으로 해석하지 말 것. 조건은 항목의 condition과 sections[*].footnotes.",
  "section_conditions": {

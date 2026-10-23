@@ -14,10 +14,10 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app import config, db
 from app.api.login import current
-from app.chat import client, drugs, guard, prompts
-from app.chat.retrieve import get_chunk, retrieve
+from app.chat import client, drug_lookup, guard, prompts
+from app.chat.retrieve import retrieve
 from app.program import lessons
-from app.schemas import ChatMessage, ChatRequest, ChatResponse, Chunk, RelatedLesson, SessionInfo
+from app.schemas import ChatMessage, ChatRequest, ChatResponse, RelatedLesson, SessionInfo
 
 router = APIRouter(prefix="/api")
 log = logging.getLogger(__name__)
@@ -74,7 +74,7 @@ def _answer(body: ChatRequest, who: SessionInfo) -> tuple[ChatResponse, str]:
     if _over_limit(who):
         return guard.server_message(guard.DAILY_LIMIT), "chat_limit"
 
-    checks = drugs.lookup(question)
+    checks = drug_lookup.lookup(question)
     # 약 이름이 있으면 성분 이름으로도 찾고(예: 타이레놀 → 슈도에페드린 레슨), 판정이 이미 근거라 레슨은 3개만
     names = " ".join(dict.fromkeys(i.name_ko for c in checks for i in c.ingredients))
     chunks = retrieve(f"{question} {names}", k=3) if checks else retrieve(question)
@@ -94,11 +94,3 @@ def _answer(body: ChatRequest, who: SessionInfo) -> tuple[ChatResponse, str]:
     related = [RelatedLesson(lesson_id=d, title=lessons.title(d), category=lessons.meta(d)["category"])
                for d in dict.fromkeys(c.chunk_id.split("#")[0] for c in result.citations) if lessons.exists(d)]
     return result.model_copy(update={"drug_checks": checks, "related_lessons": related}), "chat_llm"
-
-
-@router.get("/sources/{chunk_id:path}", response_model=Chunk)
-def source(chunk_id: str, who: SessionInfo = Depends(current)) -> Chunk:
-    chunk = get_chunk(chunk_id)
-    if chunk is None:
-        raise HTTPException(404)
-    return chunk

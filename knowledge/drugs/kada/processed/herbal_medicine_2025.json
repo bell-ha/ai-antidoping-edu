@@ -1,0 +1,109 @@
+{
+  "source": "KADA 한약재 도핑방지 가이드라인(최종, 2025-07) 7쪽 — KIST 도핑콘트롤센터 2024년 분석, 다빈도 한약재 32종 중 금지성분이 나온 11종",
+  "raw_path": "knowledge/drugs/kada/raw/한약/한약재 도핑방지 가이드라인(최종).pdf",
+  "board_page": "https://www.kada-ad.or.kr/kada?where=drug/drug_chinese_medic",
+  "made_by": "이미지 PDF라 사람이 옮김(scripts/build_kada.py가 만들지 않음)",
+  "herbs": {
+    "마황": {
+      "aliases": [
+        "麻黃"
+      ],
+      "ingredients": [
+        "ephedrine",
+        "methylephedrine",
+        "pseudoephedrine"
+      ],
+      "reviewed": false
+    },
+    "백굴채": {
+      "aliases": [
+        "白屈菜"
+      ],
+      "ingredients": [
+        "higenamine"
+      ],
+      "reviewed": false
+    },
+    "부자": {
+      "aliases": [
+        "附子"
+      ],
+      "ingredients": [
+        "higenamine"
+      ],
+      "reviewed": false
+    },
+    "세신": {
+      "aliases": [
+        "細辛"
+      ],
+      "ingredients": [
+        "higenamine"
+      ],
+      "reviewed": false
+    },
+    "연자육": {
+      "aliases": [
+        "蓮子肉",
+        "연밥"
+      ],
+      "ingredients": [
+        "higenamine"
+      ],
+      "reviewed": false
+    },
+    "오수유": {
+      "aliases": [
+        "吳茱萸"
+      ],
+      "ingredients": [
+        "higenamine"
+      ],
+      "reviewed": false
+    },
+    "오약": {
+      "aliases": [
+        "烏藥"
+      ],
+      "ingredients": [
+        "higenamine"
+      ],
+      "reviewed": false
+    },
+    "지부자": {
+      "aliases": [
+        "地膚子"
+      ],
+      "ingredients": [
+        "higenamine"
+      ],
+      "reviewed": false
+    },
+    "산초": {
+      "aliases": [
+        "山椒"
+      ],
+      "ingredients": [
+        "higenamine"
+      ],
+      "reviewed": false
+    },
+    "마전자": {
+      "aliases": [
+        "馬錢子"
+      ],
+      "ingredients": [
+        "strychnine"
+      ],
+      "reviewed": false
+    },
+    "보두": {
+      "aliases": [],
+      "ingredients": [
+        "strychnine"
+      ],
+      "reviewed": false
+    }
+  },
+  "note": "KADA 한약재 도핑방지 가이드라인(2025) 7쪽: KIST 도핑콘트롤센터의 2024년 분석에서 이 한약재에서 나온 성분이에요. 약재마다 함량이 일정하지 않아요."
+}
