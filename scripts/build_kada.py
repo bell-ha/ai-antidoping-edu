@@ -5,8 +5,8 @@
 만드는 것
   prohibited_sections_ko_2026.json   2026 금지목록 국문 대역본의 분류 이름(S0~S9, P1, M1~M3와 세부 분류).
                                      약물 판정 카드와 AI 근거에 "S6.B 특정 흥분제"처럼 한글 분류명을 붙이는 데 쓴다.
-  documents.json                     받아 둔 KADA 문서 목록: 제목 · 출처 게시판 주소 · 원본 파일 주소 · sha256 · raw 경로.
-                                     교육 레슨의 원문 링크를 다운로드 주소 대신 게시판 주소로 바꾸는 데 쓴다.
+  documents.json                     받아 둔 KADA 문서 목록: 제목 · 출처 게시판 주소 · 원본 파일 주소 · 바로 보기 주소(view_url)
+                                     · sha256 · raw 경로. 교육 레슨의 원문 링크는 view_url(브라우저에서 바로 열림)을 쓴다.
 손으로 옮긴 것(이 스크립트가 만들지 않음)
   herbal_medicine_2025.json          한약재 도핑방지 가이드라인 7쪽(이미지 PDF라 글자를 뽑을 수 없어 사람이 옮김)
 
@@ -75,6 +75,8 @@ def documents() -> list[dict]:
                 "raw_path": path,
                 "board_page": cells[2].split()[0] if cells[2].startswith("http") else None,  # 주소 뒤 설명 글은 뺀다
                 "file_url": cells[1],
+                # KADA 게시판의 "PDF보기"와 같은 주소: 내려받지 않고 브라우저에서 바로 열린다(레슨 원문 링크로 쓴다)
+                "view_url": cells[1] + "&pdfView=true" if "fileDownLoad" in cells[1] else cells[1],
                 "sha256": hashlib.sha256(local.read_bytes()).hexdigest() if local.exists() else None,
             })
     return out
