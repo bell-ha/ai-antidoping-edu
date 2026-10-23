@@ -345,6 +345,38 @@
       "file_url": "https://www.kada-ad.or.kr/cmn/fileDownLoad?getHash=2022060922382939bf39be-cd42-4b36-b3a2-9417ac58279f&getName=WEB_2021_ISE%20%EA%B5%90%EC%9C%A1%20%EA%B5%AD%EC%A0%9C%ED%91%9C%EC%A4%80%20%ED%95%9C%EC%98%81%EB%B2%88%EC%97%AD.pdf",
       "view_url": "https://www.kada-ad.or.kr/cmn/fileDownLoad?getHash=2022060922382939bf39be-cd42-4b36-b3a2-9417ac58279f&getName=WEB_2021_ISE%20%EA%B5%90%EC%9C%A1%20%EA%B5%AD%EC%A0%9C%ED%91%9C%EC%A4%80%20%ED%95%9C%EC%98%81%EB%B2%88%EC%97%AD.pdf&pdfView=true",
       "sha256": "58e24b6802d201be0a1e54b4372d52f1a4bb7e49535c69f91be8f07cb1e8b7c2"
+    },
+    {
+      "title": "WEB_세계도핑방지규약_통합본",
+      "raw_path": "knowledge/education/raw/kada/규정/WEB_세계도핑방지규약_통합본.pdf",
+      "board_page": "https://www.kada-ad.or.kr/kadaList?where=data/data_rule_rule&board_kind=ruleData",
+      "file_url": "https://www.kada-ad.or.kr/cmn/fileDownLoad?getHash=20220609222829f0775793-8914-4057-a5e5-60bcbe27af7b&getName=WEB_%EC%84%B8%EA%B3%84%EB%8F%84%ED%95%91%EB%B0%A9%EC%A7%80%EA%B7%9C%EC%95%BD_%ED%86%B5%ED%95%A9%EB%B3%B8.pdf",
+      "view_url": "https://www.kada-ad.or.kr/cmn/fileDownLoad?getHash=20220609222829f0775793-8914-4057-a5e5-60bcbe27af7b&getName=WEB_%EC%84%B8%EA%B3%84%EB%8F%84%ED%95%91%EB%B0%A9%EC%A7%80%EA%B7%9C%EC%95%BD_%ED%86%B5%ED%95%A9%EB%B3%B8.pdf&pdfView=true",
+      "sha256": "3799ab5a5410ee33550e6fabb6a897a36c144510f1b695a9eca8373919b06f5b"
+    },
+    {
+      "title": "2021 한국도핑방지규정 개정안 전문(220308 개정)",
+      "raw_path": "knowledge/education/raw/kada/규정/2021 한국도핑방지규정 개정안 전문(220308 개정).pdf",
+      "board_page": "https://www.kada-ad.or.kr/kadaList?where=data/data_rule_rule&board_kind=ruleData",
+      "file_url": "https://www.kada-ad.or.kr/cmn/fileDownLoad?getHash=20220609222600edd3bf84-d093-4094-8e89-e76b858c9c80&getName=2021%20%ED%95%9C%EA%B5%AD%EB%8F%84%ED%95%91%EB%B0%A9%EC%A7%80%EA%B7%9C%EC%A0%95%20%EA%B0%9C%EC%A0%95%EC%95%88%20%EC%A0%84%EB%AC%B8%28220308%20%EA%B0%9C%EC%A0%95%29.pdf",
+      "view_url": "https://www.kada-ad.or.kr/cmn/fileDownLoad?getHash=20220609222600edd3bf84-d093-4094-8e89-e76b858c9c80&getName=2021%20%ED%95%9C%EA%B5%AD%EB%8F%84%ED%95%91%EB%B0%A9%EC%A7%80%EA%B7%9C%EC%A0%95%20%EA%B0%9C%EC%A0%95%EC%95%88%20%EC%A0%84%EB%AC%B8%28220308%20%EA%B0%9C%EC%A0%95%29.pdf&pdfView=true",
+      "sha256": "ac6f07544ce7e3b45b19f5979f5ee019b0c7251c1c97879e0e9d067a81d4155a"
+    },
+    {
+      "title": "WEB_2021_ISTI",
+      "raw_path": "knowledge/education/raw/kada/국제표준/WEB_2021_ISTI.pdf",
+      "board_page": "https://www.kada-ad.or.kr/kadaList?where=data/data_rule_standard&board_kind=isData",
+      "file_url": "https://www.kada-ad.or.kr/cmn/fileDownLoad?getHash=2022060922394456161e25-b4ec-4058-b8b8-05171c6c9f71&getName=WEB_2021_ISTI.pdf",
+      "view_url": "https://www.kada-ad.or.kr/cmn/fileDownLoad?getHash=2022060922394456161e25-b4ec-4058-b8b8-05171c6c9f71&getName=WEB_2021_ISTI.pdf&pdfView=true",
+      "sha256": "80e5fc353299091d7f9008ecad42b2b3a665882a22363dc0302b266008325d90"
+    },
+    {
+      "title": "WEB_2021_ISRM",
+      "raw_path": "knowledge/education/raw/kada/국제표준/WEB_2021_ISRM.pdf",
+      "board_page": "https://www.kada-ad.or.kr/kadaList?where=data/data_rule_standard&board_kind=isData",
+      "file_url": "https://www.kada-ad.or.kr/cmn/fileDownLoad?getHash=202206092236526ffbdcc8-2c50-4ef6-bd4d-1baebb20b9c6&getName=WEB_2021_ISRM.pdf",
+      "view_url": "https://www.kada-ad.or.kr/cmn/fileDownLoad?getHash=202206092236526ffbdcc8-2c50-4ef6-bd4d-1baebb20b9c6&getName=WEB_2021_ISRM.pdf&pdfView=true",
+      "sha256": "5ec7c0036df34a85a8dc422bf831e8daa1250eca33494878f58f0a20f0f43bc0"
     }
   ]
 }

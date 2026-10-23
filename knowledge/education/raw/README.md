@@ -6,6 +6,8 @@
   wada-ama.org는 자동 다운로드를 막아 ITA·Play True Japan에 올라온 같은 문서를 받았다.
 - `adel/` — WADA ADEL 공개 카탈로그·코스 정보(JSON, 로그인 없이 응답하는 API).
 - `kada/` — KADA 교육용 자료 게시판 21건, ISE 2021 한영 대역(한글 텍스트 추출이 깨져 OCR 필요), 교육e카다 학습자 가이드.
+  2026-10-23 추가: 규정 게시판의 세계도핑방지규약 통합본·한국도핑방지규정 전문, 국제표준 게시판의 ISTI(검사·조사)·ISRM(결과관리) 국문.
+  한국도핑방지규정은 글자 추출이 되고, 나머지 셋은 글꼴 때문에 한글이 깨져 쪽 그림으로 읽어야 한다. 프로스포츠 규정·실험실(ISL)·가맹기구 규약준수 표준은 역도 선수 교육과 거리가 멀어 받지 않았다.
 
 | 파일 | 원본 URL | 출처 페이지 | sha256(앞 16자) |
 |---|---|---|---|
@@ -58,3 +60,7 @@
 | wada/ISE_Athlete-Curriculum.pdf | https://ita.sport/uploads/2021/11/ISE_Athlete-Curriculum.pdf | WADA Example of an Athlete Curriculum v1 (March 2021), ITA mirror | `5272eba552ab892c` |
 | wada/international_standard_ise_2020.pdf | https://ita.sport/uploads/2021/01/international_standard_ise_2020.pdf | https://ita.sport/resource/international-standard-for-education-ise/ | `c77f294645be137f` |
 | wada/guidelinesforeducation_final.pdf | (사용자가 wada-ama.org에서 직접 받음) | https://www.wada-ama.org/en/resources/education-and-prevention/guidelines-for-the-2021-international-standard-for-education-ise | `0e21891252799f71` |
+| kada/규정/WEB_세계도핑방지규약_통합본.pdf | https://www.kada-ad.or.kr/cmn/fileDownLoad?getHash=20220609222829f0775793-8914-4057-a5e5-60bcbe27af7b&getName=WEB_%EC%84%B8%EA%B3%84%EB%8F%84%ED%95%91%EB%B0%A9%EC%A7%80%EA%B7%9C%EC%95%BD_%ED%86%B5%ED%95%A9%EB%B3%B8.pdf | https://www.kada-ad.or.kr/kadaList?where=data/data_rule_rule&board_kind=ruleData | `3799ab5a5410ee33` |
+| kada/규정/2021 한국도핑방지규정 개정안 전문(220308 개정).pdf | https://www.kada-ad.or.kr/cmn/fileDownLoad?getHash=20220609222600edd3bf84-d093-4094-8e89-e76b858c9c80&getName=2021%20%ED%95%9C%EA%B5%AD%EB%8F%84%ED%95%91%EB%B0%A9%EC%A7%80%EA%B7%9C%EC%A0%95%20%EA%B0%9C%EC%A0%95%EC%95%88%20%EC%A0%84%EB%AC%B8%28220308%20%EA%B0%9C%EC%A0%95%29.pdf | https://www.kada-ad.or.kr/kadaList?where=data/data_rule_rule&board_kind=ruleData | `ac6f07544ce7e3b4` |
+| kada/국제표준/WEB_2021_ISTI.pdf | https://www.kada-ad.or.kr/cmn/fileDownLoad?getHash=2022060922394456161e25-b4ec-4058-b8b8-05171c6c9f71&getName=WEB_2021_ISTI.pdf | https://www.kada-ad.or.kr/kadaList?where=data/data_rule_standard&board_kind=isData | `80e5fc353299091d` |
+| kada/국제표준/WEB_2021_ISRM.pdf | https://www.kada-ad.or.kr/cmn/fileDownLoad?getHash=202206092236526ffbdcc8-2c50-4ef6-bd4d-1baebb20b9c6&getName=WEB_2021_ISRM.pdf | https://www.kada-ad.or.kr/kadaList?where=data/data_rule_standard&board_kind=isData | `5ec7c0036df34a85` |
