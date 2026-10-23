@@ -1,19 +1,22 @@
 [project]
 name = "antidoping-edu-backend"
-version = "0.1.0"
+version = "0.2.0"
+description = "AI 반도핑 교육 플랫폼 서버(FastAPI) — 화면(frontend/dist)도 같은 서버가 내보낸다"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
     "pydantic>=2.9",
-    "itsdangerous>=2.2",  # SessionMiddleware 서명 쿠키 (D23)
-    "anthropic>=1.12",
-    "rank-bm25>=0.2.2",   # 46 요청 (D13)
-    "pyyaml>=6.0",        # 46 요청 (rules.yaml, synonyms.yaml)
+    "itsdangerous>=2.2",  # 로그인 세션 쿠키 서명(SessionMiddleware)
+    "anthropic>=1.12",    # 질문하기 — Claude API
+    "rank-bm25>=0.2.2",   # 질문하기 — 레슨 300개 근거 검색
+    "pyyaml>=6.0",        # 레슨 frontmatter, settings/*.yaml
+    "numpy>=2.0",         # 연구진 RNN 추론(model/rnn_infer.py)
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "httpx>=0.27"]
+dev = ["pytest>=8", "httpx>=0.27"]          # 테스트: pip install -e ".[dev]"
+scripts = ["pymupdf>=1.24"]                 # scripts/build_wada.py(WADA PDF 추출)만. 서버·Docker에는 넣지 않는다
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
