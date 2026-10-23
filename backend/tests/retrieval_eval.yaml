@@ -1,4 +1,4 @@
-# 검색 평가셋 (D14, 튜닝용). 역도 선수(남자)가 "질문하기"에 칠 법한 구어체 질문과, 그 질문에 답이 되는 레슨 id.
+# 검색 평가셋 (튜닝용). 역도 선수(남자)가 "질문하기"에 칠 법한 구어체 질문과, 그 질문에 답이 되는 레슨 id.
 # 채점: retrieve(q) 상위 K개 청크의 doc_id 중 expect가 하나라도 있으면 성공 → recall@K (test_retrieval.py).
 # expect는 사람이 레슨 제목·본문을 읽고 정했다.
 # backend/settings/synonyms.yaml은 이 파일의 실패를 보고 고친다. 독립 수치는 retrieval_heldout.yaml(고칠 때 보지 않음).

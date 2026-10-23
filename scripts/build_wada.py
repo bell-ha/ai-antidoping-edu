@@ -1,4 +1,4 @@
-"""WADA 금지목록 PDF → 구조화 JSON (D10 조회표의 원천 자료).
+"""WADA 금지목록 PDF → 구조화 JSON (약물 판정 조회표의 원천 자료).
 
     <PyMuPDF·PyYAML이 있는 가상환경>/bin/python scripts/build_wada.py --pdf knowledge/drugs/wada/raw/2026list_en_final_clean_september_2025.pdf \\
         --year 2026 --url <원문 URL> --manual knowledge/drugs/wada/processed/wada_manual_2026.yaml --out knowledge/drugs/wada/processed/prohibited_list_2026.json
@@ -14,7 +14,7 @@ WADA는 금지목록을 PDF로만 배포한다(기계용 형식 없음). 원문 
 
 한계(그대로 출력에 남긴다):
 - WADA 목록은 닫힌 목록이 아니다("including, but not limited to", "similar chemical structure").
-  여기 없는 이름을 "허용"으로 해석하면 안 된다(D10).
+  여기 없는 이름을 "허용"으로 해석하면 안 된다.
 - 판정 규칙은 substances.check()가 정한다.
 - 자동 추출이므로 사람이 검토하기 전에는 reviewed=false.
 """

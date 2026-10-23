@@ -1,9 +1,9 @@
-"""검색 동작 (D14).
+"""검색 동작.
 
 검색 정확도: 레슨 300개 기준 평가셋 두 개로 recall@K(K = 서버가 AI에 넘기는 청크 수)를 잰다.
 - retrieval_eval.yaml(튜닝셋 60문항): synonyms.yaml을 고칠 때 보는 셋. 2026-10-23 recall@6 1.000(recall@3 0.950).
 - retrieval_heldout.yaml(15문항): 동의어를 고칠 때 보지 않고 마지막에 한 번 잰 셋. 2026-10-23 recall@6 0.867.
-기준은 달성값보다 조금 낮게 둔다. hold-out 기준은 D14 수용 기준(0.8)과 같다.
+기준은 달성값보다 조금 낮게 둔다. hold-out 기준은 0.8.
 """
 
 from pathlib import Path

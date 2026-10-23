@@ -23,7 +23,7 @@ knowledge/
 
 | 가공본 | 만드는 것 | 원본이 바뀌면 |
 |---|---|---|
-| `drugs/wada/processed/` | `scripts/build_wada.py`(PDF 자동 추출 + 손 보정 yaml) | 해마다 새 금지목록 → 다시 추출하고 `docs/WADA-REVIEW.md`로 사람 검토 |
+| `drugs/wada/processed/` | `scripts/build_wada.py`(PDF 자동 추출 + 손 보정 yaml) | 해마다 새 금지목록 → 다시 추출하고 `drugs/wada/REVIEW.md`로 사람 검토 |
 | `drugs/kada/processed/` 분류 이름·문서 목록 | `scripts/build_kada.py` | 다시 실행 |
 | `drugs/kada/processed/herbal_medicine_2025.json` | 사람이 옮김(이미지 PDF) | 가이드라인 7쪽을 보고 고침 |
 | `drugs/kr_source/processed/` | `scripts/build_kr_source.py` | 심평원 파일을 새로 받아 다시 실행 |

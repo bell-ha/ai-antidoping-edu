@@ -1,10 +1,10 @@
-"""경기력 예측 계산 (D4, D26, D32). 대회 기록 → 마지막 대회 합계 예측.
+"""경기력 예측 계산. 대회 기록 → 마지막 대회 합계 예측.
 
 모델 파일은 MODEL_DIR(기본 backend/settings/)의 model_params.json이 정한다.
   synthetic_trend : 공개용 합성 추세 모델(누구나 실행해 볼 수 있게). 성별 연령 곡선 + 개인 오프셋.
   rnn             : 연구진 RNN(LSTM) 가중치를 numpy로 추론(app.model.rnn_infer). 성별마다 파일이 따로 있고,
                     없는 성별은 예측하지 않는다(model "none").
-플랫폼은 모델을 학습하지 않고 결과만 쓴다(D32). 서버에 torch는 없다(D2).
+플랫폼은 모델을 학습하지 않고 결과만 쓴다. 서버에 torch는 없다.
 """
 
 import json
@@ -24,7 +24,7 @@ def params() -> dict:
 
 
 def params_source() -> str:
-    """D26: "synthetic"이면 시범(DEMO_MODE=0)에서 서버가 시작을 거부한다."""
+    """"synthetic"이면 시범 모드(DEMO_MODE=0)에서 서버가 시작을 거부한다(main.pilot_problems)."""
     return params()["source"]
 
 

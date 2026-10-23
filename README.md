@@ -2,7 +2,7 @@
 
 역도 선수(남자)를 위한 도핑방지 교육 웹사이트. 연구진 경기력 예측 모델의 결과로 선수들을 단계로 나누고, 단계가 높을수록 한 주에 더 많은 교육과 퀴즈를 줍니다. 선수는 **교육 시작하기**와 **질문하기**만 쓰고, 관리자는 선수 기록을 넣고 진행 상황을 봅니다.
 
-연구용 프로토타입입니다. 설계 결정은 [docs/design/DESIGN-DECISIONS.md](docs/design/DESIGN-DECISIONS.md)(D37이 지금 구조), 화면 규칙은 [DESIGN.md](DESIGN.md).
+연구용 프로토타입입니다. 지금까지 정한 것은 아래 [7절](#7-정해-둔-것), 화면 규칙은 [DESIGN.md](DESIGN.md), 자료 지도는 [knowledge/README.md](knowledge/README.md).
 
 ## 1. 한눈에 보기
 
@@ -21,8 +21,8 @@ flowchart LR
 
 | 누가 | 하는 일 |
 |---|---|
-| 관리자 | 선수 등록(로그인 코드 발급, 가입 없음) · 경기 기록 입력 · 단계 설정 · 선수별 이수/퀴즈/질문 보기 · 교육 자료 열람 · 질문하기 |
-| 선수 | 일주일에 한 번 접속 → 이번 주 교육(글 + 퀴즈 1문항) · 갑자기 퀴즈 · 질문하기 · 사용 설명서 |
+| 관리자 | 선수 등록(로그인 코드 발급, 가입 없음) · 경기 기록 입력 · 단계 설정 · 선수별 이수/퀴즈/오답 남음/질문 보기 · CSV 내보내기 · 교육 자료 열람 · 질문하기 |
+| 선수 | 일주일에 한 번 접속 → 이번 주 교육(글 + 퀴즈 1문항) · 갑자기 퀴즈 · 질문하기 · 내 학습 기록(오답 다시 풀기) · 사용 설명서 |
 
 **단계 나누기**: 모델의 관측 − 예측(kg)이 큰 선수, 즉 예측보다 기록이 많이 오른 선수가 앞. 모델 결과가 없는 선수(기록 부족)는 맨 뒤. 전체 인원을 단계 수로 고르게 나눕니다(100명·5단계면 20명씩). 기본값은 [backend/settings/program.yaml](backend/settings/program.yaml), 관리자가 화면에서 바꿉니다.
 
@@ -40,7 +40,7 @@ flowchart LR
 ai-antidoping-edu/
 ├── frontend/              화면 (React · TypeScript)
 │   └── src/pages/         Login(로그인) · Ask(질문하기 — 선수·관리자 함께)
-│                          athlete/ Home(이번 주 교육) · Lesson(교육+퀴즈) · Guide(사용 설명서)
+│                          athlete/ Home(이번 주 교육) · Lesson(교육+퀴즈) · History(내 학습 기록·오답 다시 풀기) · Guide(사용 설명서)
 │                          admin/   AdminAthletes(선수 표) · AdminAthlete(상세·기록) · AdminSettings(단계) · Library(교육 자료) · Architecture(시스템 구성)
 ├── backend/               서버 (Python · FastAPI)
 │   ├── app/
@@ -55,9 +55,8 @@ ai-antidoping-edu/
 ├── knowledge/             자료. 출처마다 raw/(받은 원본, Git 제외) → processed/(가공본) — 자세한 지도는 knowledge/README.md
 │   ├── drugs/             wada · kada · kr_source(심평원) + curated(사람이 만든 조회표)
 │   └── education/         lessons/(교육 300개, A~M 13개 대분류) + raw/(WADA ISE·Athlete Curriculum·ADEL·KADA 자료)
-├── scripts/               run.sh(서버 켜기) · seed_dummy.py(더미 선수 100명)
+├── scripts/               run.sh(서버 켜기) · seed_dummy.py(더미 선수 100명) · redteam.py(까다로운 질문 50개를 실제 AI로)
 │                          build_wada.py · build_kada.py · build_kr_source.py(raw → processed)
-├── docs/                  WADA-REVIEW.md(금지목록 검토·서명) · design/DESIGN-DECISIONS.md(설계 결정 D1~D40) · design/history/(초기 설계 토론)
 ├── private/               비공개(Git 제외): 연구진 인계 자료 · 원고 · 실제 모델
 └── var/                   실행하면 생김(Git 제외): 운영 DB · 약물 DB · 더미 로그인 코드
 ```
@@ -117,3 +116,19 @@ cd ../frontend && npm ci
 - AI 답변: 기본은 키 없이 도는 mock. 레포 루트 `.env`에 `ANTHROPIC_API_KEY=…`와 `LLM_MODE=live`를 넣으면 실제 답변.
 - 테스트: `cd backend && .venv/bin/python -m pytest -q`
 - Docker: `docker compose up --build` → http://localhost:8100, 더미 선수는 `docker compose exec app python /app/scripts/seed_dummy.py`
+
+## 7. 정해 둔 것
+
+사용자가 정한 것과 날짜. 설계 문서(docs/)는 Claude가 쓴 것이라 2026-10-23에 지웠고, 남길 결정만 여기 옮겼다.
+
+- **대상·역할**: 남자 역도 선수. 선수/관리자 두 역할, 가입 없음 — 관리자가 선수를 등록하면 로그인 코드가 나온다(2026-10-18).
+- **모델**: 연구진 것이다. 플랫폼은 결과(관측 − 예측)만 쓰고 학습·조정하지 않는다. 여자 모델은 구현하지 않는다. 지금 `private/models`의 남자 RNN은 연구진 묶음이 올 때까지의 임시본(2026-10-12, 10-17).
+- **단계**: 관측 − 예측이 큰 순으로 줄 세우고, 결과가 없으면 가장 낮은 단계. 단계가 높을수록 교육 수·퀴즈 빈도만 많고 내용은 같다(2026-10-18). 급격한 향상·감소의 기준은 정하지 않았다(지금은 쓰지 않음).
+- **교육**: 300개, 텍스트 설명 + 객관식 1문항. 갑자기 퀴즈는 배운 교육에서만. 내 학습 기록·오답 다시 풀기(2026-10-18, 10-23).
+- **질문하기**: 선수의 이름·기록·단계는 AI에 보내지 않는다. AI는 종목을 모르므로 종목마다 다른 규정은 "종목마다 다르다", 평소/경기기간 중은 둘 다 말한다. 질문 원문은 저장되고 관리자가 본다(선수에게 따로 알리지 않음). 약물 확인 화면은 질문하기로 합쳤다(2026-10-18).
+- **넣지 않는 문구**: "KADA에서 확인하세요", "전문가·의사에게 확인하세요" 같은 다시 확인하라는 문장, 도움 요청 안내, 동의서, 위기 안내(2026-10-17). 관련 교육 추천과 원문 링크는 넣는다(2026-10-18).
+- **비용**: 답변 생성은 effort low · 최대 1200 토큰 · 직전 대화 2번만(2026-10-18). 같은 질문 답 저장(캐시)과 사용량 기록은 하지 않는다.
+- **자료**: 원본(raw)과 가공본(processed)을 나누고 원본은 Git에 올리지 않는다. 저장소는 공개, 원고·실데이터·연구계획서·연구진 자료는 `private/`에만.
+- **서버**: 하나(8100). 8000은 다른 프로젝트가 쓴다. 알림은 보류(2026-10-23).
+- **검토**: 레슨·약물 표·WADA 추출본이 모두 `reviewed: false`. 시범 모드(`DEMO_MODE=0`)는 실제 모델·사람 검토·금지목록 유효기간·비밀키가 갖춰져야 켜진다 — 이 관문은 이전 Claude 세션이 만든 것이다. WADA 추출본 검토지는 `knowledge/drugs/wada/REVIEW.md`.
+

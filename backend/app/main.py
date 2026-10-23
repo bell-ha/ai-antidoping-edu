@@ -1,4 +1,4 @@
-"""서버 하나(D37): API + 화면(frontend/dist). 실행: cd backend && .venv/bin/python -m uvicorn app.main:app --port 8100"""
+"""서버 하나: API + 화면(frontend/dist). 실행: cd backend && .venv/bin/python -m uvicorn app.main:app --port 8100"""
 
 from datetime import date
 
@@ -15,14 +15,15 @@ from app.model import predict
 
 
 def pilot_problems(today: date, secret: str) -> list[str]:
-    """시범 모드(DEMO_MODE=0) 시작 관문 (§10 G1·G2·G3, D26). 하나라도 있으면 서버가 뜨지 않는다."""
+    """시범 모드(DEMO_MODE=0) 시작 관문. 하나라도 있으면 서버가 뜨지 않는다.
+    (실제 모델 · 사람 검토 · 금지목록 유효기간 · 비밀키 — 이전 Claude 세션이 정한 관문으로, 사용자 방침이 아니다)"""
     problems = []
     if secret == config.DEV_SECRET or len(secret) < 32:
         problems.append("SESSION_SECRET을 32자 이상 무작위 값으로 설정해야 합니다.")
     if pending := substances.unreviewed() + retrieve.unreviewed():
         problems.append(f"연구진 검토 전 항목 {len(pending)}개 (reviewed: false): {pending[:5]} …")
     if predict.params_source() != "real":
-        problems.append("예측 모델이 합성 데이터 기준입니다. 연구진 모델을 private/models에 넣으세요(D26).")
+        problems.append("예측 모델이 합성 데이터 기준입니다. 연구진 모델을 private/models에 넣으세요.")
     if today > (expires := substances.list_expires()):
         problems.append(f"금지목록 유효기간이 {expires}에 끝났습니다. 새 금지목록으로 조회표를 갱신하세요.")
     return problems

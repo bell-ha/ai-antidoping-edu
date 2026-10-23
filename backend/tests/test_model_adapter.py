@@ -1,4 +1,4 @@
-"""연구진 모델 결과 모양 (D32, D35)."""
+"""연구진 모델 결과 모양."""
 
 from types import SimpleNamespace as R
 

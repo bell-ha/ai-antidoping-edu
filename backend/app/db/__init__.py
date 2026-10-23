@@ -1,4 +1,4 @@
-"""운영 DB(SQLite, var/app.sqlite). 표 정의는 schema.sql (D37).
+"""운영 DB(SQLite, var/app.sqlite). 표 정의는 schema.sql.
 
 약물 DB(drugs.drug_db)와 파일을 나눈다. 저쪽은 원자료에서 다시 만들 수 있는 생성물이고,
 이쪽은 다시 만들 수 없는 운영 기록이다. 레포·이미지에 넣지 않는다(.gitignore·.dockerignore).

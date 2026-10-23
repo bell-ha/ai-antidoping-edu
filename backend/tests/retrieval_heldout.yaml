@@ -1,4 +1,4 @@
-# 검색 hold-out (D14, 과적합 확인용). 형식·채점은 retrieval_eval.yaml과 같다.
+# 검색 hold-out (과적합 확인용). 형식·채점은 retrieval_eval.yaml과 같다.
 # synonyms.yaml을 고칠 때 이 파일의 결과는 보지 않는다. 동의어 정리를 마친 뒤에만 점수를 재고 그대로 기록한다.
 # 이 파일의 실패를 보고 동의어를 늘리면 hold-out이 아니게 되므로, 그때는 새 hold-out을 따로 만든다.
 # expect는 사람이 레슨 제목·본문을 읽고 정했다.

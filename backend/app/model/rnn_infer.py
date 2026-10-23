@@ -1,7 +1,7 @@
-"""RNN(LSTM) 경기력 예측의 numpy 추론 (D2: 서버에 torch 없음).
+"""RNN(LSTM) 경기력 예측의 numpy 추론 (서버에 torch 없음).
 
 연구진 모델(원고의 RNNRegressor)과 같은 연산을 numpy로 다시 쓴 것이다. 가중치는 .npz로 받는다.
-지금 private/models의 남자 모델은 연구진 bundle이 올 때까지 자리만 채우는 임시본이다(D35). 두 구현의 출력은 내보낼 때 검증했다
+지금 private/models의 남자 모델은 연구진 bundle이 올 때까지 자리만 채우는 임시본이다. 두 구현의 출력은 내보낼 때 검증했다
 (최대 오차 1e-4 kg 미만이 아니면 내보내지 않음).
 
 이 모듈은 numpy만 import한다 — 학습용 가상환경(torch)에서도 경로로 불러 검증에 쓸 수 있게.
