@@ -33,5 +33,5 @@ LLM_CACHE_DIR = VAR / "llm_cache"  # LLM_MODE=record/replay용
 # 운영 DB(선수·기록·단계·교육 이수·퀴즈·질문). 레포·이미지 밖 기록
 APP_DB = Path(os.environ.get("APP_DB", VAR / "app.sqlite"))
 DAILY_CHAT_LIMIT = int(os.environ.get("DAILY_CHAT_LIMIT", "30"))  # 사용자별 하루 AI 답변 생성 횟수(G5 비용 한도)
-# 외부 설문(사전·사후 평가) 주소. "{pid}" 자리에 가명 ID가 들어간다(사용 기록과 같은 가명 → 이름 없이 연결)
+# 외부 설문(사전·사후 평가) 주소. "{pid}" 자리에 선수 번호(WL-001 등)가 들어간다(api/athlete.py survey)
 SURVEY_URL = os.environ.get("SURVEY_URL", "")

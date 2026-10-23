@@ -6,12 +6,12 @@ import { HOME_BY_ROLE, SessionContext } from "./session";
 import { AdminAthlete } from "./pages/admin/AdminAthlete";
 import { AdminAthletes } from "./pages/admin/AdminAthletes";
 import { AdminSettings } from "./pages/admin/AdminSettings";
-import { Architecture } from "./pages/Architecture";
+import { Architecture } from "./pages/admin/Architecture";
 import { Ask } from "./pages/Ask";
 import { Guide } from "./pages/athlete/Guide";
 import { Home } from "./pages/athlete/Home";
 import { Lesson } from "./pages/athlete/Lesson";
-import { Library } from "./pages/Library";
+import { Library } from "./pages/admin/Library";
 import { Login } from "./pages/Login";
 
 export default function App() {

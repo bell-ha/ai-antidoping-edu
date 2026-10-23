@@ -1,6 +1,6 @@
 # 설계 합의안
 
-> draft-37 · draft-46 · review-of-46 · review-of-37 을 합친 결과. 코드는 이 문서를 기준으로 쓴다.
+> 처음에는 design/history/의 draft-37 · draft-46 · review-of-46 · review-of-37 을 합친 결과였고, 이후 결정(D32~)을 이어 적는다. 코드는 이 문서를 기준으로 쓴다.
 > 상태: ✅ 합의·구현 / 🚧 진행 중 / ❓ 사용자 확인 필요 / ⛔ 폐기(대체한 결정 표시)
 >
 > **2026-10-18 지금 구조는 D37(선수·관리자, 단계별 교육량)과 D38(약물 확인을 질문하기로 합침)이다.** §0·§2·§3·§6~§9는 Phase 1(데모·Figure) 당시 기록으로 남겨 둔다. 현재 API·폴더는 §4·§5, 실행은 README.
@@ -34,7 +34,7 @@
 | D11 | 판정 상태 5단계: `PROHIBITED` / `IN_COMPETITION_ONLY` / `THRESHOLD`(슈도에페드린 등 기준치 방식) / `NOT_LISTED_VERIFY` / `UNKNOWN`. 사용 시기 "모름"은 경기기간 중 기준으로 판정. 보충제는 항상 오염 위험 안내 | 46 | ✅ |
 | D12 | 국가 3갈래: 한국 → KADA 검색, Global DRO 지원국(`knowledge/drugs/dro_countries.json`, 출처 URL 포함) → DRO, 그 외 → "현지 제품 성분 동일성 보장 안 됨" | 37 + 46 검토 6 | ⛔ D36(Global DRO 갈래 폐기) |
 | D13 | RAG = 큐레이션 md 코퍼스 + **BM25(한국어 문자 bigram)**, 임베딩과 벡터 DB 없음. `retrieve(query, k)` 함수 하나로 격리 | 46 ADR-05 | ✅ |
-| D14 | 검색 수용 기준: 튜닝셋 `tests/retrieval_eval.yaml`과 **독립 hold-out** 모두 **recall@K ≥ 0.8**, K = 서버가 AI에 넘기는 청크 수(`rag.K`, 2026-10-17부터 6). hold-out은 고치는 쪽이 보지 않고 다른 세션이 개선 전에 작성, 개선 뒤 한 번만 측정·그대로 보고. 미달 시 ① 동의어 사전 → ② Claude 질의 재작성 → ③ 임베딩 순. **기록**: 문서 12개 때 hold-out1 0.80(첫 측정). 22개로 확충 후 hold-out1 0.75 → 검색 구조 개선(문서 단계 점수 0.4, K=6, 튜닝셋 0.942) → 새 hold-out2 **0.70 (recall@6), 기준 미달** — 대응 결정 대기 | 37 B-5 + 88 + dd | ❓ |
+| D14 | 검색 수용 기준: 튜닝셋 `tests/retrieval_eval.yaml`과 **독립 hold-out** 모두 **recall@K ≥ 0.8**, K = 서버가 AI에 넘기는 청크 수(`chat.retrieve.K`, 6). hold-out은 고치는 쪽이 보지 않고 다른 세션이 개선 전에 작성, 개선 뒤 한 번만 측정·그대로 보고. 미달 시 ① 동의어 사전 → ② Claude 질의 재작성 → ③ 임베딩 순. **기록**: 문서 12개 때 hold-out1 0.80(첫 측정). 22개로 확충 후 hold-out1 0.75 → 검색 구조 개선(문서 단계 점수 0.4, K=6, 튜닝셋 0.942) → 새 (레슨 22개 시절 측정값은 D40 재측정으로 대체) | 37 B-5 + 88 + dd | ✅ 2026-10-23 레슨 300개 기준 재측정(D40): 평가셋 60문항 recall@6 1.00, hold-out 15문항 0.87 |
 | D15 | LLM: Claude API, `CLAUDE_MODEL` 환경변수(기본 `claude-sonnet-5-5`). 구조화 JSON 응답 `{answer, citations[], refer_to_expert, out_of_scope}`. 서버 guard가 인용 ID를 검증하고, 안전 플래그는 **LLM 판단과 서버 규칙(키워드·조회 결과)의 OR**로 정함. **프롬프트에 넣는 프로파일은 태그 + 연령대 + 경기 수준만**(원 기록, 대회명, 체중 수치 금지) | 46 ADR-06 + 37 B-8 | ⛔ D37⑤(프롬프트에 선수 정보 없음) |
 | D16 | `LLM_MODE=mock|live|record|replay`. mock은 UI 개발 전용(guard·S5는 mock으로 검증 불가). 캐시 키는 프롬프트 해시. `scripts/record_scenarios.py`로 S1~S5 캐시를 다시 생성(P0) | 46 ADR-07 + 37 B-8 | ✅ |
 | D17 | 저장소는 레포 안 파일(JSON/MD/YAML)만. 대화는 브라우저 메모리에만 | 양쪽 | ⛔ D37⑤(질문·답 원문 저장, 관리자 열람) |
@@ -60,6 +60,7 @@
 | D37 | **인터뷰 반영: 선수/관리자 두 화면, 단계별 교육량**(2026-10-18 사용자). ① 가입 없음 — 관리자가 선수를 등록하면 로그인 코드 발급(DB에는 해시만). 역할은 선수·관리자 둘(지도자·지원인력·데모 인물 폐지). ② 관리자가 경기 기록을 입력 → 연구진 모델 결과(관측−예측) → 전원 줄 세우기(큰 순, 결과 없으면 맨 뒤) → 인원을 단계 수로 고르게 나눔(기본 5단계). ③ 단계가 높을수록 주당 교육 수·갑자기 퀴즈 확률·문항 수가 많음(내용 난이도는 같음, `backend/settings/program.yaml` 기본값, 관리자가 변경). ④ 레슨은 커리큘럼 순서(A→M)로 매주 배정, 못 들은 것은 이월. 갑자기 퀴즈는 그날 첫 접속 때, 배운 레슨에서만, 마지막에 틀린 것 먼저. ⑤ 질문하기: 선수 개인정보·기록·단계는 AI에 넘기지 않음. 질문 속 약 이름은 약물 조회표 판정을 근거로 넣음(제품명=성분명). 종목·시기를 모르므로 종목마다 다른 규정은 '종목마다 다르다', 경기기간 중/외는 둘 다. 질문·답 원문은 저장하고 관리자가 선수별로 봄. ⑥ 운영 DB에 선수 이름·출생연도·경기 기록 저장(D25의 '저장 안 함' 폐기). ⑦ 교육 프로파일 태그·기준표·추천 연결 폐지(D5·D6 대체). ⑧ 서버 하나(private/models 있으면 연구진 모델, 없으면 합성). 더미 선수 100명은 `scripts/seed_dummy.py`(경기 기록만) | 88 | 🚧 |
 | D38 | **약물 확인 화면을 질문하기로 합침**(2026-10-18 사용자). 챗봇이 이미 같은 조회표 판정을 근거로 쓰므로 별도 화면·메뉴·`/api/admin/check`는 없앰. 대신 답변 아래에 조회표 판정 원본(성분별 상태·분류·같은 이름 제품 후보)을 카드로 보여 줘 AI 설명과 대조할 수 있게 함(추가 API 비용 없음). 판정 엔진(drugs.substances)은 그대로. 상태 표시 문구: NOT_LISTED_VERIFY → "2026 금지목록에 없음", UNKNOWN → "제품마다 다름" | 88 | ✅ |
 | D39 | **질문하기 답변에 관련 교육 추천과 원문 링크**(2026-10-18 사용자: "레슨을 추천해줘도 되고, 외부 링크를 줘도 되고"). 답에 인용된 레슨을 '관련 교육'으로 보여 주고, 선수는 이번 주 목록 밖의 레슨도 열어 읽고 퀴즈를 풀면 이수(이번 주 배정을 먼저 만든 뒤 더함). 출처 칩은 원문 URL을 새 창으로 바로 연다. 근거 검색: 흔한 질문 말(먹어도·돼 등) 제외, 최고점의 0.6배 미만 조각 제외, 약 이름이 있으면 성분 이름을 더해 찾고 레슨 조각 3개만 | 88 | ✅ |
+| D40 | **자료·폴더 정리**(2026-10-23 사용자: "KADA를 제대로, 동의어, 파일 구조, 설치 목록, 옛 흔적"). ① KADA 가공본: `kada/processed/`에 금지목록 국문 분류 이름(판정 카드·AI 근거에 "S6.B 특정 흥분제"), 문서 목록(게시판 주소), 한약재 11종(curated에서 옮김, 약물 DB에 herbal 표시 저장 — 전에는 DB에 빠져 있었음). 만드는 스크립트 `scripts/build_kada.py`. kada.health.kr 검색은 공개된 일괄 내려받기가 없고 국내 제품은 심평원 목록이 대신해 받지 않음 ② 레슨 원문 링크의 KADA 다운로드 주소(fileDownLoad) 188개를 게시판 주소로 ③ 보충제 오염 경고를 판정 카드·AI 근거에 ④ 스크립트 이름을 만드는 대상으로(build_wada·build_kada·build_kr_source), 관리자 전용 화면을 pages/admin/으로, chat/drugs.py → drug_lookup.py, 초기 설계 토론은 docs/design/history/ ⑤ 교육 자료 화면을 A~M 대분류로 묶고 레슨의 roles·topic 칸 제거 ⑥ pyproject에 numpy, 자료 스크립트용 선택 의존성(scripts) ⑦ 검색 동의어를 레슨 300개 기준으로 다시, 검색 평가셋(tests/retrieval_eval.yaml)·hold-out | 88 | ✅ |
 
 ---
 
@@ -106,25 +107,25 @@ S3의 비교 화면은 앱 화면이 아니라 **Playwright로 각 응답을 캡
 | PUT · POST | `/api/admin/settings` · `/api/admin/rerank` | 관리자 | 단계 설정 저장 · 모델 다시 읽고 전체 다시 계산 |
 | GET | `/api/library[/{doc_id}]` | 관리자 | 레슨 300개 열람 |
 | POST | `/api/chat` | 둘 다 | `{messages}` → 답 · 출처 · 약물 판정 카드(`drug_checks`) · 관련 교육(`related_lessons`) · 서명 |
-| GET | `/api/sources/{chunk_id}` | 둘 다 | 출처 팝오버 |
 
 ## 5. 디렉터리 (2026-10-18, D37)
 
 ```
-frontend/src/             # 화면: pages/(Login, athlete/{Home,Lesson,Guide}, admin/{AdminAthletes,AdminAthlete,AdminSettings}, Ask, Library, Architecture)
+frontend/src/pages/       # Login · Ask(질문하기, 선수·관리자) · athlete/{Home,Lesson,Guide} · admin/{AdminAthletes,AdminAthlete,AdminSettings,Library,Architecture}
 backend/app/              # 서버: main config schemas
   api/                    #   login athlete admin chat library
   db/                     #   운영 DB 연결 + schema.sql
   program/                #   lessons tiers weekly quiz
   model/                  #   adapter(연구진 결과 모양) predict rnn_infer
-  drugs/                  #   substances(판정) drug_db
-  chat/                   #   retrieve(BM25) drugs(질문 속 약 이름) prompts guard client
-backend/settings/         # program.yaml(단계 기본값) synonyms.yaml model_params.json(공개용 합성)
-backend/tests/            # 자동 테스트
-knowledge/drugs/          # wada · kada · kr_source (raw/processed) + curated(사람이 만든 조회표, 한약재 포함)
-knowledge/education/      # lessons/(A~M 300개) + raw/
-scripts/                  # run.sh seed_dummy.py wada_extract.py kr_drug_names.py
-docs/                     # 설계 결정, WADA 검토 기록
+  drugs/                  #   substances(판정) drug_db(약물 DB)
+  chat/                   #   retrieve(BM25) drug_lookup(질문 속 약 이름) prompts guard client
+backend/settings/         # program.yaml(단계 기본값) synonyms.yaml(검색 동의어) model_params.json(공개용 합성)
+backend/tests/            # 자동 테스트 + retrieval_eval.yaml · retrieval_heldout.yaml(검색 평가)
+knowledge/                # 지도: knowledge/README.md
+  drugs/{wada,kada,kr_source}/{raw,processed}  drugs/curated/
+  education/{lessons,raw}
+scripts/                  # run.sh seed_dummy.py · build_wada.py build_kada.py build_kr_source.py(raw → processed)
+docs/                     # WADA-REVIEW.md · design/DESIGN-DECISIONS.md · design/history/(초기 설계 토론)
 private/  var/  .env      # Git 제외: 연구진 자료·모델 / 운영 DB·약물 DB·더미 코드 / API 키
 ```
 

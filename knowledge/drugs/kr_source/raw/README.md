@@ -9,4 +9,4 @@
 | `hira_standard_code.csv` | [건강보험심사평가원_약가마스터_의약품표준코드](https://www.data.go.kr/data/15067462/fileData.do) | 2026-08-31 | `2d00689474851d81e6efb2ec4ccff9e271b46c5ba0d3640adfa797dff79368fa` |
 | `hira_ingredient.csv` | [건강보험심사평가원_약가마스터_의약품주성분](https://www.data.go.kr/data/15067461/fileData.do) | 2025-10-31 | `2f5c7ce1484480fb50325c71a9b0fb3275f3964ea5a92ecb714aecec674e9739` |
 
-새 버전을 받으면 이 폴더에 같은 이름으로 넣고 목록을 다시 만듭니다(`kr_drug_names.py`).
+새 버전을 받으면 이 폴더에 같은 이름으로 넣고 목록을 다시 만듭니다(`build_kr_source.py`).

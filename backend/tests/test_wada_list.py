@@ -1,7 +1,7 @@
 """WADA 금지목록 자동 추출본(knowledge/drugs/wada/processed/prohibited_list_2026.json) 고정 테스트.
 
 원문(2026 금지목록 PDF)에서 직접 확인한 분류를 고정한다. 특히 "금지 아님"인 예외가 금지로 바뀌지 않는지.
-추출 스크립트: scripts/wada_extract.py + 손 보정 knowledge/drugs/wada/processed/wada_manual_2026.yaml
+추출 스크립트: scripts/build_wada.py + 손 보정 knowledge/drugs/wada/processed/wada_manual_2026.yaml
 """
 
 import json

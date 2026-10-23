@@ -1,7 +1,7 @@
 # WADA 금지목록 원본
 
 `../processed/prohibited_list_2026.json`(가공본, 443항목)을 만든 원본입니다. 받은 그대로 두고 고치지 않습니다.
-가공은 `analysis/wada_extract.py` + 손 보정 `../processed/wada_manual_2026.yaml`. 원본은 GitHub에 올리지 않습니다.
+가공은 `scripts/build_wada.py` + 손 보정 `../processed/wada_manual_2026.yaml`. 원본은 GitHub에 올리지 않습니다.
 
 | 파일 | 받는 곳 | 판 | sha256 |
 |---|---|---|---|

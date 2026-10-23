@@ -1,6 +1,6 @@
 """한글 제품명 → 영문 성분명 조회표 만들기 (약물 확인의 제품 검색).
 
-    python3 scripts/kr_drug_names.py --standard knowledge/drugs/kr_source/raw/hira_standard_code.csv \\
+    python3 scripts/build_kr_source.py --standard knowledge/drugs/kr_source/raw/hira_standard_code.csv \\
         --ingredient knowledge/drugs/kr_source/raw/hira_ingredient.csv
 
 출처(공공누리 제1유형: 출처표시, 키·로그인 없이 내려받음):
