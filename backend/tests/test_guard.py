@@ -122,6 +122,8 @@ def test_coercion_is_not_out_of_scope(question):
     "이 약 반감기가 어떻게 돼? 검사 전에 알아야 해서",
     "코치가 프로틴 줬는데 먹어도 돼?",
     "감독님이 먹으라고 한 보충제 괜찮아?",
+    "우울증 약 먹어도 돼?",  # 힘든 마음 낱말이 있어도 약 질문은 교육 경로
+    "훈련이 너무 힘들어서 진통제 먹어도 돼?",
 ])
 def test_ordinary_education_questions_are_not_blocked(question):
     assert guard.classify(question) is None
@@ -297,3 +299,12 @@ def test_guess_comes_apart_and_is_logged(captured, people):
     with db.connect() as con:
         saved = con.execute("SELECT answer FROM chat_logs ORDER BY at DESC LIMIT 1").fetchone()[0]
     assert saved.endswith("[AI 추측] 빈속에 먹으면 속이 쓰릴 수 있어요.")
+
+
+@pytest.mark.parametrize("question", ["요즘 너무 힘들어서 아무것도 하기 싫어", "죽고 싶어", "다 포기하고 싶다", "운동 그만두고 싶어",
+                                      "약 먹고 죽고 싶어"])
+def test_distress_gets_fixed_guidance_with_checked_numbers(question):
+    """힘든 마음은 LLM을 부르지 않고 확인된 상담 번호를 고정으로 안내한다(사용자, 2026-10-23)."""
+    assert guard.classify(question) == "distress"
+    r = guard.fixed("distress")
+    assert r.kind == "fixed" and all(n in r.answer for n in ("109", "1577-0199", "1388"))

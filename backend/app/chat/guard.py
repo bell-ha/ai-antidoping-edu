@@ -1,7 +1,7 @@
 """환각 최소화 안전장치. 계획서 2단계 마지막 항목의 실체.
 
-1. 질문 분류: 강요 피해 고백과 검사 회피 질문은 LLM을 부르지 않고 서버 고정 응답을 준다(S5 결과가 결정적).
-   판정 순서: 강요 → 회피(강요 피해 고백을 회피 질문보다 먼저 받아 준다).
+1. 질문 분류: 힘든 마음, 강요 피해 고백, 검사 회피 질문은 LLM을 부르지 않고 서버 고정 응답을 준다(S5 결과가 결정적).
+   판정 순서: 위기(강한 신호) → 강요 → 회피 → 힘든 마음(약 질문이 아닐 때).
 2. 인용은 프롬프트에 넣은 청크 id만 남긴다.
 3. 남은 인용이 없으면 LLM 문장을 버리고 서버 고정 문구로 바꾼다(out_of_scope 표시와 무관).
 4. 전문가 안내 플래그 = LLM 판단 OR 서버 규칙(본인 상황에 대한 의료·법적 판단 질문, 확인이 필요한 판정 결과).
@@ -21,6 +21,18 @@ EVASION = (
 )
 COERCION = ("원하지 않는 약이나 주사는 거절할 수 있어요. 선수에게 금지약물을 주거나 쓰게 하는 것은 그 사람의 도핑방지규정 위반이에요. "
             "모르게 받았거나 권유받았다면, 받은 약이나 포장을 버리지 말고 보관하고 언제 누구에게 무엇을 받았는지 기록해 두세요.")
+# 힘든 마음 — 확인된 상담 번호만 고정으로(사용자, 2026-10-23). 번호·운영 시간은 2026-10-23 확인:
+# 109 자살예방상담전화(보건복지부, 2024-01 통합, 24시간) · 1577-0199 정신건강위기상담전화(전국 공통, 24시간)
+# · 1388 청소년상담(만 9~24세, 365일 24시간, 휴대전화는 지역번호+1388, 문자·카카오톡)
+DISTRESS = (
+    "많이 힘들었겠어요. 그런 마음이 드는 건 이상한 일이 아니에요.\n\n"
+    "잠깐이라도 쉬고, 믿을 수 있는 사람에게 지금 마음을 이야기해 보세요. "
+    "혼자 버티기 어렵거나 나쁜 생각이 들면 지금 바로 전화로 이야기할 수 있어요.\n\n"
+    "- 자살예방상담전화 109 (24시간)\n"
+    "- 정신건강위기상담전화 1577-0199 (24시간)\n"
+    "- 청소년상담 1388 (만 24세 이하, 24시간, 휴대전화는 지역번호+1388, 문자·카카오톡도 돼요)\n"
+    "- 지금 위험하다면 112 또는 119"
+)
 REFUSED = "이 질문에는 답할 수 없어요."
 UNAVAILABLE = "지금은 답변을 만들 수 없어요. 잠시 후 다시 시도해 주세요."
 NOT_PREPARED = "데모 모드에서 준비되지 않은 질문이에요. 추천 질문을 눌러 보세요."
@@ -42,7 +54,7 @@ EVASION_PATTERNS = [
     r"(은폐|마스킹|희석).*(하려면|하는\s*법|방법|어떻게)",
     r"소변.*희석",
 ]
-# 강요·모르게 받은 약 — 고정 응답(위기 안내 범주는 2026-10-17 삭제)
+# 강요·모르게 받은 약 — 고정 응답
 # 강한 신호만. "모르고 먹은 거면 괜찮아?"는 엄격책임을 묻는 교육 질문이라 넣지 않는다. "코치가 프로틴 줬는데 먹어도 돼?" 같은 일상 질문은 LLM 경로 + 전문가 배너(GIVEN_BY_STAFF).
 COERCION_PATTERNS = [
     r"강요",
@@ -61,21 +73,31 @@ EXPERT_PATTERNS = [
     r"소송",
 ]
 
-Kind = Literal["evasion", "coercion"]
+# 힘든 마음. 강한 신호는 언제나, 약한 신호는 약·검사 질문이 아닐 때만("우울증 약 먹어도 돼?"는 교육 질문)
+CRISIS_PATTERNS = [r"죽고\s*싶", r"자살", r"자해", r"살기\s*싫", r"사라지고\s*싶", r"죽어\s*버리", r"극단적\s*선택"]
+DISTRESS_PATTERNS = [r"(너무|요즘|많이|진짜|정말)\s*힘들", r"아무것도\s*하기\s*싫", r"우울", r"무기력", r"그만두고\s*싶",
+                     r"다\s*포기하고\s*싶", r"지쳤"]
+DRUG_OR_RULE = r"약|먹어도|먹으면|복용|처방|주사|보충제|금지|TUE|도핑|검사"
+
+Kind = Literal["evasion", "coercion", "distress"]
 
 
 def classify(question: str) -> Kind | None:
+    if any(re.search(p, question) for p in CRISIS_PATTERNS):
+        return "distress"
     if any(re.search(p, question) for p in COERCION_PATTERNS):
         return "coercion"
     if any(re.search(p, question) for p in EVASION_PATTERNS):
         return "evasion"
+    if any(re.search(p, question) for p in DISTRESS_PATTERNS) and not re.search(DRUG_OR_RULE, question):
+        return "distress"
     return None
 
 
 def fixed(kind: Kind) -> ChatResponse:
     """LLM을 부르지 않는 고정 응답."""
-    answer = EVASION if kind == "evasion" else COERCION
-    return ChatResponse(kind="fixed", answer=answer, citations=[], refer_to_expert=True, out_of_scope=False)
+    answer = {"evasion": EVASION, "coercion": COERCION, "distress": DISTRESS}[kind]
+    return ChatResponse(kind="fixed", answer=answer, citations=[], refer_to_expert=kind != "distress", out_of_scope=False)
 
 
 def server_message(text: str) -> ChatResponse:
