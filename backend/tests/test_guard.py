@@ -16,9 +16,9 @@ from app.schemas import CheckResult, Chunk, LlmAnswer, OfficialLink
 
 CHUNKS = [
     Chunk(id="I-002#s1", doc_id="I-002", source="KADA", title="보충제", section="오염", url="https://example.org/a",
-          version="2026", roles=["athlete"], text="...", reviewed=False),
+          version="2026", text="...", reviewed=False),
     Chunk(id="G-005#s1", doc_id="G-005", source="KADA", title="2026 금지목록", section="S6 흥분제", url="https://example.org/b",
-          version="2026", roles=["athlete"], text="...", reviewed=False),
+          version="2026", text="...", reviewed=False),
 ]
 
 

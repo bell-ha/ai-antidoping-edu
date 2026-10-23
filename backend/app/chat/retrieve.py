@@ -1,6 +1,6 @@
 """근거 검색 (D13). knowledge/education/lessons/<대분류>/*.md 를 H2 섹션 단위 청크로 나눠 BM25로 찾는다.
 
-문서 형식: YAML frontmatter(doc_id, source, title, url, version, roles, reviewed) + 본문의 `## 섹션`.
+문서 형식: YAML frontmatter(doc_id, category, title, source, url, version, reviewed, quiz …) + 본문의 `## 섹션`(knowledge/education/README.md).
 청크 id = "{doc_id}#s{n}" (n은 문서 안 섹션 순서, 1부터). URL 경로에 넣을 때는 '#'을 인코딩해야 한다.
 
 토큰화: 한국어는 띄어쓰기·조사 변형이 많아 어절마다 문자 bigram을 쓰고, 영문·숫자는 단어 그대로 쓴다.
@@ -46,7 +46,7 @@ def parse(path: Path) -> list[Chunk]:
     sections = re.split(r"^## +(.+)$", body, flags=re.M)[1:]
     return [
         Chunk(id=f"{meta['doc_id']}#s{n}", doc_id=meta["doc_id"], source=meta["source"], title=meta["title"],
-              section=heading.strip(), url=meta["url"], version=str(meta["version"]), roles=meta["roles"],
+              section=heading.strip(), url=meta["url"], version=str(meta["version"]),
               text=body.strip(), reviewed=meta["reviewed"])
         for n, (heading, body) in enumerate(zip(sections[::2], sections[1::2]), start=1)
     ]
@@ -96,13 +96,9 @@ def expand(query: str) -> str:
     return " ".join([query, *extra])
 
 
-def get_chunk(chunk_id: str) -> Chunk | None:
-    """출처 팝오버용 (/api/sources/{chunk_id})."""
-    return next((c for c in _index().chunks if c.id == chunk_id), None)
-
 
 # 질문에 흔히 붙는 말. 두 글자 조각 검색에서 이 말만 겹친 엉뚱한 레슨이 올라오지 않게 질문에서 뺀다
-QUESTION_WORDS = re.compile(r"(먹어도|마셔도|써도|맞아도|발라도|해도|돼요?|되나요|될까요?|되는|괜찮아요?|괜찮나요|괜찮을까요?|알려줘|알려\s*주세요|뭐야|뭐예요|어떻게|있어요?|없어요?)")
+QUESTION_WORDS = re.compile(r"(먹어도|마셔도|써도|맞아도|발라도|해도|돼요?|되나요|될까요?|되는|괜찮아요?|괜찮나요|괜찮을까요?|알려줘|알려\s*주세요|뭐야|뭐예요|이야(?!기)|어떻게|있어요?|없어요?)")
 # 가장 높은 점수의 이 비율보다 낮은 청크는 근거로 넣지 않는다(질문과 상관없는 조각으로 토큰을 쓰지 않게)
 MIN_RELATIVE = 0.6
 
@@ -132,10 +128,6 @@ def _documents() -> dict[str, tuple[dict, tuple[Chunk, ...]]]:
     return {meta["doc_id"]: (meta, tuple(parse(path)))
             for path in _doc_paths() for meta in [read_doc(path)[0]]}
 
-
-def documents() -> list[dict]:
-    """교육 자료 열람 목록용 frontmatter들(doc_id, source, title, url, version, roles, reviewed, 있으면 topic)."""
-    return [meta for meta, _ in _documents().values()]
 
 
 def get_document(doc_id: str) -> tuple[dict, tuple[Chunk, ...]] | None:
