@@ -263,6 +263,13 @@ def test_everyday_words_are_not_drug_names(question):
     assert drug_lookup.lookup(question) == []
 
 
+def test_short_brand_and_name_ending_like_particle():
+    """레드팀 3차: "판콜"(두 글자 제품명)을 놓치고, "판콜에이"를 "판콜에"(조사 '이'를 뗌)로 찾던 문제."""
+    from app.chat import drug_lookup
+    assert [c.query for c in drug_lookup.lookup("판콜 먹어도 돼?")][0] == "판콜"
+    assert [c.query for c in drug_lookup.lookup("판콜에이 먹어도 돼?")][0] == "판콜에이"
+
+
 def test_two_letter_names_in_hand_tables_still_match():
     from app.chat import drug_lookup
     assert [r.query for r in drug_lookup.lookup("마황 먹어도 돼?")] == ["마황"]

@@ -25,7 +25,7 @@ WHO = SessionInfo(role="athlete", athlete_id=None, label="레드팀")
 
 def run(item: dict) -> dict:
     response, kind = chat._answer(ChatRequest(messages=[ChatMessage(role="user", content=item["q"])]), WHO)
-    return {**item, "got_kind": response.kind, "log_kind": kind, "answer": response.answer,
+    return {**item, "got_kind": response.kind, "log_kind": kind, "answer": response.answer, "guess": response.guess,
             "citations": [c.chunk_id for c in response.citations],
             "drugs": [f"{c.query}({c.status}{', 보충제 경고' if c.supplement_warning else ''})" for c in response.drug_checks]}
 
@@ -43,7 +43,7 @@ def main() -> None:
     for r in results:
         lines += [f"## {r['id']} {r['q']}", f"- 기대: {r['expect']} (kind: {r['kind']})",
                   f"- 결과 종류: {r['got_kind']} / 기록 {r['log_kind']}",
-                  f"- 약물 판정: {', '.join(r['drugs']) or '없음'} · 인용: {', '.join(r['citations']) or '없음'}", "", r["answer"], ""]
+                  f"- 약물 판정: {', '.join(r['drugs']) or '없음'} · 인용: {', '.join(r['citations']) or '없음'}", "", r["answer"], ""] + ([f"> AI 추측: {r['guess']}", ""] if r["guess"] else [])
     out.write_text("\n".join(lines), encoding="utf-8")
     print(f"{len(results)}개 → {out}")
 

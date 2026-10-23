@@ -13,9 +13,12 @@ _TAIL = sorted(["은", "는", "이", "가", "을", "를", "도", "만", "에", "
 _SKIP = {"먹어도", "돼", "되나요", "괜찮아", "괜찮나요", "약", "금지", "금지약물", "경기", "시즌", "평소", "선수", "도핑",
          "무시하고", "알려줘", "방법", "사용법"}
 MAX = 3
+# 두 글자지만 흔히 묻는 국내 제품 이름(국내 제품명 앞부분으로 찾는다). 레드팀 R14(2026-10-23) "판콜 먹어도 돼?"
+_SHORT_BRANDS = {"판콜", "펜잘", "탁센", "콘택"}
 
 
-def _terms(question: str) -> list[str]:
+def _terms(question: str) -> list[tuple[str, str]]:
+    """(낱말 그대로, 조사를 뗀 것). "판콜에이"처럼 이름 끝이 조사처럼 보이는 경우가 있어 둘 다 남긴다."""
     out = []
     for word in re.findall(r"[A-Za-z][A-Za-z0-9\-]+|[가-힣A-Za-z0-9]+", question):
         stem = word
@@ -23,25 +26,34 @@ def _terms(question: str) -> list[str]:
             if len(stem) > len(t) + 1 and stem.endswith(t):
                 stem = stem[: -len(t)]
                 break
-        if len(stem) >= 2 and stem not in _SKIP and stem not in out:
-            out.append(stem)
+        if len(stem) >= 2 and stem not in _SKIP and (word, stem) not in out:
+            out.append((word, stem))
     return out
 
 
 def _plausible(term: str) -> bool:
     """두 글자 낱말("엄마", "하나", "아니", "가도")은 국내 제품명 앞부분과 우연히 겹친다. 손 조회표(성분·제품군·한약재)에
-    정확히 있는 이름(예: "마황", "부자", "대마")만 약 이름으로 본다. 세 글자 이상은 그대로 찾는다."""
+    정확히 있는 이름(예: "마황", "부자", "대마")과 _SHORT_BRANDS만 약 이름으로 본다. 세 글자 이상은 그대로 찾는다."""
     if re.fullmatch(r"[가-힣]{1,2}", term):
         hit = substances._match(term)
-        return bool(hit and hit[0] in ("substance", "product"))
+        return term in _SHORT_BRANDS or bool(hit and hit[0] in ("substance", "product"))
     return True
+
+
+def _hit(term: str) -> CheckResult | None:
+    if not _plausible(term):
+        return None
+    result = substances.check(term, "KR", "unknown")
+    if result.matched_kind in ("product", "substance", "category") and (result.ingredients or result.candidates or result.supplement_warning):
+        return result
+    return None
 
 
 def lookup(question: str) -> list[CheckResult]:
     found: list[CheckResult] = []
-    for term in filter(_plausible, _terms(question)):
-        result = substances.check(term, "KR", "unknown")
-        if result.matched_kind in ("product", "substance", "category") and (result.ingredients or result.candidates or result.supplement_warning):
+    for word, stem in _terms(question):
+        result = (_hit(word) if word != stem else None) or _hit(stem)
+        if result and result.query not in {r.query for r in found}:
             found.append(result)
         if len(found) >= MAX:
             break
