@@ -9,8 +9,7 @@
   knowledge/drugs/kada/processed/herbal_medicine_2025.json   KADA 한약재 가이드라인의 11종(한약재 → 검출 성분)
   knowledge/drugs/wada/processed/prohibited_list_<연도>.json   WADA 금지목록 추출본
   knowledge/drugs/kr_source/processed/kr_products.json.gz                한글 제품명 → 성분(심평원 약가마스터)
-원천 파일의 sha256을 meta에 기록하고, 서버는 시작할 때 원천과 다르면 데모 모드에서는 다시 빌드하고
-시범 모드(DEMO_MODE=0)에서는 시작을 거부한다(검토하지 않은 DB로 판정하지 않도록).
+원천 파일의 sha256을 meta에 기록하고, 서버는 시작할 때 원천과 다르면 다시 빌드한다.
 판정 규칙(부분 일치·투여 경로·ATC 계열)은 substances.py에 있고, 이 모듈은 저장과 읽기만 한다.
 """
 
@@ -141,13 +140,10 @@ def is_current(path: Path = DB) -> bool:
             and json.loads(row.get("sources", "{}")) == source_hashes())
 
 
-def ensure(demo_mode: bool, path: Path = DB) -> None:
-    """서버 시작 시: 원천과 맞지 않으면 데모에서는 다시 빌드, 시범에서는 거부."""
-    if is_current(path):
-        return
-    if not demo_mode:
-        raise RuntimeError("약물 DB가 없거나 원천 JSON과 다릅니다. `python -m app.drugs.drug_db`로 빌드한 뒤 시작하세요.")
-    build(path)
+def ensure(path: Path = DB) -> None:
+    """서버 시작 시: 원천과 맞지 않으면 다시 빌드."""
+    if not is_current(path):
+        build(path)
 
 
 def load(path: Path = DB) -> dict:

@@ -195,16 +195,16 @@ def test_no_forbidden_words_in_backend():
     assert hits == []
 
 
-# ---------- §10 G2: 시범 모드 시작 관문 ----------
+# ---------- 시범 모드: 비밀키만 막고, 나머지는 알림 ----------
 
-def test_pilot_mode_refuses_to_start_with_unreviewed_items():
+def test_pilot_mode_starts_with_unreviewed_items_and_warns():
     import subprocess
     import sys
 
     env = {**__import__("os").environ, "DEMO_MODE": "0", "SESSION_SECRET": "x" * 32}
     r = subprocess.run([sys.executable, "-c", "import app.main"], env=env, capture_output=True, text=True,
                        cwd=Path(__file__).resolve().parents[1])
-    assert r.returncode != 0 and "연구진 검토 전 항목" in r.stderr
+    assert r.returncode == 0 and "사람 검토 전 항목" in r.stderr
 
 
 def test_health_needs_no_session():
@@ -222,7 +222,7 @@ def test_pilot_mode_refuses_short_secret():
     assert r.returncode != 0 and "32자 이상" in r.stderr
 
 
-def test_pilot_gate_checks_list_expiry(monkeypatch):
+def test_pilot_notes_list_expiry_and_synthetic_model(monkeypatch):
     from datetime import date
 
     from app import main
@@ -230,24 +230,13 @@ def test_pilot_gate_checks_list_expiry(monkeypatch):
     monkeypatch.setattr(main.substances, "unreviewed", lambda: [])
     monkeypatch.setattr(main.retrieve, "unreviewed", lambda: [])
     monkeypatch.setattr(main.predict, "params_source", lambda: "real")
-    secret = "x" * 32
     expires = main.substances.list_expires()
-    assert main.pilot_problems(expires, secret) == []
+    assert main.pilot_notes(expires) == []
     after = date.fromordinal(expires.toordinal() + 1)
-    assert any("유효기간" in p for p in main.pilot_problems(after, secret))
-
-
-def test_pilot_gate_rejects_synthetic_params(monkeypatch):
-    """합성 파라미터로 실제 선수를 판정하는 상태로는 시범이 뜨지 않는다."""
-    from app import main
-
-    monkeypatch.setattr(main.substances, "unreviewed", lambda: [])
-    monkeypatch.setattr(main.retrieve, "unreviewed", lambda: [])
+    assert any("유효기간" in n for n in main.pilot_notes(after))
     monkeypatch.setattr(main.predict, "params_source", lambda: "synthetic")
-    problems = main.pilot_problems(main.substances.list_expires(), "x" * 32)
-    assert any("합성" in p for p in problems)
-    monkeypatch.setattr(main.predict, "params_source", lambda: "real")
-    assert main.pilot_problems(main.substances.list_expires(), "x" * 32) == []
+    assert any("합성" in n for n in main.pilot_notes(expires))
+    assert main.pilot_problems("x" * 32) == []
 
 
 def test_drug_verdicts_come_back_as_cards(captured, people):

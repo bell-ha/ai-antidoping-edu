@@ -19,13 +19,11 @@ def test_built_db_is_current_and_round_trips(db):
     assert data["kr"]["products"] and data["wada"]["items"]
 
 
-def test_stale_db_is_rebuilt_in_demo_and_refused_in_pilot(db, monkeypatch):
+def test_stale_db_is_rebuilt(db, monkeypatch):
     real = drug_db.source_hashes()
     monkeypatch.setattr(drug_db, "source_hashes", lambda: {**real, "substances": "changed"})
     assert not drug_db.is_current(db)
-    with pytest.raises(RuntimeError):
-        drug_db.ensure(demo_mode=False, path=db)
-    drug_db.ensure(demo_mode=True, path=db)  # 다시 빌드
+    drug_db.ensure(path=db)  # 다시 빌드
     assert drug_db.is_current(db)
 
 

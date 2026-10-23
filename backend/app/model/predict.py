@@ -24,7 +24,7 @@ def params() -> dict:
 
 
 def params_source() -> str:
-    """"synthetic"이면 시범 모드(DEMO_MODE=0)에서 서버가 시작을 거부한다(main.pilot_problems)."""
+    """"synthetic"이면 시범 모드(DEMO_MODE=0)에서 시작할 때 알림(main.pilot_notes)."""
     return params()["source"]
 
 

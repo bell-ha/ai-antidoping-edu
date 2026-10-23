@@ -1,5 +1,6 @@
 """서버 하나: API + 화면(frontend/dist). 실행: cd backend && .venv/bin/python -m uvicorn app.main:app --port 8100"""
 
+import sys
 from datetime import date
 
 from fastapi import FastAPI, HTTPException
@@ -14,23 +15,30 @@ from app.drugs import substances
 from app.model import predict
 
 
-def pilot_problems(today: date, secret: str) -> list[str]:
-    """시범 모드(DEMO_MODE=0) 시작 관문. 하나라도 있으면 서버가 뜨지 않는다.
-    (실제 모델 · 사람 검토 · 금지목록 유효기간 · 비밀키 — 이전 Claude 세션이 정한 관문으로, 사용자 방침이 아니다)"""
-    problems = []
+def pilot_problems(secret: str) -> list[str]:
+    """시범 모드(DEMO_MODE=0)에서 서버를 막는 것은 비밀키 하나. 저장소가 공개라 기본 비밀키로는 누구나 로그인 쿠키를 만들 수 있다."""
     if secret == config.DEV_SECRET or len(secret) < 32:
-        problems.append("SESSION_SECRET을 32자 이상 무작위 값으로 설정해야 합니다.")
+        return ["SESSION_SECRET을 32자 이상 무작위 값으로 설정해야 합니다."]
+    return []
+
+
+def pilot_notes(today: date) -> list[str]:
+    """시범 모드에서 알려만 주는 것(서버는 뜬다). 사람 검토·실제 모델·유효기간으로는 막지 않기로 함(사용자, 2026-10-23)."""
+    notes = []
     if pending := substances.unreviewed() + retrieve.unreviewed():
-        problems.append(f"연구진 검토 전 항목 {len(pending)}개 (reviewed: false): {pending[:5]} …")
+        notes.append(f"사람 검토 전 항목 {len(pending)}개 (reviewed: false)")
     if predict.params_source() != "real":
-        problems.append("예측 모델이 합성 데이터 기준입니다. 연구진 모델을 private/models에 넣으세요.")
+        notes.append("예측 모델이 합성 데이터 기준입니다. 연구진 모델은 private/models에 넣으세요.")
     if today > (expires := substances.list_expires()):
-        problems.append(f"금지목록 유효기간이 {expires}에 끝났습니다. 새 금지목록으로 조회표를 갱신하세요.")
-    return problems
+        notes.append(f"금지목록 유효기간이 {expires}에 끝났습니다. 새 금지목록으로 조회표를 갱신하세요.")
+    return notes
 
 
-if not config.DEMO_MODE and (problems := pilot_problems(date.today(), config.SESSION_SECRET)):
-    raise RuntimeError("시범 모드 시작 불가:\n- " + "\n- ".join(problems))
+if not config.DEMO_MODE:
+    if problems := pilot_problems(config.SESSION_SECRET):
+        raise RuntimeError("시범 모드 시작 불가:\n- " + "\n- ".join(problems))
+    for note in pilot_notes(date.today()):
+        print(f"시범 모드 알림: {note}", file=sys.stderr)
 
 app = FastAPI(title="AI 반도핑 교육")
 app.add_middleware(

@@ -25,7 +25,7 @@ from datetime import date
 from functools import cache
 
 from app.drugs import drug_db
-from app.config import DEMO_MODE, DRUGS
+from app.config import DRUGS
 from app.schemas import (CheckResult, CheckStatus, CountryRoute, DataSource, Ingredient, OfficialLink, ProductCandidate,
                          Timing)
 
@@ -36,8 +36,8 @@ FLAGGED: tuple[CheckStatus, ...] = ("PROHIBITED", "IN_COMPETITION_ONLY", "THRESH
 
 @cache
 def _store() -> dict:
-    """약물 DB(var/drugs.sqlite). 원천 JSON과 다르면 데모에서는 다시 빌드, 시범에서는 거부(drug_db.ensure)."""
-    drug_db.ensure(DEMO_MODE)
+    """약물 DB(var/drugs.sqlite). 원천 JSON과 다르면 다시 빌드(drug_db.ensure)."""
+    drug_db.ensure()
     return drug_db.load()
 
 
@@ -500,7 +500,7 @@ def class_ko(code: str | None) -> str | None:
 
 
 def unreviewed() -> list[str]:
-    """§10 G2: 연구진 검토 전 항목. DEMO_MODE=0에서 하나라도 있으면 서버가 시작을 거부한다."""
+    """사람 검토 전 항목. 시범 모드(DEMO_MODE=0)에서 시작할 때 알림으로 보여 준다(main.pilot_notes)."""
     substances, products, _ = _tables()
     out = [f"substances.json:{k}" for k, v in substances["substances"].items() if not v["reviewed"]]
     out += [f"{'herbal_medicine_2025.json' if v.get('herbal') else 'products.json'}:{k}"

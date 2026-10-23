@@ -25,7 +25,7 @@ LLM_MODE = cast(LlmMode, os.environ.get("LLM_MODE", "mock"))  # mock(키 없이 
 CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-5-5")
 # 워크스페이스에 묶이지 않은 조직 키를 쓸 때만 필요(없으면 API가 400). 워크스페이스 키면 비워 둔다
 ANTHROPIC_WORKSPACE_ID = os.environ.get("ANTHROPIC_WORKSPACE_ID", "")
-DEMO_MODE = os.environ.get("DEMO_MODE", "1") == "1"  # 0이면 시범 모드 시작 관문(main.pilot_problems)을 건다
+DEMO_MODE = os.environ.get("DEMO_MODE", "1") == "1"  # 0이면 시범 모드: 비밀키 검사(main.pilot_problems)와 시작 알림(main.pilot_notes)
 DEV_SECRET = "dev-only-secret-change-me"
 SESSION_SECRET = os.environ.get("SESSION_SECRET", DEV_SECRET)
 COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "0") == "1"  # 로컬 개발만 0

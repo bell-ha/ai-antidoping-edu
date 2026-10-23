@@ -29,7 +29,7 @@ knowledge/
 | `drugs/kr_source/processed/` | `scripts/build_kr_source.py` | 심평원 파일을 새로 받아 다시 실행 |
 | `education/lessons/` | 사람(과 AI)이 원문을 읽고 씀 | 원문이 바뀐 레슨을 고침 |
 
-약물 가공본과 조회표는 서버가 시작할 때 `var/drugs.sqlite`(약물 DB)로 묶인다(`backend/app/drugs/drug_db.py`). 원본 파일이 바뀌면 데모에서는 다시 만들고, 시범 운영에서는 시작을 거부한다.
+약물 가공본과 조회표는 서버가 시작할 때 `var/drugs.sqlite`(약물 DB)로 묶인다(`backend/app/drugs/drug_db.py`). 원본 파일이 바뀌면 다시 만든다.
 
 ## 검토
 
