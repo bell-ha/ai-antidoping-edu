@@ -1,19 +1,11 @@
 import { ArrowLeft, BookOpen, ExternalLink, MessageCircle } from "lucide-react";
 import { Fragment, useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
-import { api, type LibraryDoc, type LibraryDocSummary } from "../api";
+import { api, type LibraryDoc, type LibraryDocSummary } from "../../api";
 
 // 교육 자료 열람(관리자). 질문하기가 근거로 쓰는 레슨 파일을 그대로 보여 준다(같은 파일, 같은 섹션 번호).
 
-const SOURCE_LABEL: Record<string, string> = { WADA: "WADA", KADA: "KADA", ADEL: "ADEL", GlobalDRO: "Global DRO" };
-// 주제 묶음(문서 frontmatter의 topic) — WADA 교육 국제표준의 주제 순서
-const TOPICS: [string, string][] = [
-  ["basics", "기본 원칙"],
-  ["violations", "위반과 절차"],
-  ["list", "금지목록과 약"],
-  ["testing", "검사와 소재지"],
-  ["roles", "역할별 안내"],
-];
+const SOURCE_LABEL: Record<string, string> = { WADA: "WADA", KADA: "KADA", ADEL: "ADEL" };
 
 // 본문 표기: 빈 줄 = 문단, "- " = 목록, "출처:" 줄 = 출처 캡션, URL = 링크
 function linkify(text: string): ReactNode[] {
@@ -59,13 +51,9 @@ function DocList() {
     api.library().then(setDocs, (e) => setError(e.message));
   }, []);
 
-  // 주제(topic)가 있으면 주제별(정해진 순서), 없으면 출처별로 묶는다
-  const groups = new Map<string, LibraryDocSummary[]>(TOPICS.map(([, label]) => [label, []]));
-  for (const d of docs ?? []) {
-    const key = TOPICS.find(([t]) => t === d.topic)?.[1] ?? `${SOURCE_LABEL[d.source] ?? d.source} 자료`;
-    groups.set(key, [...(groups.get(key) ?? []), d]);
-  }
-  for (const [k, v] of groups) if (!v.length) groups.delete(k);
+  // 선수 화면과 같은 대분류(A~M)로, 서버가 준 배정 순서 그대로 묶는다
+  const groups = new Map<string, LibraryDocSummary[]>();
+  for (const d of docs ?? []) groups.set(d.category, [...(groups.get(d.category) ?? []), d]);
 
   return (
     <>
@@ -77,7 +65,9 @@ function DocList() {
       <div className="stack-lg">
         {[...groups].map(([group, items]) => (
           <section key={group} className="stack">
-            <h2 className="heading">{group}</h2>
+            <h2 className="heading">
+              {group} <span className="caption">{items.length}개</span>
+            </h2>
             <div className="lib-grid">
               {items.map((d) => (
                 <Link key={d.doc_id} to={`/library/${d.doc_id}`} className="card lib-card">

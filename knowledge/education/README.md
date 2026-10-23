@@ -13,8 +13,6 @@ source: KADA             # 근거 기관: WADA · KADA · ADEL
 reference: ...           # 근거 문서 이름·조항(raw에 있는 것)
 url: ...
 version: 2026
-roles: [athlete]
-topic: list              # 관리자 '교육 자료' 화면의 묶음(basics · violations · list · testing · roles). 선수 화면은 category로 묶는다
 summary: ...             # 한 줄 요약
 reviewed: false          # 사람이 검토하면 true
 quiz:

@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.login import admin as current
 from app.chat import retrieve as rag
+from app.program import lessons
 from app.schemas import LibraryDoc, LibraryDocSummary, LibrarySection, SessionInfo
 
 router = APIRouter(prefix="/api")
@@ -20,7 +21,7 @@ def _doc(doc_id: str) -> LibraryDoc | None:
         return None
     meta, chunks = found
     return LibraryDoc(doc_id=meta["doc_id"], title=meta["title"], source=meta["source"], url=meta["url"],
-                      version=str(meta["version"]), roles=meta["roles"], topic=meta.get("topic"),
+                      version=str(meta["version"]), category=meta["category"],
                       summary=meta.get("summary"), reviewed=meta["reviewed"],
                       sections=[LibrarySection(id=c.id.split("#", 1)[1], heading=c.section, text=c.text) for c in chunks])
 
@@ -28,8 +29,8 @@ def _doc(doc_id: str) -> LibraryDoc | None:
 @router.get("/library", response_model=list[LibraryDocSummary])
 def library(who: SessionInfo = Depends(current)) -> list[LibraryDocSummary]:
     out = []
-    for meta in rag.documents():
-        d = _doc(meta["doc_id"])
+    for doc_id in lessons.curriculum():  # 선수에게 배정되는 순서(A→M)
+        d = _doc(doc_id)
         out.append(LibraryDocSummary(**d.model_dump(exclude={"sections"}), section_headings=[s.heading for s in d.sections],
                                      length=sum(len(s.text) for s in d.sections)))
     return out
