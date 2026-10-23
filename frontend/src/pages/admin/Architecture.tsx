@@ -27,7 +27,7 @@ const LANES: Lane[] = [
     id: "tier",
     title: "① 단계 나누기",
     users: "관리자",
-    screen: ["선수 등록 · 로그인 코드 발급", "경기 기록 입력 · 단계 설정 · 진행 현황"],
+    screen: ["선수 등록 · 로그인 코드 발급", "경기 기록 입력 · 단계 설정 · 진행 현황 · CSV 내보내기"],
     steps: [
       { label: "경기력 예측", kind: "ai" },
       { label: "관측 − 예측", kind: "rule" },
@@ -44,7 +44,7 @@ const LANES: Lane[] = [
     id: "lesson",
     title: "② 교육 시작하기",
     users: "선수",
-    screen: ["이번 주 교육 목록", "교육 글 · 객관식 퀴즈 · 갑자기 퀴즈"],
+    screen: ["이번 주 교육 목록", "교육 글 · 객관식 퀴즈 · 갑자기 퀴즈", "내 학습 기록 · 오답 다시 풀기"],
     steps: [
       { label: "주간 배정", kind: "rule" },
       { label: "교육 읽기", kind: "rule" },
@@ -52,10 +52,10 @@ const LANES: Lane[] = [
       { label: "갑자기 퀴즈", kind: "rule" },
     ],
     sources: [
-      { label: "교육 300개", detail: "WADA ISE·Athlete Curriculum·ADEL 구조 · KADA 자료 근거", kind: "data" },
-      { label: "학습 기록", detail: "이수 · 정답/오답 · 접속 (운영 DB)", kind: "data" },
+      { label: "교육 300개", detail: "WADA ISE·Athlete Curriculum·ADEL 구조 · KADA 자료 근거 · 규정·금지목록과 대조 · 관리자가 사람 검토", kind: "data" },
+      { label: "학습 기록", detail: "이수 · 정답/오답 · 오답 다시 풀기 · 접속 (운영 DB)", kind: "data" },
     ],
-    note: "단계가 높을수록 한 주 교육 수 · 퀴즈 확률 · 문항 수가 많음 · 갑자기 퀴즈는 배운 교육에서만",
+    note: "단계가 높을수록 한 주 교육 수 · 퀴즈 확률 · 문항 수가 많음 · 갑자기 퀴즈는 배운 교육에서만 · 관리자도 이수·오답을 봄",
   },
   {
     id: "ask",
@@ -69,7 +69,7 @@ const LANES: Lane[] = [
       { label: "답변 생성", kind: "ai" },
     ],
     sources: [
-      { label: "WADA 2026 금지목록", detail: "원문 PDF에서 추출 · S0~S9 · P1 · M1~M3", kind: "data" },
+      { label: "WADA 2026 금지목록", detail: "원문 PDF에서 추출 · S0~S9 · P1 · M1~M3 · 분류 이름은 KADA 국문 대역", kind: "data" },
       { label: "국내 의약품 목록", detail: "심평원 약가마스터 · 제품명 → 성분", kind: "data" },
       { label: "조회표", detail: "자주 묻는 성분·제품군 · KADA 한약재 11종", kind: "data" },
       { label: "교육 300개", detail: "질문과 가까운 교육 조각을 근거로", kind: "data" },
@@ -91,14 +91,14 @@ const AI_ROLES = [
     name: "Claude",
     type: "생성형 AI (LLM)",
     does: "검색된 교육 자료와 약물 판정을 바탕으로 질문에 답하고 출처를 붙임",
-    input: "질문 · 검색된 교육 자료 · 약물 조회표 판정",
+    input: "질문 · 직전 대화 2번 · 검색된 교육 자료 · 약물 조회표 판정",
     not: "약물 판정을 바꾸지 않음 · 선수 개인정보를 받지 않음 · 근거 없는 답은 차단",
   },
 ];
 
 const NOT_AI = [
   { name: "줄 세우기 · 단계", does: "모델의 관측 − 예측으로 전원을 줄 세우고 단계 수만큼 고르게 나눔" },
-  { name: "주간 배정 · 퀴즈", does: "단계별 개수만큼 교육을 순서대로 배정, 객관식 채점, 갑자기 퀴즈는 틀린 것 먼저" },
+  { name: "주간 배정 · 퀴즈", does: "단계별 개수만큼 교육을 순서대로 배정, 객관식 채점, 갑자기 퀴즈는 틀린 것 먼저, 틀린 문항은 다시 풀기로" },
   { name: "약물 판정", does: "제품명을 성분으로 바꾼 뒤 금지목록으로 상태를 정함 (상시 금지 · 경기기간 중 금지 · 기준치 · 조건부 · 목록에 없음)" },
   { name: "자료 검색", does: "질문과 가까운 교육 조각을 찾음 (BM25, 한국어 글자 단위)" },
   { name: "질문 점검", does: "검사 회피·강요 질문을 걸러 고정 응답으로 보냄" },
@@ -110,7 +110,7 @@ const STACK = [
   { layer: "경기력 예측", tech: "연구진 RNN 가중치 · numpy 추론", note: "Git 제외 private/models (없으면 공개용 합성 모델)" },
   { layer: "자료 검색", tech: "BM25 · 동의어 사전", note: "외부 검색 서비스 없음" },
   { layer: "생성형 AI", tech: "Claude API (Anthropic)", note: "구조화 응답 · 인용 검증" },
-  { layer: "운영 DB", tech: "SQLite", note: "선수 · 기록 · 단계 · 이수 · 퀴즈 · 질문" },
+  { layer: "운영 DB", tech: "SQLite", note: "선수 · 기록 · 단계 · 이수 · 퀴즈 · 질문 · 사람 검토" },
   { layer: "배포", tech: "Docker Compose", note: "서버 1개 · 로그인 코드" },
 ];
 
@@ -281,7 +281,7 @@ export function Architecture() {
             <ul className="arch-plain">
               <li>
                 <strong>운영 DB에 저장</strong>
-                <span>선수 이름 · 출생연도 · 경기 기록 · 모델 결과 · 단계 · 교육 이수 · 퀴즈 · 질문과 답 · 접속</span>
+                <span>선수 이름 · 출생연도 · 경기 기록 · 모델 결과 · 단계 · 교육 이수 · 퀴즈 · 질문과 답 · 접속 · 교육 자료 사람 검토</span>
               </li>
               <li>
                 <strong>저장하지 않음</strong>
@@ -289,7 +289,7 @@ export function Architecture() {
               </li>
               <li>
                 <strong>Claude API로 보내는 것</strong>
-                <span>질문 · 검색된 교육 자료 · 약물 판정 (이름 · 기록 · 단계는 보내지 않음)</span>
+                <span>질문 · 직전 대화 2번 · 검색된 교육 자료 · 약물 판정 (이름 · 기록 · 단계는 보내지 않음)</span>
               </li>
             </ul>
           </section>
