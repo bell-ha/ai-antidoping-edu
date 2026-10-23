@@ -57,3 +57,4 @@
 | wada/2027_international_standard_for_education_ise.pdf | https://www.playtruejapan.org/entry_img/2027_international_standard_for_education_ise.pdf | (mirror of WADA 2027 ISE; wada-ama.org blocked by WAF challenge) | `70eaacbb4b4a5b75` |
 | wada/ISE_Athlete-Curriculum.pdf | https://ita.sport/uploads/2021/11/ISE_Athlete-Curriculum.pdf | WADA Example of an Athlete Curriculum v1 (March 2021), ITA mirror | `5272eba552ab892c` |
 | wada/international_standard_ise_2020.pdf | https://ita.sport/uploads/2021/01/international_standard_ise_2020.pdf | https://ita.sport/resource/international-standard-for-education-ise/ | `c77f294645be137f` |
+| wada/guidelinesforeducation_final.pdf | (사용자가 wada-ama.org에서 직접 받음) | https://www.wada-ama.org/en/resources/education-and-prevention/guidelines-for-the-2021-international-standard-for-education-ise | `0e21891252799f71` |

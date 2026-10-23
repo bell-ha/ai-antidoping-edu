@@ -39,8 +39,9 @@ flowchart LR
 ```
 ai-antidoping-edu/
 ├── frontend/              화면 (React · TypeScript)
-│   └── src/pages/         Login · athlete/(Home · Lesson · Guide) · admin/(AdminAthletes · AdminAthlete · AdminSettings)
-│                          · Ask(질문하기, 약물 판정 카드 포함) · Library(교육 자료) · Architecture(시스템 구성)
+│   └── src/pages/         Login(로그인) · Ask(질문하기 — 선수·관리자 함께)
+│                          athlete/ Home(이번 주 교육) · Lesson(교육+퀴즈) · Guide(사용 설명서)
+│                          admin/   AdminAthletes(선수 표) · AdminAthlete(상세·기록) · AdminSettings(단계) · Library(교육 자료) · Architecture(시스템 구성)
 ├── backend/               서버 (Python · FastAPI)
 │   ├── app/
 │   │   ├── api/           login · athlete · admin · chat · library — 화면이 부르는 주소
@@ -48,14 +49,15 @@ ai-antidoping-edu/
 │   │   ├── program/       lessons(300개 읽기·순서) · tiers(줄 세우기·단계) · weekly(주간 배정) · quiz(채점·갑자기 퀴즈)
 │   │   ├── model/         연구진 모델 결과 모양(adapter) · 예측 계산(predict) · RNN numpy 추론
 │   │   ├── drugs/         약물 판정(substances) · 약물 DB(drug_db)
-│   │   └── chat/          교육 검색(BM25) · 질문 속 약 이름 찾기 · 프롬프트 · 질문 점검 · Claude 호출
+│   │   └── chat/          retrieve(교육 검색) · drug_lookup(질문 속 약 이름) · prompts · guard(질문 점검) · client(Claude 호출)
 │   ├── settings/          단계 기본값 · 검색 동의어 · 공개용 합성 모델
 │   └── tests/             자동 테스트
-├── knowledge/             AI·판정이 보는 자료. 출처 폴더마다 raw/(받은 원본, Git 제외) · processed/(가공본)
+├── knowledge/             자료. 출처마다 raw/(받은 원본, Git 제외) → processed/(가공본) — 자세한 지도는 knowledge/README.md
 │   ├── drugs/             wada · kada · kr_source(심평원) + curated(사람이 만든 조회표)
 │   └── education/         lessons/(교육 300개, A~M 13개 대분류) + raw/(WADA ISE·Athlete Curriculum·ADEL·KADA 자료)
-├── scripts/               run.sh(서버 켜기) · seed_dummy.py(더미 선수 100명) · wada_extract.py · kr_drug_names.py
-├── docs/                  설계 결정 기록 · WADA 금지목록 검토 기록
+├── scripts/               run.sh(서버 켜기) · seed_dummy.py(더미 선수 100명)
+│                          build_wada.py · build_kada.py · build_kr_source.py(raw → processed)
+├── docs/                  WADA-REVIEW.md(금지목록 검토·서명) · design/DESIGN-DECISIONS.md(설계 결정 D1~D40) · design/history/(초기 설계 토론)
 ├── private/               비공개(Git 제외): 연구진 인계 자료 · 원고 · 실제 모델
 └── var/                   실행하면 생김(Git 제외): 운영 DB · 약물 DB · 더미 로그인 코드
 ```
@@ -95,6 +97,16 @@ ai-antidoping-edu/
 | Claude API로 보내는 것 | 질문 · 직전 대화 2번(질문과 답) · 검색된 교육 조각 · 약물 판정 |
 
 ## 6. 실행하기
+
+처음 한 번(Python 3.12 이상, Node 24 이상):
+
+```bash
+cd backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.lock && .venv/bin/pip install -e ".[dev]"
+cd ../frontend && npm ci
+# 자료를 다시 만들 때만: build_wada.py는 cd backend && .venv/bin/pip install -e ".[scripts]"(PyMuPDF), build_kada.py는 pdftotext(poppler)
+```
+
+그다음부터:
 
 ```bash
 ./scripts/run.sh          # http://127.0.0.1:8100 — 서버 하나(화면 + API)
