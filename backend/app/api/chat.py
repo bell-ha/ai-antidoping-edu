@@ -49,7 +49,8 @@ def _save(who: SessionInfo, question: str, response: ChatResponse, kind: str) ->
         with db.connect() as con:
             con.execute("""INSERT INTO chat_logs (athlete_id, day, at, question, answer, kind, citations_json)
                            VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                        (who.athlete_id, db.today(), db.now_iso(), question, response.answer, kind,
+                        (who.athlete_id, db.today(), db.now_iso(), question,
+                         response.answer + (f"\n\n[AI 추측] {response.guess}" if response.guess else ""), kind,
                          json.dumps([c.chunk_id for c in response.citations])))
     except Exception:  # 기록 실패로 질문을 못 하게 하지 않는다
         log.exception("질문 기록 저장 실패")

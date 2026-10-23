@@ -566,6 +566,19 @@ a {
   color: var(--body);
 }
 
+.guess {
+  border-left: 3px solid var(--hairline);
+  padding-left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.guess p {
+  margin: 0;
+  color: var(--muted);
+}
+
 .composer {
   border-top: 1px solid var(--hairline);
   padding: 14px 24px 18px;

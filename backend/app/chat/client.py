@@ -27,8 +27,9 @@ ANSWER_SCHEMA = {
         "citations": {"type": "array", "items": {"type": "string"}},
         "refer_to_expert": {"type": "boolean"},
         "out_of_scope": {"type": "boolean"},
+        "guess": {"type": "string"},
     },
-    "required": ["answer", "citations", "refer_to_expert", "out_of_scope"],
+    "required": ["answer", "citations", "refer_to_expert", "out_of_scope", "guess"],
     "additionalProperties": False,
 }
 

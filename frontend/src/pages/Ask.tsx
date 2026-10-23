@@ -123,6 +123,12 @@ function Answer({ r }: { r: ChatResponse }) {
         </div>
       )}
       <p className="answer">{r.answer}</p>
+      {r.guess && (
+        <div className="guess">
+          <span className="caption">AI 추측 · 교육 자료에 없는 내용이라 틀릴 수 있어요</span>
+          <p>{r.guess}</p>
+        </div>
+      )}
       {r.drug_checks.length > 0 && <DrugCards checks={r.drug_checks} />}
       {r.related_lessons.length > 0 && (
         <div className="stack" style={{ gap: 6 }}>

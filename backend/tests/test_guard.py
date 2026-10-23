@@ -3,12 +3,14 @@
 실제 모델이 회피 질문에 어떻게 답하는지(S5)는 live 테스트에서 따로 본다 — mock으로는 검증되지 않음.
 """
 
+import json
 import re
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
+from app import db
 from app.api import chat
 from app.chat import guard
 from app.main import app
@@ -273,3 +275,16 @@ def test_same_name_products_carry_their_own_verdict():
 
 def test_coercion_reply_says_athlete_can_refuse():
     assert "거절할 수 있어요" in guard.COERCION
+
+
+def test_guess_comes_apart_and_is_logged(captured, people):
+    """근거로 답할 수 없는 부분은 AI 추측(guess)으로 따로 오고 질문 기록에도 남는다. 판정은 코드가 아니라 한글로 AI에 넘긴다."""
+    captured["answer"] = LlmAnswer(answer="답", citations=[CHUNKS[0].id], refer_to_expert=False, out_of_scope=False,
+                                   guess=" 빈속에 먹으면 속이 쓰릴 수 있어요. ")
+    r = ask(people.login("athlete"), "배고플 때 타이레놀 먹으면 어떻게 돼?").json()
+    assert r["guess"] == "빈속에 먹으면 속이 쓰릴 수 있어요."
+    prompt = json.dumps(captured["messages"], ensure_ascii=False)
+    assert "NOT_LISTED_VERIFY" not in prompt and "2026 금지목록에 없음" in prompt
+    with db.connect() as con:
+        saved = con.execute("SELECT answer FROM chat_logs ORDER BY at DESC LIMIT 1").fetchone()[0]
+    assert saved.endswith("[AI 추측] 빈속에 먹으면 속이 쓰릴 수 있어요.")

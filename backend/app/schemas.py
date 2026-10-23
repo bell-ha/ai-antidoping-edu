@@ -170,6 +170,7 @@ class LlmAnswer(BaseModel):
     citations: list[str]
     refer_to_expert: bool
     out_of_scope: bool
+    guess: str = ""  # 근거로 답할 수 없는 부분에 대한 AI 추측(화면에서 따로 표시)
 
 
 class Citation(BaseModel):
@@ -185,6 +186,7 @@ class ChatResponse(BaseModel):
     citations: list[Citation]
     refer_to_expert: bool  # LLM 판단 OR 서버 규칙
     out_of_scope: bool
+    guess: str = ""  # AI 추측(교육 자료에 없는 내용). 본 답과 따로 보여 준다
     token: str = ""  # 다음 요청에서 이 답을 대화 기록으로 보낼 때 함께 보내는 서명
     drug_checks: list["CheckResult"] = []  # 질문 속 약 이름의 조회표 판정(AI 설명과 함께 화면에 카드로)
     related_lessons: list["RelatedLesson"] = []  # 답에 인용된 레슨 = 더 읽어 볼 교육

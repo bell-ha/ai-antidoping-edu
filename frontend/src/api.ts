@@ -222,6 +222,7 @@ export interface ChatResponse {
   citations: Citation[];
   refer_to_expert: boolean;
   out_of_scope: boolean;
+  guess: string; // AI 추측(교육 자료에 없는 내용)
   token: string;
   drug_checks: CheckResult[]; // 질문 속 약 이름의 조회표 판정
   related_lessons: { lesson_id: string; title: string; category: string }[]; // 답에 인용된 레슨

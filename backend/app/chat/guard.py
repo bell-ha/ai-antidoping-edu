@@ -97,4 +97,5 @@ def apply(answer: LlmAnswer, chunks: list[Chunk], question: str, check: CheckRes
         text = OUT_OF_SCOPE if answer.out_of_scope else NO_EVIDENCE
         return ChatResponse(kind="server", answer=text, citations=[], refer_to_expert=refer, out_of_scope=True)
     citations = [Citation(chunk_id=c.id, source=c.source, title=f"{c.title} — {c.section}", url=c.url) for c in cited]
-    return ChatResponse(answer=answer.answer, citations=citations, refer_to_expert=refer, out_of_scope=answer.out_of_scope)
+    return ChatResponse(answer=answer.answer, citations=citations, refer_to_expert=refer, out_of_scope=answer.out_of_scope,
+                        guess=answer.guess.strip())
