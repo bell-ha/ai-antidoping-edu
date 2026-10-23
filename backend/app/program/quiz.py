@@ -1,4 +1,4 @@
-"""퀴즈: 레슨 직후 1문항, 갑자기 퀴즈(D37).
+"""퀴즈: 레슨 직후 1문항, 갑자기 퀴즈.
 
 갑자기 퀴즈는 그날 첫 접속 때 단계별 확률로 나온다. 문항은 이미 배운 레슨에서만, 마지막에 틀린 레슨을 먼저.
 """
@@ -16,6 +16,22 @@ def answer(con: sqlite3.Connection, athlete_id: int, lesson_id: str, choice: int
     con.execute("INSERT INTO quiz_attempts (athlete_id, lesson_id, context, choice, correct, at) VALUES (?, ?, ?, ?, ?, ?)",
                 (athlete_id, lesson_id, context, choice, int(result.correct), db.now_iso()))
     return result
+
+
+def last_results(con: sqlite3.Connection, athlete_id: int) -> dict[str, tuple[bool, int]]:
+    """레슨별 (마지막 답이 정답인지, 푼 횟수). 레슨 퀴즈·갑자기 퀴즈·다시 풀기를 모두 센다."""
+    out: dict[str, tuple[bool, int]] = {}
+    for r in con.execute("SELECT lesson_id, correct FROM quiz_attempts WHERE athlete_id = ? ORDER BY id", (athlete_id,)):
+        out[r["lesson_id"]] = (bool(r["correct"]), out.get(r["lesson_id"], (False, 0))[1] + 1)
+    return out
+
+
+def wrong_open(con: sqlite3.Connection, athlete_id: int) -> list[str]:
+    """오답 노트: 이수한 교육 중 마지막 답이 오답인 것(다시 풀어 맞히면 빠진다)."""
+    done = [r["lesson_id"] for r in con.execute(
+        "SELECT lesson_id FROM lesson_assignments WHERE athlete_id = ? AND completed_at IS NOT NULL ORDER BY completed_at", (athlete_id,))]
+    last = last_results(con, athlete_id)
+    return [lid for lid in done if lid in last and not last[lid][0]]
 
 
 def first_visit_today(con: sqlite3.Connection, athlete_id: int) -> bool:

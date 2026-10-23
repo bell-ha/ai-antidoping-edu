@@ -1,4 +1,4 @@
--- 운영 DB (var/app.sqlite, Git 제외). D37.
+-- 운영 DB (var/app.sqlite, Git 제외).
 -- 선수 이름·번호·출생연도·경기 기록·질문 원문이 들어간다. 로그인 코드는 HMAC 해시만.
 CREATE TABLE IF NOT EXISTS admins (
     id INTEGER PRIMARY KEY,
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS quiz_attempts (
     id INTEGER PRIMARY KEY,
     athlete_id INTEGER NOT NULL REFERENCES athletes(id),
     lesson_id TEXT NOT NULL,
-    context TEXT NOT NULL,             -- lesson | surprise
+    context TEXT NOT NULL,             -- lesson | surprise | review(오답 다시 풀기)
     choice INTEGER NOT NULL,
     correct INTEGER NOT NULL,
     at TEXT NOT NULL

@@ -9,6 +9,7 @@ import { AdminSettings } from "./pages/admin/AdminSettings";
 import { Architecture } from "./pages/admin/Architecture";
 import { Ask } from "./pages/Ask";
 import { Guide } from "./pages/athlete/Guide";
+import { History } from "./pages/athlete/History";
 import { Home } from "./pages/athlete/Home";
 import { Lesson } from "./pages/athlete/Lesson";
 import { Library } from "./pages/admin/Library";
@@ -39,6 +40,7 @@ export default function App() {
             <>
               <Route path="/home" element={<Home />} />
               <Route path="/lesson/:lessonId" element={<Lesson />} />
+              <Route path="/history" element={<History />} />
               <Route path="/guide" element={<Guide />} />
             </>
           ) : (

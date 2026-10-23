@@ -15,11 +15,12 @@ export function useSession(): SessionState {
   return s;
 }
 
-// 역할별 메뉴 (D37): 선수는 교육·질문만, 관리자는 선수 관리와 도구
+// 역할별 메뉴: 선수는 교육·질문만, 관리자는 선수 관리와 도구
 export const NAV_BY_ROLE: Record<Role, { path: string; label: string }[]> = {
   athlete: [
     { path: "/home", label: "교육 시작하기" },
     { path: "/ask", label: "질문하기" },
+    { path: "/history", label: "내 학습 기록" },
     { path: "/guide", label: "사용 설명서" },
   ],
   admin: [

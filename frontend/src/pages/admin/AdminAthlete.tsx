@@ -89,6 +89,8 @@ export function AdminAthlete() {
               <dd>
                 {a.quiz_correct} / {a.quiz_wrong}
               </dd>
+              <dt>오답 남음(다시 풀기 전)</dt>
+              <dd>{a.wrong_open}개</dd>
               <dt>질문</dt>
               <dd>{a.questions}개</dd>
             </dl>
@@ -130,7 +132,7 @@ export function AdminAthlete() {
                   {d.quizzes.map((q, i) => (
                     <tr key={i}>
                       <td>{q.at.slice(0, 16).replace("T", " ")}</td>
-                      <td>{q.context === "surprise" ? "갑자기 퀴즈" : "교육 퀴즈"}</td>
+                      <td>{{ lesson: "교육 퀴즈", surprise: "갑자기 퀴즈", review: "다시 풀기" }[q.context]}</td>
                       <td>{q.title}</td>
                       <td>{q.correct ? "정답" : `오답(${q.choice}번)`}</td>
                     </tr>
