@@ -46,3 +46,11 @@ export const CATEGORY_LABEL: Record<CompetitionCategory, string> = {
   other_international: "그 밖의 국제대회",
   domestic: "국내 대회",
 };
+
+// 예측 모델 이름(서버 adapter.MODEL_LABEL과 같음). 화면마다 이름이 달라 연구진 가중치인지 알 수 없다는 지적(테스터 1·2·13)
+export const MODEL_LABEL: Record<string, string> = {
+  researchers: "연구진 RNN(LSTM)",
+  platform_temporary: "연구진 RNN(LSTM) · 인계 코드로 재현한 임시 가중치(남자)",
+  synthetic: "공개용 합성 모델(연구진 모델 아님)",
+  none: "모델 없음",
+};

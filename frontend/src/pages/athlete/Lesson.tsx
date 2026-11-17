@@ -1,8 +1,9 @@
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { api, type AthleteHome, type LessonView, type QuizResult } from "../../api";
 import { QuizBox } from "../../components/QuizBox";
+import { RichText } from "../../components/RichText";
 
 export function Lesson() {
   const { lessonId = "" } = useParams();
@@ -11,6 +12,7 @@ export function Lesson() {
   const [next, setNext] = useState<string | null>(null);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const fromAsk = (useLocation().state as { from?: string } | null)?.from === "ask"; // 질문하기의 관련 교육에서 들어옴
 
   useEffect(() => {
     setLesson(null);
@@ -32,23 +34,29 @@ export function Lesson() {
 
   return (
     <article className="lesson stack-lg">
-      <Link to="/home" className="btn-sub small" style={{ alignSelf: "flex-start" }}>
-        <ArrowLeft size={14} /> 이번 주 목록
-      </Link>
+      {fromAsk ? (
+        <button className="btn-sub small" style={{ alignSelf: "flex-start" }} onClick={() => navigate(-1)}>
+          <ArrowLeft size={14} /> 질문으로 돌아가기
+        </button>
+      ) : (
+        <Link to="/home" className="btn-sub small" style={{ alignSelf: "flex-start" }}>
+          <ArrowLeft size={14} /> 이번 주 목록
+        </Link>
+      )}
       <div className="stack" style={{ gap: 6 }}>
-        <span className="caption">{lesson.category}</span>
+        <span className="caption">{lesson.category.replace(/^[A-M] /, "")}</span>
         <h1 className="title">{lesson.title}</h1>
       </div>
 
       {lesson.sections.map((s) => (
         <section key={s.id} className="lesson-section">
           <h2 className="heading">{s.heading}</h2>
-          <LessonText text={s.text} />
+          <RichText text={s.text} />
         </section>
       ))}
 
       <section className="card">
-        <QuizBox q={lesson.quiz} onAnswer={answer} label={lesson.completed ? "퀴즈 (다시 풀기)" : "퀴즈 — 답하면 이 교육을 이수해요"} />
+        <QuizBox q={lesson.quiz} onAnswer={answer} label={lesson.completed ? "퀴즈 (이미 완료한 교육 · 다시 풀기)" : "퀴즈 — 답하면 맞든 틀리든 이 교육은 완료예요"} />
       </section>
 
       {answered && (
@@ -69,28 +77,3 @@ export function Lesson() {
 }
 
 /** 레슨 본문: 빈 줄로 문단, "- "는 목록, **굵게**, "출처:" 줄은 작게. */
-function LessonText({ text }: { text: string }) {
-  const blocks = text.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
-  return (
-    <>
-      {blocks.map((b, i) => {
-        if (b.startsWith("출처:")) return <p key={i} className="caption lesson-source">{b}</p>;
-        const lines = b.split("\n");
-        if (lines.every((l) => l.trim().startsWith("- "))) {
-          return (
-            <ul key={i} className="lesson-ul">
-              {lines.map((l, j) => (
-                <li key={j}>{bold(l.trim().slice(2))}</li>
-              ))}
-            </ul>
-          );
-        }
-        return <p key={i}>{bold(b)}</p>;
-      })}
-    </>
-  );
-}
-
-function bold(s: string) {
-  return s.split(/(\*\*[^*]+\*\*)/).map((part, i) => (part.startsWith("**") && part.endsWith("**") ? <b key={i}>{part.slice(2, -2)}</b> : part));
-}

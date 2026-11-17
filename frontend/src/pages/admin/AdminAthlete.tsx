@@ -1,11 +1,11 @@
-import { ArrowLeft, KeyRound, Plus, Trash2 } from "lucide-react";
+import { Archive, ArrowLeft, KeyRound, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router";
 import { api, type AthleteDetail, type CompetitionCategory, type IssuedCode, type RecordInput } from "../../api";
 import { CodeHandoff } from "../../components/CodeHandoff";
 import { Dialog } from "../../components/Dialog";
 import { Select } from "../../components/Select";
-import { CATEGORY_LABEL, weightClassLabel } from "../../session";
+import { CATEGORY_LABEL, MODEL_LABEL, weightClassLabel } from "../../session";
 
 const EMPTY: RecordInput = { date: "", competition_category: "domestic", body_weight: 0, snatch: 0, clean_jerk: 0 };
 
@@ -15,6 +15,21 @@ export function AdminAthlete() {
   const [error, setError] = useState("");
   const [issued, setIssued] = useState<IssuedCode | null>(null);
   const [tab, setTab] = useState<"chats" | "quizzes" | "lessons">("chats");
+  const [notice, setNotice] = useState(""); // 기록을 넣거나 지운 뒤 단계가 바뀌었으면 알림(테스터 3·4)
+  // 기록 추가·삭제 결과: 이 선수의 단계가 바뀌었는지 알려 준다(다른 선수도 다시 나눠짐)
+  const changed = (next: AthleteDetail) => {
+    const before = d?.athlete.tier ?? null;
+    const after = next.athlete.tier;
+    setNotice(before !== after ? `이 선수: ${before ?? "없음"} → ${after ?? "없음"}단계. 전체 선수도 다시 나눴어요.` : "전체 선수를 다시 나눴어요(이 선수 단계는 그대로).");
+    setD(next);
+  };
+  const rename = () => {
+    const name = window.prompt("새 이름", d?.athlete.name ?? "")?.trim();
+    if (name) api.updateAthlete(id, { name }).then(setD, (e) => setError(e.message));
+  };
+  const archive = (active: boolean) =>
+    window.confirm(active ? "보관을 풀까요? 다시 목록과 단계 나누기에 들어가고 로그인할 수 있어요." : "보관할까요? 목록과 단계 나누기에서 빠지고 이 선수는 로그인할 수 없어요. 기록은 지우지 않아요.") &&
+    api.updateAthlete(id, { active }).then(setD, (e) => setError(e.message));
 
   useEffect(() => {
     api.athlete(id).then(setD, (e) => setError(e.message));
@@ -36,18 +51,27 @@ export function AdminAthlete() {
             {a.name} <span className="muted">{a.number}</span>
           </h1>
           <p className="muted">
-            {a.birth_year}년생 · {weightClassLabel(a.weight_class)} · {a.tier !== null ? `${a.tier}단계 (순위 ${a.rank})` : "단계 없음"} · 마지막 접속일{" "}
-            {a.last_visit ? a.last_visit.slice(0, 10) : "없음"}
+            {a.birth_year}년생 · {weightClassLabel(a.weight_class)} · {a.tier !== null ? `${a.tier}단계 · 순위 ${a.rank}` : "단계 없음"} · 이번 주{" "}
+            {a.week_done}/{a.week_total} · 마지막 접속일 {a.last_visit ? a.last_visit.slice(0, 10) : "없음"}
           </p>
         </div>
+        <div className="row wrap" style={{ gap: 8 }}>
+        <button className="btn-sub" onClick={rename}>
+          <Pencil size={14} /> 이름 고치기
+        </button>
+        <button className="btn-sub" onClick={() => archive(!a.active)}>
+          <Archive size={14} /> {a.active ? "보관(목록에서 빼기)" : "보관 풀기"}
+        </button>
         <button
           className="btn-sub"
           onClick={() => window.confirm("새 코드를 발급하면 지금 코드는 바로 쓸 수 없어요. 발급할까요?") && api.reissueCode(id).then(setIssued, (e) => setError(e.message))}
         >
           <KeyRound size={14} /> 로그인 코드 새로 발급
         </button>
+        </div>
       </div>
       {error && <p className="error" style={{ marginBottom: 16 }}>{error}</p>}
+      {notice && <p className="notice notice-neutral" style={{ marginBottom: 16 }}>{notice}</p>}
 
       <div className="grid">
         <section className="span-4 stack-lg">
@@ -59,7 +83,7 @@ export function AdminAthlete() {
                 <dd>{m.observed.value ?? "—"}kg</dd>
                 <dt>모델 예측</dt>
                 <dd>{m.prediction.value ?? "—"}{m.prediction.value !== null && "kg"}</dd>
-                <dt>관측 − 예측</dt>
+                <dt>실제 − 예측</dt>
                 <dd>
                   <b>
                     {m.residual_observed_minus_predicted === null
@@ -70,7 +94,7 @@ export function AdminAthlete() {
                 <dt>예측에 쓴 이전 대회</dt>
                 <dd>{m.history_count}개</dd>
                 <dt>모델</dt>
-                <dd className="caption">{m.model_version}</dd>
+                <dd className="caption">{MODEL_LABEL[m.source] ?? m.model_version}</dd>
               </dl>
             ) : (
               <p className="muted">아직 결과가 없어요.</p>
@@ -104,7 +128,7 @@ export function AdminAthlete() {
         </section>
 
         <section className="span-8 stack-lg">
-          <Records d={d} onChange={setD} />
+          <Records d={d} onChange={changed} />
 
           <div className="card stack">
             <div className="row wrap" style={{ gap: 8 }}>
@@ -138,7 +162,7 @@ export function AdminAthlete() {
                   {d.quizzes.map((q, i) => (
                     <tr key={i}>
                       <td>{q.at.slice(0, 16).replace("T", " ")}</td>
-                      <td>{{ lesson: "교육 퀴즈", surprise: "갑자기 퀴즈", review: "오답 다시 풀기", retry: "이수 후 다시 풀기" }[q.context]}</td>
+                      <td>{{ lesson: "교육 퀴즈", surprise: "깜짝 퀴즈", review: "오답 다시 풀기", retry: "이수 후 다시 풀기" }[q.context]}</td>
                       <td>{q.title}</td>
                       <td>{q.correct ? "정답" : `오답(${q.choice}번)`}</td>
                     </tr>
@@ -165,13 +189,10 @@ export function AdminAthlete() {
       </div>
 
       {issued && (
-        <Dialog onClose={() => setIssued(null)}>
+        <Dialog onClose={() => setIssued(null)} persistent>
           <h2 className="heading">새 로그인 코드</h2>
           <p className="muted">이전 코드는 이제 쓸 수 없어요. 새 코드는 지금만 볼 수 있으니 복사하거나 안내문을 그대로 보내 주세요.</p>
-          <CodeHandoff name={a.name} code={issued.code} />
-          <button className="btn" onClick={() => setIssued(null)}>
-            닫기
-          </button>
+          <CodeHandoff name={a.name} code={issued.code} onClose={() => setIssued(null)} />
         </Dialog>
       )}
     </>
@@ -182,18 +203,29 @@ function Records({ d, onChange }: { d: AthleteDetail; onChange: (d: AthleteDetai
   const [r, setR] = useState<RecordInput>(EMPTY);
   const [error, setError] = useState("");
   const id = d.athlete.id;
-  const valid = /^\d{4}-(0[1-9]|1[0-2])$/.test(r.date) && r.body_weight > 0 && r.snatch > 0 && r.clean_jerk > 0;
+  const [busy, setBusy] = useState(false); // 연타로 같은 기록이 두 번 들어가던 문제(테스터 2)
+  const dateOk = /^\d{4}-(0[1-9]|1[0-2])$/.test(r.date);
+  const valid = dateOk && r.body_weight > 0 && r.snatch > 0 && r.clean_jerk > 0;
+  // 버튼이 회색이기만 하고 이유가 안 보이던 문제(테스터 2·3)
+  const why = r.date && !dateOk ? "대회 연월은 2025-03처럼 넣어 주세요." : "";
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
+    if (busy) return;
+    const warn = [
+      r.snatch > r.clean_jerk && `인상(${r.snatch})이 용상(${r.clean_jerk})보다 커요.`,
+      d.records.some((x) => x.date === r.date) && `${r.date}에 이미 기록이 있어요.`,
+    ].filter(Boolean);
+    if (warn.length && !window.confirm(`${warn.join(" ")} 그래도 넣을까요?`)) return;
     setError("");
+    setBusy(true);
     api.addRecord(id, r).then(
       (x) => {
         onChange(x);
         setR(EMPTY);
       },
       (e) => setError(e.message),
-    );
+    ).finally(() => setBusy(false));
   };
   const num = (k: "body_weight" | "snatch" | "clean_jerk") => (e: React.ChangeEvent<HTMLInputElement>) =>
     setR({ ...r, [k]: Number(e.target.value) || 0 });
@@ -201,12 +233,12 @@ function Records({ d, onChange }: { d: AthleteDetail; onChange: (d: AthleteDetai
   return (
     <div className="card stack">
       <h2 className="heading">경기 기록</h2>
-      <p className="caption">기록을 넣거나 지우면 이 선수의 모델을 다시 돌리고 전체 선수를 다시 줄 세워요.</p>
+      <p className="caption">기록을 넣거나 지우면 이 선수의 모델을 다시 돌리고 전체 선수의 단계를 다시 나눠요. 예측에는 대회 기록이 3개(마지막 1개 + 이전 2개) 이상 필요해요.</p>
       <div className="table-scroll">
         <table className="data-table">
           <thead>
             <tr>
-              <th>대회 날짜</th>
+              <th>대회 연월</th>
               <th>대회</th>
               <th className="num">계체</th>
               <th>체급</th>
@@ -229,7 +261,7 @@ function Records({ d, onChange }: { d: AthleteDetail; onChange: (d: AthleteDetai
                   <b>{x.total}</b>
                 </td>
                 <td>
-                  <button className="icon-btn" aria-label="기록 지우기" onClick={() => window.confirm(`${x.date} 기록을 지울까요? 전체 선수를 다시 줄 세워요.`) && api.deleteRecord(id, x.id).then(onChange, (e) => setError(e.message))}>
+                  <button className="icon-btn" aria-label="기록 지우기" onClick={() => window.confirm(`${x.date} 기록(합계 ${x.total}kg)을 지울까요? 전체 선수의 단계를 다시 나눠요.`) && api.deleteRecord(id, x.id).then(onChange, (e) => setError(e.message))}>
                     <Trash2 size={14} />
                   </button>
                 </td>
@@ -239,7 +271,7 @@ function Records({ d, onChange }: { d: AthleteDetail; onChange: (d: AthleteDetai
         </table>
       </div>
       <form className="record-add" onSubmit={submit}>
-        <input className="input" placeholder="YYYY-MM" value={r.date} onChange={(e) => setR({ ...r, date: e.target.value })} aria-label="대회 날짜" />
+        <input className="input" placeholder="대회 연월(2025-03)" value={r.date} onChange={(e) => setR({ ...r, date: e.target.value })} aria-label="대회 연월" />
         <Select<CompetitionCategory>
           id="category"
           value={r.competition_category}
@@ -250,10 +282,11 @@ function Records({ d, onChange }: { d: AthleteDetail; onChange: (d: AthleteDetai
         <input className="input" inputMode="decimal" placeholder="계체(kg)" value={r.body_weight || ""} onChange={num("body_weight")} aria-label="계체 체중" />
         <input className="input" inputMode="numeric" placeholder="인상" value={r.snatch || ""} onChange={num("snatch")} aria-label="인상" />
         <input className="input" inputMode="numeric" placeholder="용상" value={r.clean_jerk || ""} onChange={num("clean_jerk")} aria-label="용상" />
-        <button className="btn" style={{ height: 44 }} disabled={!valid}>
-          <Plus size={16} /> 추가
+        <button className="btn" style={{ height: 44 }} disabled={!valid || busy}>
+          <Plus size={16} /> {busy ? "넣는 중…" : "추가"}
         </button>
       </form>
+      {why && <p className="caption">{why}</p>}
       {error && <p className="error">{error}</p>}
     </div>
   );

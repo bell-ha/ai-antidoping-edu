@@ -63,7 +63,10 @@ export function Login({ onLogin }: { onLogin: (who: SessionInfo) => void }) {
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
                   autoComplete="off"
-                  placeholder="관리자에게 받은 코드 (예: WL-001-abcd2345)"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  placeholder="관리자에게 받은 로그인 코드"
                 />
               </div>
               {error && <p className="error">{error}</p>}

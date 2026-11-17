@@ -1,43 +1,12 @@
-import { ArrowLeft, BookOpen, CircleCheck, ExternalLink, MessageCircle, PencilLine } from "lucide-react";
-import { Fragment, useEffect, useState, type ReactNode } from "react";
+import { ArrowLeft, ArrowRight, BookOpen, CircleCheck, ExternalLink, MessageCircle, PencilLine, Search } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { api, type LessonReview, type LibraryDoc, type LibraryDocSummary } from "../../api";
+import { RichText } from "../../components/RichText";
 
 // 교육 자료 열람(관리자). 질문하기가 근거로 쓰는 레슨 파일을 그대로 보여 준다(같은 파일, 같은 섹션 번호).
 
 const SOURCE_LABEL: Record<string, string> = { WADA: "WADA", KADA: "KADA", ADEL: "ADEL" };
-
-// 본문 표기: 빈 줄 = 문단, "- " = 목록, "출처:" 줄 = 출처 캡션, URL = 링크
-function linkify(text: string): ReactNode[] {
-  return text.split(/(https?:\/\/[^\s)]+)/g).map((part, i) =>
-    /^https?:\/\//.test(part) ? (
-      <a key={i} href={part} target="_blank" rel="noreferrer">
-        {part}
-      </a>
-    ) : (
-      <Fragment key={i}>{part}</Fragment>
-    ),
-  );
-}
-
-function Body({ text }: { text: string }) {
-  const blocks: ReactNode[] = [];
-  let list: string[] = [];
-  const flush = () => {
-    if (list.length) blocks.push(<ul key={`l${blocks.length}`}>{list.map((x, i) => <li key={i}>{linkify(x)}</li>)}</ul>);
-    list = [];
-  };
-  text.split("\n").forEach((raw) => {
-    const line = raw.trim();
-    if (!line) return flush();
-    if (line.startsWith("- ")) return void list.push(line.slice(2));
-    flush();
-    if (line.startsWith("출처:")) blocks.push(<p key={blocks.length} className="caption lib-source">{linkify(line)}</p>);
-    else blocks.push(<p key={blocks.length}>{linkify(line)}</p>);
-  });
-  flush();
-  return <div className="lib-body">{blocks}</div>;
-}
 
 export function Library() {
   const { docId } = useParams();
@@ -59,6 +28,7 @@ function DocList() {
   const [docs, setDocs] = useState<LibraryDocSummary[] | null>(null);
   const [reviews, setReviews] = useState<Record<string, LessonReview>>({});
   const [filter, setFilter] = useState<Filter>("all");
+  const [query, setQuery] = useState("");
   const [error, setError] = useState("");
   useEffect(() => {
     api.library().then(setDocs, (e) => setError(e.message));
@@ -70,6 +40,8 @@ function DocList() {
   const groups = new Map<string, LibraryDocSummary[]>();
   for (const d of docs ?? []) {
     if (filter !== "all" && reviewState(d, reviews) !== filter) continue;
+    const q = query.trim().toLowerCase();
+    if (q && ![d.doc_id, d.title, d.summary ?? "", ...d.section_headings].some((x) => x.toLowerCase().includes(q))) continue;
     groups.set(d.category, [...(groups.get(d.category) ?? []), d]);
   }
 
@@ -81,9 +53,15 @@ function DocList() {
       </div>
       {error && <p className="error">{error}</p>}
       {docs && (
+        <div className="demo-search" style={{ marginBottom: 12, maxWidth: 420 }}>
+          <Search size={16} />
+          <input className="input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="제목·소제목·번호로 찾기(예: 살부타몰, G-021)" aria-label="교육 자료 찾기" />
+        </div>
+      )}
+      {docs && (
         <div className="row wrap" style={{ gap: 8, marginBottom: 24 }}>
           <span className="caption">
-            사람 검토 {count("reviewed")} / {docs.length} · 고칠 곳 {count("needs_fix")}
+            검토 완료 {count("reviewed")} · 고칠 곳 {count("needs_fix")} · 남음 {count("todo")} (전체 {docs.length})
           </span>
           {(Object.keys(FILTER_LABEL) as Filter[]).map((f) => (
             <button key={f} className={`chip ${filter === f ? "chip-on" : "chip-plain"}`} onClick={() => setFilter(f)}>
@@ -105,7 +83,7 @@ function DocList() {
                     <span className="chip-source">
                       <b>{SOURCE_LABEL[d.source] ?? d.source}</b>
                     </span>
-                    <span className="caption num">섹션 {d.section_headings.length}개</span>
+                    <span className="caption num">{d.doc_id}</span>
                     {reviewState(d, reviews) !== "todo" && (
                       <span className={`review-mark ${reviewState(d, reviews)}`}>{FILTER_LABEL[reviewState(d, reviews)]}</span>
                     )}
@@ -150,8 +128,7 @@ function DocView({ docId }: { docId: string }) {
         </Link>
         <h1 className="title">{doc.title}</h1>
         <p className="muted">
-          {SOURCE_LABEL[doc.source] ?? doc.source} 안내를 바탕으로 정리 · {doc.version}
-          {!doc.reviewed && " · 연구진 검토 전"}
+          {doc.doc_id} · {SOURCE_LABEL[doc.source] ?? doc.source} 자료를 바탕으로 정리 · 원문 판 {doc.version}
         </p>
       </div>
 
@@ -180,7 +157,7 @@ function DocView({ docId }: { docId: string }) {
           {doc.sections.map((s) => (
             <section key={s.id} id={s.id} className={`card stack lib-section${s.id === target ? " is-target" : ""}`}>
               <h2 className="heading">{s.heading}</h2>
-              <Body text={s.text} />
+              <div className="lib-body"><RichText text={s.text} sourceClass="caption lib-source" /></div>
               <button
                 type="button"
                 className="btn-sub small"
@@ -217,12 +194,22 @@ function ReviewPanel({ docId, fileReviewed }: { docId: string; fileReviewed: boo
   const [review, setReview] = useState<LessonReview | null>(null);
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
+  const [next, setNext] = useState<string | null>(null);
   useEffect(() => {
     api.reviews().then((all) => {
       setReview(all[docId] ?? null);
       setNote(all[docId]?.note ?? "");
     }, () => setReview(null));
   }, [docId]);
+  // 표시하고 나면 '다음 검토할 교육'(배정 순서에서 이 다음의 검토 전 교육)으로 바로 넘어갈 수 있게
+  useEffect(() => {
+    if (!review) return;
+    Promise.all([api.library(), api.reviews()]).then(([docs, all]) => {
+      const i = docs.findIndex((d) => d.doc_id === docId);
+      const todo = (d: LibraryDocSummary) => d.doc_id !== docId && reviewState(d, all) === "todo";
+      setNext((docs.slice(i + 1).find(todo) ?? docs.find(todo))?.doc_id ?? null);
+    }, () => setNext(null));
+  }, [review, docId]);
 
   const save = (status: "reviewed" | "needs_fix" | "none") =>
     api.setReview(docId, status, status === "needs_fix" ? note : undefined).then(
@@ -240,13 +227,14 @@ function ReviewPanel({ docId, fileReviewed }: { docId: string; fileReviewed: boo
         {fileReviewed
           ? "파일에 검토 완료로 반영돼 있어요."
           : review?.status === "reviewed"
-            ? `검토 완료로 표시했어요(${review.at?.slice(0, 10)}). 파일 반영: scripts/apply_reviews.py --write`
+            ? `검토 완료로 표시했어요(${review.at?.slice(0, 10)}).`
             : review?.status === "needs_fix"
               ? `고칠 곳 있음으로 표시했어요(${review.at?.slice(0, 10)}).`
               : "본문과 퀴즈를 원문과 비교해 읽은 뒤 표시해 주세요."}
       </p>
-      <textarea className="input review-note" rows={3} value={note} onChange={(e) => setNote(e.target.value)}
+      <textarea className="input review-note" rows={3} value={note} maxLength={1000} onChange={(e) => setNote(e.target.value)}
         placeholder="고칠 곳이 있으면 적어 주세요(예: 2번 소제목의 기간이 원문과 달라요)" aria-label="검토 메모" />
+      <span className="caption">{note.trim() ? `${note.length} / 1000자` : "고칠 곳을 적으면 '고칠 곳 있음'을 누를 수 있어요."}</span>
       <div className="row wrap" style={{ gap: 8 }}>
         <button className="btn" style={{ height: 40 }} onClick={() => save("reviewed")}>
           <CircleCheck size={16} /> 검토 완료
@@ -258,6 +246,11 @@ function ReviewPanel({ docId, fileReviewed }: { docId: string; fileReviewed: boo
           <button className="btn-sub" onClick={() => save("none").then(() => setNote(""))}>
             표시 지우기
           </button>
+        )}
+        {review && next && (
+          <Link className="btn-sub" to={`/library/${next}`}>
+            다음 검토할 교육 <ArrowRight size={14} />
+          </Link>
         )}
       </div>
       {error && <p className="error">{error}</p>}

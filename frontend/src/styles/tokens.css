@@ -6,7 +6,7 @@
 
   --ink: #111111;
   --body: #374151;
-  --muted: #5f6672;
+  --muted: #4b5260; /* 노안 사용자 대비(테스터 4·9): #5f6672보다 진하게 */
 
   --primary: #111111;
   --primary-active: #242424;
@@ -42,8 +42,8 @@
   --fs-title: 28px;
   --fs-heading: 18px;
   --fs-body: 16px;
-  --fs-label: 14px;
-  --fs-caption: 13px;
+  --fs-label: 15px;
+  --fs-caption: 14px; /* 13px은 작다(테스터 4·9) */
 
   --shadow-dialog: 0 4px 12px rgb(0 0 0 / 0.08);
 }

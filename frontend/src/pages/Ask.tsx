@@ -1,20 +1,21 @@
-import { ArrowRight, CircleHelp, ExternalLink, Send, TriangleAlert } from "lucide-react";
+import { ArrowRight, ExternalLink, RotateCcw, Send, Sparkles, TriangleAlert } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useLocation } from "react-router";
-import { api, type ChatMessage, type ChatResponse, type CheckResult, type Citation } from "../api";
+import { api, type ChatMessage, type ChatResponse, type CheckResult } from "../api";
 import { StatusBadge } from "../components/StatusBadge";
 import { useSession } from "../session";
-
-const SOURCE_LABEL: Record<Citation["source"], string> = { WADA: "WADA", KADA: "KADA", ADEL: "ADEL" };
 
 const SUGGESTED = [
   "타이레놀 먹어도 돼?",
   "에페드린은 평소에 먹어도 돼?",
-  "S6에 해당하는 약물은 뭐야?",
+  "감기약에 든 흥분제는 뭐야?",
+  "수액이나 주사 맞아도 돼?",
   "도핑검사는 불시에 할 수 있어?",
   "프로틴 보충제 먹어도 돼?",
   "병원에서 약 처방받을 때 뭘 확인해야 해?",
 ];
+
+const MAX_QUESTION = 500; // 서버 메시지 길이 제한과 맞춤
 
 interface Turn {
   question: string;
@@ -78,6 +79,12 @@ export function Ask() {
       .finally(() => setPending(false));
   };
 
+  const retry = (index: number) => {
+    const question = turns[index].question;
+    setTurns((ts) => ts.filter((_, i) => i !== index));
+    send(question);
+  };
+
   const submit = (e: FormEvent) => {
     e.preventDefault();
     send(draft);
@@ -87,7 +94,10 @@ export function Ask() {
     <>
       <div className="page-head">
         <h1 className="title">질문하기</h1>
-        <p className="muted">약 이름(제품명이나 성분명)이나 도핑방지 규정을 물어보세요. WADA·KADA 자료에 근거해 답해요.</p>
+        <p className="muted">
+          약 이름(제품명이나 성분명)이나 도핑방지 규정을 물어보세요. AI가 WADA·KADA 교육 자료로 답을 만들어요. 답 아래 판정 카드는 금지목록
+          규칙으로 정해지니, 글과 다르면 판정 카드를 따르세요.
+        </p>
       </div>
 
       <div className="grid">
@@ -111,8 +121,15 @@ export function Ask() {
               <div key={i} className="stack" style={{ gap: 12 }}>
                 <p className="bubble-user">{t.question}</p>
                 {t.response && <Answer r={t.response} />}
-                {t.error && <p className="error">{t.error}</p>}
-                {!t.response && !t.error && <p className="caption">답변을 만들고 있어요…</p>}
+                {t.error && (
+                  <div className="row wrap" style={{ gap: 8 }}>
+                    <p className="error">{t.error}</p>
+                    <button className="btn-sub small" onClick={() => retry(i)} disabled={pending}>
+                      <RotateCcw size={14} /> 다시 보내기
+                    </button>
+                  </div>
+                )}
+                {!t.response && !t.error && <p className="caption pending-dots">답변을 만들고 있어요(보통 5~15초)</p>}
               </div>
             ))}
             <div ref={endRef} />
@@ -120,11 +137,13 @@ export function Ask() {
 
           <div className="composer">
             <form onSubmit={submit}>
-              <input className="input" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="약 이름이나 도핑방지 규정을 물어보세요" aria-label="질문" />
+              <input className="input" value={draft} maxLength={MAX_QUESTION} onChange={(e) => setDraft(e.target.value)}
+                placeholder="예: 판콜 먹어도 돼?" aria-label="질문" />
               <button className="icon-btn" disabled={!draft.trim() || pending} aria-label="보내기">
                 <Send size={18} />
               </button>
             </form>
+            {draft.length > MAX_QUESTION - 100 && <span className="caption">{draft.length} / {MAX_QUESTION}자</span>}
           </div>
         </section>
       </div>
@@ -137,17 +156,12 @@ function Answer({ r }: { r: ChatResponse }) {
   const { who } = useSession();
   return (
     <div className="answer-block">
-      {/* 고정 응답·서버 문구는 본문에 이미 안내가 있으므로 배너를 붙이지 않는다 */}
-      {r.kind === "answer" && r.out_of_scope && (
-        <div className="notice notice-neutral">
-          <CircleHelp size={18} />
-          <span>교육 자료 범위 밖의 질문이에요.</span>
-        </div>
-      )}
       <p className="answer">{r.answer}</p>
       {r.guess && (
         <div className="guess">
-          <span className="caption">AI 추측 · 교육 자료에 없는 내용이라 틀릴 수 있어요</span>
+          <span className="caption guess-label">
+            <Sparkles size={14} /> 자료에 없는 AI 설명 · 확인되지 않은 내용이라 틀릴 수 있어요
+          </span>
           <p>{r.guess}</p>
         </div>
       )}
@@ -157,9 +171,12 @@ function Answer({ r }: { r: ChatResponse }) {
           <span className="caption">관련 교육</span>
           <div className="related-list">
             {r.related_lessons.map((l) => (
-              <Link key={l.lesson_id} className="related-lesson" to={who.role === "admin" ? `/library/${l.lesson_id}` : `/lesson/${l.lesson_id}`}>
-                <span className="caption">{l.category}</span>
-                <span>{l.title}</span>
+              <Link key={l.lesson_id} className="related-lesson" to={who.role === "admin" ? `/library/${l.lesson_id}` : `/lesson/${l.lesson_id}`}
+                state={{ from: "ask" }}>
+                <span className="related-text">
+                  <span className="caption">{l.category.replace(/^[A-M] /, "")}</span>
+                  <span>{l.title}</span>
+                </span>
                 <ArrowRight size={14} />
               </Link>
             ))}
@@ -168,13 +185,14 @@ function Answer({ r }: { r: ChatResponse }) {
       )}
       {r.citations.length > 0 && (
         <div className="stack" style={{ gap: 6 }}>
-          <span className="caption">출처 · 누르면 원문이 새 창으로 열려요</span>
-          <div className="row wrap">
+          <span className="caption">답에 쓴 교육과 그 출처 · 누르면 원문 문서가 새 창으로 열려요</span>
+          <div className="stack" style={{ gap: 6 }}>
             {r.citations.map((c) => (
               <a key={c.chunk_id} className="chip-source" href={c.url} target="_blank" rel="noreferrer">
-                <b>{SOURCE_LABEL[c.source]}</b>
+                <b>교육</b>
                 {c.title}
                 <ExternalLink size={12} />
+                {c.ref && <span className="chip-ref">출처: {c.ref}</span>}
               </a>
             ))}
           </div>
@@ -190,12 +208,13 @@ const KIND_LABEL: Record<CheckResult["matched_kind"], string> = { product: "제�
 function DrugCards({ checks }: { checks: CheckResult[] }) {
   return (
     <div className="drug-cards">
-      <span className="caption">금지목록 조회표 판정 (2026)</span>
+      <span className="caption">2026 금지목록 판정 · 금지목록 규칙으로 정해요(답 글과 다르면 이 판정을 따르세요)</span>
       {checks.map((c) => (
         <div key={c.query} className="drug-card">
           <div className="row wrap" style={{ gap: 8 }}>
             <strong>{c.matched_kind === "substance" && c.ingredients[0] ? c.ingredients[0].name_ko : c.query}</strong>
             <span className="caption">{KIND_LABEL[c.matched_kind]}</span>
+            {c.matched_kind === "category" && <StatusBadge status={c.status} small />}
           </div>
           {c.matched_kind === "category" && c.ingredients.length > 0 && <span className="caption">일부 제품에 들어 있는 주의 성분</span>}
           {c.note && <span className="caption">{c.note}</span>}
@@ -208,7 +227,7 @@ function DrugCards({ checks }: { checks: CheckResult[] }) {
               ))}
             </div>
           )}
-          {c.supplement_warning && (
+          {c.supplement_warning && !c.note?.includes("섞여") && (
             <div className="notice notice-supplement">
               <TriangleAlert size={16} />
               <span>보충제는 성분표에 없는 금지물질이 섞여 있을 수 있어요(오염).</span>
@@ -217,7 +236,11 @@ function DrugCards({ checks }: { checks: CheckResult[] }) {
           {c.ingredients.map((i) => (
             <div key={i.name_en} className="drug-row">
               <span>
-                {i.name_ko} <span className="caption">{i.name_en}{i.wada_class ? ` · ${i.wada_class}${i.wada_class_ko ? ` ${i.wada_class_ko}` : ""}` : ""}</span>
+                {i.name_ko}{" "}
+                <span className="caption">
+                  {i.name_en.toLowerCase() !== i.name_ko.toLowerCase() ? i.name_en : ""}
+                  {i.wada_class ? ` · ${i.wada_class}${i.wada_class_ko ? ` ${i.wada_class_ko}` : ""}` : ""}
+                </span>
               </span>
               <StatusBadge status={i.status} small />
             </div>
@@ -226,10 +249,12 @@ function DrugCards({ checks }: { checks: CheckResult[] }) {
             <ul className="drug-candidates">
               {c.candidates.map((p) => (
                 <li key={p.name} className="drug-candidate">
-                  <span>
-                    {p.name} <span className="caption">— {p.ingredients.join(", ")}</span>
-                  </span>
-                  {p.status && <StatusBadge status={p.status} small />}
+                  {/* 제품 이름과 배지를 한 줄로 묶는다(배지가 다음 제품 것처럼 보이던 문제, 테스터 7) */}
+                  <div className="drug-candidate-head">
+                    <strong>{p.name}</strong>
+                    {p.status ? <StatusBadge status={p.status} small /> : <span className="caption">성분 정보 없음</span>}
+                  </div>
+                  <span className="caption">{p.ingredients.join(", ")}</span>
                 </li>
               ))}
             </ul>

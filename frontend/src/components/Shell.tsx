@@ -29,7 +29,7 @@ export function Shell() {
           <div className="nav-right">
             <span className="chip chip-plain">{who.role === "admin" ? `관리자 · ${who.label}` : who.label}</span>
             <button className="btn-sub small" onClick={() => setConfirming(true)}>
-              <LogOut size={14} /> 나가기
+              <LogOut size={14} /> 로그아웃
             </button>
           </div>
         </div>
@@ -62,7 +62,7 @@ export function Shell() {
               취소
             </button>
             <button className="btn" style={{ height: 40 }} onClick={logout}>
-              나가기
+              로그아웃
             </button>
           </div>
         </Dialog>

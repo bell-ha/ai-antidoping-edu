@@ -1,4 +1,4 @@
-import { ArrowRight, CircleCheck, CircleX, RotateCcw } from "lucide-react";
+import { ArrowRight, CircleCheck, RotateCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { api, type AthleteHistory } from "../../api";
@@ -9,9 +9,11 @@ export function History() {
   const [h, setH] = useState<AthleteHistory | null>(null);
   const [error, setError] = useState("");
   const [round, setRound] = useState(0); // 다시 풀기를 마치고 새로 불러올 때마다 퀴즈 상자를 새로 그린다
+  const [answered, setAnswered] = useState(0); // 이번에 다시 푼 문제 수(정리 버튼은 하나라도 푼 뒤에만)
 
   useEffect(() => {
     api.history().then(setH, (e) => setError(e.message));
+    setAnswered(0);
   }, [round]);
 
   if (error) return <p className="error">{error}</p>;
@@ -28,13 +30,11 @@ export function History() {
 
       <div className="stat-row">
         <div className="card stat">
-          <span className="caption">들은 교육</span>
-          <strong>
-            {h.completed} <span className="muted">/ {h.lesson_total}</span>
-          </strong>
+          <span className="caption">완료한 교육</span>
+          <strong>{h.completed}개</strong>
         </div>
         <div className="card stat">
-          <span className="caption">퀴즈 정답률</span>
+          <span className="caption">첫 시도 정답률</span>
           <strong>{rate === null ? "—" : `${rate}%`}</strong>
           <span className="caption">
             정답 {h.quiz_correct} · 오답 {h.quiz_wrong}
@@ -56,27 +56,34 @@ export function History() {
           <>
             {h.wrong.map((q) => (
               <section key={`${round}-${q.lesson_id}`} className="card">
-                <QuizBox q={q} onAnswer={(c) => api.answerReview(q.lesson_id, c)} label={h.items.find((i) => i.lesson_id === q.lesson_id)?.title ?? "퀴즈"} />
+                <QuizBox q={q} onAnswer={(c) => api.answerReview(q.lesson_id, c).then((r) => (setAnswered((n) => n + 1), r))}
+                  label={h.items.find((i) => i.lesson_id === q.lesson_id)?.title ?? "퀴즈"} />
               </section>
             ))}
-            <button className="btn-sub" style={{ alignSelf: "flex-start" }} onClick={() => setRound((r) => r + 1)}>
-              다 풀었어요 · 목록 새로 보기
-            </button>
+            {answered > 0 && (
+              <button className="btn-sub" style={{ alignSelf: "flex-start" }} onClick={() => setRound((r) => r + 1)}>
+                맞힌 문제 목록에서 빼기
+              </button>
+            )}
           </>
         )}
       </section>
 
       <section className="stack" style={{ marginTop: 32 }}>
-        <h2 className="heading">들은 교육</h2>
+        <h2 className="heading">완료한 교육</h2>
         {h.items.length === 0 ? (
           <p className="muted">아직 들은 교육이 없어요.</p>
         ) : (
           <div className="lesson-list">
             {[...h.items].reverse().map((i) => (
               <Link key={i.lesson_id} className="lesson-row" to={`/lesson/${i.lesson_id}`}>
-                {i.last_correct === false ? <CircleX size={18} className="mark-wrong" /> : <CircleCheck size={18} />}
+                {/* 완료는 틀려도 완료 — 빨간 X는 실패처럼 보여 쓰지 않는다(테스터 6) */}
+                <CircleCheck size={18} />
                 <span className="lesson-text">
-                  <span className="lesson-cat">{i.category}</span>
+                  <span className="lesson-cat">
+                    {i.category.replace(/^[A-M] /, "")}
+                    {i.last_correct === false && " · 다시 풀 문제 있음"}
+                  </span>
                   <span className="lesson-title">{i.title}</span>
                 </span>
                 <span className="caption">{i.completed_at.slice(0, 10)}</span>

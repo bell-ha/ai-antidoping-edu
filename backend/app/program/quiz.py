@@ -1,6 +1,6 @@
-"""퀴즈: 레슨 직후 1문항, 갑자기 퀴즈.
+"""퀴즈: 레슨 직후 1문항, 깜짝 퀴즈.
 
-갑자기 퀴즈는 그날 첫 접속 때 단계별 확률로 나온다. 문항은 이미 배운 레슨에서만, 마지막에 틀린 레슨을 먼저.
+깜짝 퀴즈는 그날 첫 접속 때 단계별 확률로 나온다. 문항은 이미 배운 레슨에서만, 마지막에 틀린 레슨을 먼저.
 """
 
 import random
@@ -20,7 +20,7 @@ def answer(con: sqlite3.Connection, athlete_id: int, lesson_id: str, choice: int
 
 
 def last_results(con: sqlite3.Connection, athlete_id: int) -> dict[str, tuple[bool, int]]:
-    """레슨별 (마지막 답이 정답인지, 푼 횟수). 레슨 퀴즈·갑자기 퀴즈·다시 풀기를 모두 센다."""
+    """레슨별 (마지막 답이 정답인지, 푼 횟수). 레슨 퀴즈·깜짝 퀴즈·다시 풀기를 모두 센다."""
     out: dict[str, tuple[bool, int]] = {}
     for r in con.execute("SELECT lesson_id, correct FROM quiz_attempts WHERE athlete_id = ? ORDER BY id", (athlete_id,)):
         out[r["lesson_id"]] = (bool(r["correct"]), out.get(r["lesson_id"], (False, 0))[1] + 1)
@@ -42,7 +42,7 @@ def first_visit_today(con: sqlite3.Connection, athlete_id: int) -> bool:
 
 
 def roll_surprise(con: sqlite3.Connection, athlete_id: int, rng: random.Random | None = None) -> None:
-    """그날 첫 접속 때 한 번. 전날까지 풀지 않은 갑자기 퀴즈는 버리고 새로 뽑는다(쌓이지 않게)."""
+    """그날 첫 접속 때 한 번. 전날까지 풀지 않은 깜짝 퀴즈는 버리고 새로 뽑는다(쌓이지 않게)."""
     con.execute("DELETE FROM surprise_quizzes WHERE athlete_id = ? AND answered_at IS NULL", (athlete_id,))
     rng = rng or random.Random()
     row = tiers.current(con, athlete_id)

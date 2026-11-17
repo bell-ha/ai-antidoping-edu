@@ -1,7 +1,7 @@
 // backend/app/schemas.py와 같은 모양. 바꾸면 양쪽을 같이 고친다.
 
 export type Role = "athlete" | "admin";
-export type CheckStatus = "PROHIBITED" | "IN_COMPETITION_ONLY" | "THRESHOLD" | "CONDITIONAL" | "NOT_LISTED_VERIFY" | "UNKNOWN";
+export type CheckStatus = "PROHIBITED" | "IN_COMPETITION_ONLY" | "THRESHOLD" | "CONDITIONAL" | "SPORT_SPECIFIC" | "NOT_LISTED_VERIFY" | "UNKNOWN";
 export type Timing = "in_competition" | "out_of_competition" | "unknown";
 export type CompetitionCategory = "world" | "continent" | "other_international" | "domestic";
 
@@ -120,6 +120,9 @@ export interface AthleteRow {
   last_visit: string | null;
   onboarding: "finished" | "skipped" | null; // 첫 안내
   onboarding_at: string | null;
+  active: boolean; // false = 보관(목록·단계 나누기에서 빠짐)
+  week_done: number; // 이번 주 목록 중 완료
+  week_total: number;
 }
 
 export interface AthleteDetail {
@@ -144,6 +147,7 @@ export interface Overview {
   athletes: AthleteRow[];
   settings: ProgramSettings;
   model_version: string;
+  model_label: string; // 화면에 보이는 모델 이름
 }
 
 export interface IssuedCode {
@@ -221,8 +225,9 @@ export interface LessonReview {
 export interface Citation {
   chunk_id: string;
   source: "WADA" | "KADA" | "ADEL";
-  title: string;
+  title: string; // 교육 제목 — 소단원
   url: string;
+  ref: string; // 소단원의 출처 줄(문서·조항·쪽)
 }
 
 export interface ChatResponse {
@@ -247,8 +252,36 @@ export class ApiError extends Error {
 }
 
 // 422(pydantic) 오류를 사람이 읽을 문장으로. 행 번호는 1부터.
-function validationMessage(errors: { loc: (string | number)[]; msg: string }[]): string {
-  return errors.map((e) => e.msg.replace(/^Value error, /, "")).join(" / ");
+// 서버 입력 검사 오류(영어 원문)를 칸 이름이 들어간 한국어로(사용성 테스트: "Input should be …"가 그대로 보이던 문제)
+const FIELD: Record<string, string> = {
+  name: "이름", birth_year: "출생연도", date: "대회 연월", body_weight: "계체", snatch: "인상", clean_jerk: "용상",
+  competition_category: "대회 수준", lessons_per_week: "주당 교육 수", quiz_probability: "깜짝 퀴즈 확률",
+  quiz_questions: "한 번에 문항 수", tiers: "단계", note: "메모", code: "로그인 코드", status: "검토 상태",
+};
+type ValidationError = { loc: (string | number)[]; msg: string; type?: string; ctx?: Record<string, number | string> };
+
+function validationMessage(errors: ValidationError[]): string {
+  const out = errors.map((e) => {
+    const key = String(e.loc[e.loc.length - 1]);
+    const tierIndex = e.loc.find((x, i) => e.loc[i - 1] === "tiers" && typeof x === "number") as number | undefined;
+    const label = `${tierIndex !== undefined ? `${tierIndex + 1}단계 ` : ""}${FIELD[key] ?? key}`;
+    const pct = key === "quiz_probability";
+    const n = (v: number | string | undefined) => (pct ? `${Math.round(Number(v) * 100)}%` : String(v));
+    switch (e.type) {
+      case "greater_than_equal": return `${label}은(는) ${n(e.ctx?.ge)} 이상으로 넣어 주세요.`;
+      case "greater_than": return `${label}은(는) ${n(e.ctx?.gt)}보다 크게 넣어 주세요.`;
+      case "less_than_equal": return `${label}은(는) ${n(e.ctx?.le)} 이하로 넣어 주세요.`;
+      case "less_than": return `${label}은(는) ${n(e.ctx?.lt)}보다 작게 넣어 주세요.`;
+      case "string_too_long": return `${label}은(는) ${e.ctx?.max_length}자까지 쓸 수 있어요.`;
+      case "string_too_short": case "missing": return `${label}을(를) 넣어 주세요.`;
+      case "int_from_float": case "int_parsing": return `${label}은(는) 소수점 없는 숫자(kg)로 넣어 주세요.`;
+      case "float_parsing": return `${label}은(는) 숫자로 넣어 주세요.`;
+      case "string_pattern_mismatch": return key === "date" ? "대회 연월은 2025-03처럼 넣어 주세요." : `${label} 형식이 맞지 않아요.`;
+      case "too_short": return `${label}을(를) 하나 이상 넣어 주세요.`;
+      default: return e.msg.replace(/^Value error, /, "");
+    }
+  });
+  return [...new Set(out)].join(" ");
 }
 
 // 로그인이 끊겼을 때(12시간 지남, 코드 재발급) 로그인 화면으로 돌려보내는 곳. App이 등록한다.
@@ -263,6 +296,8 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
     credentials: "same-origin",
     headers: body === undefined ? undefined : { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
+  }).catch(() => {
+    throw new ApiError(0, "연결이 끊겼어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
   });
   if (res.status === 401 && path !== "/api/session") onUnauthorized();
   if (!res.ok) {
@@ -299,6 +334,7 @@ export const api = {
   deleteRecord: (id: number, recordId: number) => call<AthleteDetail>("DELETE", `/api/admin/athletes/${id}/records/${recordId}`),
   saveSettings: (s: ProgramSettings) => call<Overview>("PUT", "/api/admin/settings", s),
   rerank: () => call<Overview>("POST", "/api/admin/rerank"),
+  updateAthlete: (id: number, patch: { name?: string; active?: boolean }) => call<AthleteDetail>("PATCH", `/api/admin/athletes/${id}`, patch),
   checklist: () => call<StartChecklist>("GET", "/api/admin/checklist"),
   adminOnboardingDone: (outcome: "finished" | "skipped") => call<void>("POST", "/api/admin/onboarding", { outcome }),
   setChecklist: (hidden: boolean) => call<{ hidden: boolean }>("PUT", "/api/admin/checklist", { hidden }),

@@ -1,4 +1,4 @@
-import { CalendarX, CircleAlert, CircleHelp, Gauge, OctagonX, SearchCheck, type LucideIcon } from "lucide-react";
+import { CalendarX, CircleAlert, CircleHelp, Flag, Gauge, OctagonX, SearchCheck, type LucideIcon } from "lucide-react";
 import type { CheckStatus } from "../api";
 
 // DESIGN.md 3절. "허용" 상태와 초록은 없다.
@@ -7,6 +7,7 @@ const STATUS: Record<CheckStatus, { label: string; icon: LucideIcon }> = {
   IN_COMPETITION_ONLY: { label: "경기기간 중 금지", icon: CalendarX },
   THRESHOLD: { label: "기준을 넘으면 금지", icon: Gauge },
   CONDITIONAL: { label: "조건에 따라 금지 아닐 수 있음", icon: CircleAlert },
+  SPORT_SPECIFIC: { label: "종목에 따라 금지(P1)", icon: Flag },
   NOT_LISTED_VERIFY: { label: "2026 금지목록에 없음", icon: SearchCheck },
   UNKNOWN: { label: "제품마다 다름", icon: CircleHelp },
 };

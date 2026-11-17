@@ -1,4 +1,4 @@
-"""선수 화면: 교육 시작하기 · 갑자기 퀴즈. 질문하기는 api/chat.py."""
+"""선수 화면: 교육 시작하기 · 깜짝 퀴즈. 질문하기는 api/chat.py."""
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/athlete")
 
 @router.get("/home", response_model=AthleteHome)
 def home(who: SessionInfo = Depends(athlete)) -> AthleteHome:
-    """접속할 때마다 부른다: 이번 주 배정(없으면 만듦), 그날 첫 접속이면 갑자기 퀴즈 추첨."""
+    """접속할 때마다 부른다: 이번 주 배정(없으면 만듦), 그날 첫 접속이면 깜짝 퀴즈 추첨."""
     with db.connect() as con:
         week = weekly.ensure_week(con, who.athlete_id)
         if quiz.first_visit_today(con, who.athlete_id):
@@ -101,7 +101,9 @@ def history(who: SessionInfo = Depends(athlete)) -> AthleteHistory:
                               WHERE athlete_id = ? AND completed_at IS NOT NULL ORDER BY completed_at""", (who.athlete_id,)).fetchall()
         last = quiz.last_results(con, who.athlete_id)
         wrong = quiz.wrong_open(con, who.athlete_id)
-        counts = con.execute("SELECT SUM(correct), SUM(1 - correct) FROM quiz_attempts WHERE athlete_id = ?", (who.athlete_id,)).fetchone()
+        # 정답률은 교육마다 첫 시도만(다시 푼 결과가 섞여 '정답 2 · 오답 3'이 되던 문제, 테스터 7)
+        counts = con.execute("SELECT SUM(correct), SUM(1 - correct) FROM quiz_attempts WHERE athlete_id = ? AND context = 'lesson'",
+                             (who.athlete_id,)).fetchone()
     items = [HistoryItem(lesson_id=r["lesson_id"], title=lessons.title(r["lesson_id"]), category=lessons.meta(r["lesson_id"])["category"],
                          completed_at=r["completed_at"], attempts=last.get(r["lesson_id"], (None, 0))[1],
                          last_correct=last[r["lesson_id"]][0] if r["lesson_id"] in last else None)

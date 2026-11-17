@@ -53,7 +53,7 @@ export function StartChecklist({ reloadKey }: { reloadKey: unknown }) {
   const done = data.items.filter((i) => i.done).length;
   return (
     <section className="card stack checklist" style={{ marginBottom: 24 }}>
-      <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
+      <div className="row wrap" style={{ justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
         <h2 className="heading">
           시작 체크리스트 <span className="muted">{done}/{data.items.length}</span>
         </h2>
@@ -68,14 +68,24 @@ export function StartChecklist({ reloadKey }: { reloadKey: unknown }) {
       <ol className="checklist-items">
         {data.items.map((item) => (
           <li key={item.key} className={item.done ? "done" : undefined}>
-            <Link to={item.link}>
-              {item.done ? <CircleCheck size={18} /> : <Circle size={18} />}
-              <span className="checklist-text">
-                <strong>{item.label}</strong>
-                <span className="caption">{item.detail}</span>
-              </span>
-              <ArrowRight size={16} />
-            </Link>
+            {item.link ? (
+              <Link to={item.link}>
+                {item.done ? <CircleCheck size={18} /> : <Circle size={18} />}
+                <span className="checklist-text">
+                  <strong>{item.label}</strong>
+                  <span className="caption">{item.detail}</span>
+                </span>
+                <ArrowRight size={16} />
+              </Link>
+            ) : (
+              <div className="no-link">
+                {item.done ? <CircleCheck size={18} /> : <Circle size={18} />}
+                <span className="checklist-text">
+                  <strong>{item.label}</strong>
+                  <span className="caption">{item.detail}</span>
+                </span>
+              </div>
+            )}
           </li>
         ))}
       </ol>

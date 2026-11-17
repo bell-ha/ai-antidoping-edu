@@ -7,6 +7,14 @@ import { Onboarding, type OnboardingOutcome } from "../../components/Onboarding"
 import { QuizBox } from "../../components/QuizBox";
 import { introSlides } from "../../content/guide";
 
+/** "2026-11-16" → "11월 16일(월)~22일(일)" (테스터: "2026-11-16 주"가 무슨 뜻인지 모름) */
+function weekLabel(start: string) {
+  const d = new Date(`${start}T00:00:00`);
+  const end = new Date(d.getTime() + 6 * 86400000);
+  const md = (x: Date) => `${x.getMonth() + 1}월 ${x.getDate()}일`;
+  return `${md(d)}(월)~${end.getMonth() === d.getMonth() ? `${end.getDate()}일` : md(end)}(일)`;
+}
+
 export function Home() {
   const [home, setHome] = useState<AthleteHome | null>(null);
   const [error, setError] = useState("");
@@ -20,7 +28,7 @@ export function Home() {
       (h) => {
         setHome(h);
         setIntroOpen(!h.onboarding_done);
-        setQuizOpen(h.onboarding_done && h.surprise_quiz.length > 0); // 첫 안내가 먼저, 끝나면 갑자기 퀴즈
+        setQuizOpen(h.onboarding_done && h.surprise_quiz.length > 0); // 첫 안내가 먼저, 끝나면 깜짝 퀴즈
       },
       (e) => setError(e.message),
     );
@@ -46,14 +54,14 @@ export function Home() {
       <div className="page-head">
         <h1 className="title">{home.name}님, 이번 주 교육이에요</h1>
         <p className="muted">
-          {home.week_start} 주 · 이번 주 {done.length}/{home.lessons.length}개 완료 · 전체 {home.completed_total}/{home.lesson_total}개 이수
+          {weekLabel(home.week_start)} · 이번 주 {done.length}/{home.lessons.length}개 완료 · 지금까지 {home.completed_total}개 완료
         </p>
       </div>
 
       <div className="cards-2 home-actions">
         <button className="action-card" onClick={() => next && navigate(`/lesson/${next.lesson_id}`)} disabled={!next}>
           <PlayCircle size={28} />
-          <strong>교육 시작하기</strong>
+          <strong>{done.length === 0 ? "첫 교육 듣기" : "다음 교육 듣기"}</strong>
           <span className="muted">{next ? `다음: ${next.title}` : "이번 주 교육을 모두 들었어요."}</span>
         </button>
         <Link className="action-card" to="/ask">
@@ -70,7 +78,7 @@ export function Home() {
             <Link key={l.lesson_id} className={`lesson-row${l.completed ? " done" : ""}`} to={`/lesson/${l.lesson_id}`}>
               {l.completed ? <CircleCheck size={18} /> : <span className="lesson-dot" />}
               <span className="lesson-text">
-                <span className="lesson-cat">{l.category}</span>
+                <span className="lesson-cat">{l.category.replace(/^[A-M] /, "")}</span>
                 <span className="lesson-title">{l.title}</span>
               </span>
               <ArrowRight size={16} />
@@ -92,7 +100,7 @@ export function Home() {
       {quizOpen && quiz && (
         <Dialog onClose={() => setQuizOpen(false)}>
           <h2 className="heading">
-            갑자기 퀴즈! ({quizIndex + 1}/{home.surprise_quiz.length})
+            깜짝 퀴즈! ({quizIndex + 1}/{home.surprise_quiz.length})
           </h2>
           <p className="caption">지금까지 배운 교육에서 나온 문제예요.</p>
           <QuizBox key={quiz.lesson_id} q={quiz} onAnswer={(c) => api.answerSurprise(quiz.lesson_id, c)} label="배운 교육에서 나온 문제" />

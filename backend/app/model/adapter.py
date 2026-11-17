@@ -38,7 +38,7 @@ def result(sex: str, birth_year: int, rows: list) -> ModelResult:
                            data_warnings=["이 성별은 연구진 경기력 모델이 아직 없어요."])
     if upto < p["min_history"]:
         return ModelResult(**base, prediction=ModelValue(value=None), residual_observed_minus_predicted=None,
-                           data_warnings=[f"예측에는 이전 대회 기록이 {p['min_history']}개 이상 필요해요."])
+                           data_warnings=[f"예측하려면 대회 기록이 {p['min_history'] + 1}개(마지막 1개 + 이전 {p['min_history']}개) 이상 필요해요."])
     record_ages = predict.ages(birth_year, records)
     # 연구진 runtime처럼 모델이 낸 값 그대로(체급별 보정·구간은 넣지 않는다)
     if model == "rnn":

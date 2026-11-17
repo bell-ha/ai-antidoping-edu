@@ -57,7 +57,8 @@ export function AdminAthletes() {
         <div className="stack" style={{ gap: 4 }}>
           <h1 className="title">선수 관리</h1>
           <p className="muted">
-            선수 {data.athletes.length}명 · 모델 {data.model_version} · 단계는 모델의 관측−예측이 큰 순서(예측보다 기록이 많이 오른 순)로 나눠요.
+            선수 {data.athletes.length}명 · 예측 모델: {data.model_label} · 단계는 실제−예측이 큰 순서(예측보다 기록이 많이 오른 순)로
+            나눠요(교육량을 정하는 것이지 도핑 여부가 아니에요).
           </p>
         </div>
         <button className="btn" style={{ height: 40 }} onClick={() => setAdding(true)}>
@@ -83,7 +84,7 @@ export function AdminAthletes() {
       </div>
 
       <div className="export-menu" style={{ marginBottom: 16 }}>
-        <span className="caption">CSV 내보내기(엑셀에서 열림)</span>
+        <span className="caption">엑셀(CSV)로 받기</span>
         {(
           [
             ["athletes", "선수별 요약"],
@@ -99,26 +100,56 @@ export function AdminAthletes() {
         ))}
       </div>
 
-      <div className="table-scroll card" style={{ padding: 0 }}>
+      {rows.length === 0 && data.athletes.length > 0 && (
+        <div className="card empty-state">
+          <strong>찾는 선수가 없어요</strong>
+          <button className="btn-sub" onClick={() => (setFilter(""), setTier(null))}>
+            찾기·단계 거르기 지우기
+          </button>
+        </div>
+      )}
+
+      {/* 휴대폰: 표 대신 선수마다 카드(표는 가로로 밀어야 하고 이름이 사라짐, 테스터 4) */}
+      <div className="athlete-cards">
+        {rows.map((a) => (
+          <Link key={a.id} to={`/admin/athletes/${a.id}`} className="card athlete-card">
+            <span className="row" style={{ gap: 8, justifyContent: "space-between" }}>
+              <strong>
+                {a.name} <span className="caption">{a.number}</span>
+              </strong>
+              {a.tier !== null && <span className="tier-badge">{a.tier}단계</span>}
+            </span>
+            <span className="athlete-card-stats">
+              <span>이번 주 {a.week_done}/{a.week_total}</span>
+              <span>질문 {a.questions}</span>
+              <span>다시 풀 오답 {a.wrong_open}</span>
+              <span>접속 {a.last_visit ? a.last_visit.slice(5, 10).replace("-", "/") : "없음"}</span>
+            </span>
+          </Link>
+        ))}
+      </div>
+
+      <div className="table-scroll card athlete-table" style={{ padding: 0 }}>
         <table className="data-table">
           <thead>
             <tr>
               {th("rank", "순위", true)}
               <th>
                 단계
-                <Help label="단계" text="모델의 관측−예측이 큰 선수부터 줄 세워 단계 수만큼 고르게 나눠요. 높은 단계일수록 주당 교육과 갑자기 퀴즈가 많아요. 결과가 없는 선수는 가장 낮은 단계예요. 도핑 여부를 판단하는 점수가 아니에요." />
+                <Help label="단계" text="모델의 관측−예측이 큰 선수부터 줄 세워 단계 수만큼 고르게 나눠요. 높은 단계일수록 주당 교육과 깜짝 퀴즈가 많아요. 결과가 없는 선수는 가장 낮은 단계예요. 도핑 여부를 판단하는 점수가 아니에요." />
               </th>
               {th("number", "번호")}
               <th>이름</th>
               <th>체급</th>
               <th className="num">
-                관측−예측
-                <Help label="관측−예측" text="마지막 대회 합계(관측)에서 연구진 모델이 그 전 기록으로 예측한 합계를 뺀 값(kg)이에요. +면 예측보다 더 들었다는 뜻이에요. 기록이 2개 미만이면 결과가 없어요." />
+                실제−예측(kg)
+                <Help label="실제−예측" text="마지막 대회 실제 합계에서 연구진 모델이 그 전 기록으로 예측한 합계를 뺀 값(kg)이에요. +면 예측보다 더 들었다는 뜻이에요. 대회 기록이 3개(마지막 1개 + 이전 2개) 이상이어야 결과가 나와요." />
               </th>
-              <th className="num">기록</th>
-              {th("lessons", "이수", true)}
+              <th className="num">대회 기록</th>
+              <th className="num">이번 주</th>
+              {th("lessons", "이수한 교육", true)}
               {th("quiz", "퀴즈 정답/오답", true)}
-              <th className="num">오답 남음</th>
+              <th className="num">다시 풀 오답</th>
               {th("questions", "질문", true)}
               {th("visit", "마지막 접속일")}
             </tr>
@@ -126,7 +157,7 @@ export function AdminAthletes() {
           <tbody>
             {data.athletes.length === 0 && (
               <tr>
-                <td colSpan={12}>
+                <td colSpan={13}>
                   <div className="empty-state">
                     <strong>아직 등록된 선수가 없어요</strong>
                     <span className="muted">선수를 등록하면 로그인 코드가 나오고, 경기 기록을 넣으면 단계가 정해져요.</span>
@@ -148,8 +179,11 @@ export function AdminAthletes() {
                   <Link to={`/admin/athletes/${a.id}`}>{a.name}</Link>
                 </td>
                 <td>{weightClassLabel(a.weight_class)}</td>
-                <td className="num">{a.residual === null ? <span className="caption">결과 없음</span> : `${a.residual > 0 ? "+" : ""}${a.residual}kg`}</td>
+                <td className="num">{a.residual === null ? <span className="caption">결과 없음</span> : `${a.residual > 0 ? "+" : ""}${a.residual.toFixed(1)}`}</td>
                 <td className="num">{a.records}</td>
+                <td className="num">
+                  {a.week_done}/{a.week_total}
+                </td>
                 <td className="num">{a.lessons_completed}</td>
                 <td className="num">
                   {a.quiz_correct}/{a.quiz_wrong}
@@ -163,40 +197,43 @@ export function AdminAthletes() {
         </table>
       </div>
 
-      {adding && <AddAthlete onClose={() => setAdding(false)} onDone={load} />}
+      {adding && <AddAthlete existing={data.athletes} onClose={() => setAdding(false)} onDone={load} />}
     </>
   );
 }
 
-function AddAthlete({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
+function AddAthlete({ existing, onClose, onDone }: { existing: Overview["athletes"]; onClose: () => void; onDone: () => void }) {
   const [name, setName] = useState("");
-  const [birth, setBirth] = useState("2005");
+  const [birth, setBirth] = useState("");
   const [issued, setIssued] = useState<IssuedCode | null>(null);
+  const [busy, setBusy] = useState(false); // 연타로 같은 선수가 둘 생기던 문제(테스터 3)
   const [error, setError] = useState("");
+  const birthOk = /^\d{4}$/.test(birth);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
+    if (busy) return;
+    const same = existing.find((a) => a.name === name.trim() && a.birth_year === Number(birth));
+    if (same && !window.confirm(`같은 이름·출생연도의 선수가 이미 있어요(${same.number}). 그래도 새로 등록할까요?`)) return;
+    setBusy(true);
     api.createAthlete(name.trim(), Number(birth)).then(
       (r) => {
         setIssued(r);
         onDone();
       },
-      (e) => setError(e.message),
+      (e) => (setError(e.message), setBusy(false)),
     );
   };
 
   return (
-    <Dialog onClose={onClose}>
+    <Dialog onClose={onClose} persistent={!!issued}>
       {issued ? (
         <>
           <h2 className="heading">
             {name.trim()} ({issued.number}) 등록 완료
           </h2>
           <p className="muted">로그인 코드는 지금만 볼 수 있어요(서버에 원문이 남지 않음). 복사하거나 안내문을 그대로 보내 주세요. 잃어버리면 선수 상세에서 다시 발급해요.</p>
-          <CodeHandoff name={name.trim()} code={issued.code} />
-          <button className="btn" onClick={onClose}>
-            닫기
-          </button>
+          <CodeHandoff name={name.trim()} code={issued.code} onClose={onClose} />
         </>
       ) : (
         <form className="stack" onSubmit={submit}>
@@ -205,18 +242,24 @@ function AddAthlete({ onClose, onDone }: { onClose: () => void; onDone: () => vo
             <label className="label" htmlFor="name">
               이름
             </label>
-            <input id="name" className="input" value={name} onChange={(e) => setName(e.target.value)} />
+            <input id="name" className="input" maxLength={30} value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div className="field">
             <label className="label" htmlFor="birth">
               출생연도
             </label>
-            <input id="birth" className="input" inputMode="numeric" value={birth} onChange={(e) => setBirth(e.target.value)} />
+            <input id="birth" className="input" inputMode="numeric" maxLength={4} placeholder="예: 2005" value={birth} onChange={(e) => setBirth(e.target.value)} />
+            {birth && !birthOk && <span className="caption">출생연도는 네 자리로 넣어 주세요(예: 2005).</span>}
           </div>
           {error && <p className="error">{error}</p>}
-          <button className="btn" disabled={!name.trim() || !/^\d{4}$/.test(birth)}>
-            등록하고 코드 받기
-          </button>
+          <div className="row" style={{ gap: 8, justifyContent: "flex-end" }}>
+            <button type="button" className="btn-sub" onClick={onClose}>
+              취소
+            </button>
+            <button className="btn" disabled={busy || !name.trim() || !birthOk}>
+              {busy ? "등록 중…" : "등록하고 코드 받기"}
+            </button>
+          </div>
         </form>
       )}
     </Dialog>

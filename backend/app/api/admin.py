@@ -32,7 +32,7 @@ def _rows(con: sqlite3.Connection, athlete_id: int | None = None) -> list[Athlet
     args = {"id": athlete_id, "week": db.week_start()}
     out = []
     for a in con.execute(f"""
-        SELECT a.id, a.number, a.name, a.sex, a.birth_year,
+        SELECT a.id, a.number, a.name, a.sex, a.birth_year, a.active,
           (SELECT COUNT(*) FROM records r WHERE r.athlete_id = a.id) AS n_records,
           (SELECT body_weight FROM records r WHERE r.athlete_id = a.id ORDER BY date DESC, id DESC LIMIT 1) AS last_bw,
           (SELECT COUNT(*) FROM lesson_assignments l WHERE l.athlete_id = a.id AND l.completed_at IS NOT NULL) AS done,
@@ -54,7 +54,7 @@ def _rows(con: sqlite3.Connection, athlete_id: int | None = None) -> list[Athlet
             residual=latest[1].residual_observed_minus_predicted if latest else None,
             records=a["n_records"], lessons_completed=a["done"], quiz_correct=a["qc"], quiz_wrong=a["qw"],
             wrong_open=len(quiz.wrong_open(con, a["id"])), questions=a["nq"], last_visit=a["last_visit"],
-            onboarding=a["onb"], onboarding_at=a["onb_at"], week_done=a["wk_done"], week_total=a["wk_total"]))
+            onboarding=a["onb"], onboarding_at=a["onb_at"], week_done=a["wk_done"], week_total=a["wk_total"], active=bool(a["active"])))
     return out
 
 

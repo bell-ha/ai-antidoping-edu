@@ -11,17 +11,19 @@ export function Dialog({
   onBack,
   className,
   label,
+  persistent,
 }: {
   children: ReactNode;
   onClose: () => void;
   onBack?: () => boolean;
+  persistent?: boolean; // 바깥 누르기·Esc·뒤로가기로 닫히지 않음(코드처럼 지금만 볼 수 있는 내용, 테스터 3·4)
   className?: string;
   label?: string;
 }) {
   const close = useRef(onClose);
   const back = useRef(onBack);
-  close.current = onClose;
-  back.current = onBack;
+  close.current = persistent ? () => {} : onClose;
+  back.current = persistent ? () => true : onBack;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && close.current();

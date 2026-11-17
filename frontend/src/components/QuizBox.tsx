@@ -38,7 +38,7 @@ export function QuizBox({ q, onAnswer, label = "퀴즈" }: { q: QuizQuestion; on
         <div className={`notice ${result.correct ? "notice-right" : "notice-wrong"}`}>
           {result.correct ? <CircleCheck size={18} /> : <CircleX size={18} />}
           <span>
-            <b>{result.correct ? "정답이에요." : `정답은 ${result.answer}번이에요.`}</b> {result.explanation}
+            <b>{result.correct ? "정답이에요." : `틀렸어요. 정답은 ${result.answer}번이에요.`}</b> {result.explanation}
           </span>
         </div>
       )}

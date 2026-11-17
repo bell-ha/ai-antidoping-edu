@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS quiz_attempts (
 );
 CREATE INDEX IF NOT EXISTS quiz_athlete ON quiz_attempts (athlete_id, at);
 
--- 갑자기 퀴즈: 하루 첫 접속 때 뽑아 두고, 답하면 answered_at
+-- 깜짝 퀴즈: 하루 첫 접속 때 뽑아 두고, 답하면 answered_at
 CREATE TABLE IF NOT EXISTS surprise_quizzes (
     id INTEGER PRIMARY KEY,
     athlete_id INTEGER NOT NULL REFERENCES athletes(id),

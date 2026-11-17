@@ -442,7 +442,8 @@ a {
 }
 
 .st-THRESHOLD,
-.st-CONDITIONAL {
+.st-CONDITIONAL,
+.st-SPORT_SPECIFIC {
   color: var(--st-threshold);
   background: var(--st-threshold-bg);
 }
@@ -1191,12 +1192,12 @@ button.chip { cursor: pointer; }
 .drug-cards { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
 .drug-card { border: 1px solid var(--hairline); border-radius: var(--radius-sm); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; background: var(--canvas); }
 .drug-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-.drug-candidates { margin: 0; padding-left: 18px; font-size: var(--fs-label); display: flex; flex-direction: column; gap: 2px; }
+.drug-candidates { margin: 0; padding: 0; list-style: none; font-size: var(--fs-label); display: flex; flex-direction: column; }
 .related-list { display: flex; flex-direction: column; gap: 6px; }
 .related-lesson { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--hairline); border-radius: var(--radius-sm);
   color: var(--ink); text-decoration: none; }
 .related-lesson:hover { border-color: var(--ink); }
-.related-lesson span:nth-child(2) { flex: 1; }
+.related-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .notice-supplement { background: var(--st-threshold-bg); color: var(--st-threshold); font-size: var(--fs-label); padding: 8px 10px; }
 .notice-supplement span { color: var(--body); }
 .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
@@ -1205,7 +1206,8 @@ button.chip { cursor: pointer; }
 @media (max-width: 767px) { .stat-row { grid-template-columns: 1fr; } }
 .mark-wrong { color: var(--st-prohibited); }
 .export-menu { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.drug-candidate { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.drug-candidate { display: flex; flex-direction: column; gap: 2px; padding: 8px 0; border-top: 1px solid var(--hairline); }
+.drug-candidate-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 .review-mark { font-size: var(--fs-caption); padding: 2px 8px; border-radius: var(--radius-pill); border: 1px solid var(--hairline); }
 .review-mark.reviewed { color: #1f7a57; border-color: #bfe3d3; background: #edf7f2; }
 .review-mark.needs_fix { color: var(--st-threshold); border-color: #f0dfb0; background: var(--st-threshold-bg); }
@@ -1217,7 +1219,7 @@ button.chip { cursor: pointer; }
 /* ---------- 온보딩: 선수 첫 안내 · 관리자 시작 체크리스트 ---------- */
 .dialog.onboarding { max-width: 480px; gap: 20px; }
 .onboarding-top { display: flex; justify-content: space-between; align-items: center; }
-.onboarding-skip { border: none; background: none; padding: 4px 0; color: var(--muted); font-size: var(--fs-caption); display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.onboarding-skip { white-space: nowrap; border: none; background: none; padding: 4px 0; color: var(--muted); font-size: var(--fs-caption); display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
 .onboarding-skip:hover { color: var(--ink); }
 .onboarding-slide { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 12px 0; min-height: 200px; }
 .onboarding-icon { width: 64px; height: 64px; border-radius: 50%; background: var(--surface); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; }
@@ -1235,13 +1237,37 @@ button.chip { cursor: pointer; }
 .checklist-items li + li { border-top: 1px solid var(--hairline); }
 .checklist-items a { display: flex; align-items: center; gap: 12px; padding: 10px 0; color: var(--ink); text-decoration: none; }
 .checklist-items li.done a { color: var(--muted); }
-.checklist-items li.done strong { text-decoration: line-through; font-weight: 500; }
+.checklist-items li.done strong { font-weight: 500; } /* 취소선은 '취소됨'처럼 읽혀 쓰지 않는다(테스터 1) */
+.checklist-items .no-link { display: flex; align-items: center; gap: 12px; padding: 10px 0; color: var(--ink); }
+.checklist-items li.done .no-link { color: var(--muted); }
 .checklist-text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .handoff-message { height: auto; min-height: 96px; padding: 10px 12px; resize: none; font-size: var(--fs-caption); line-height: 1.6; white-space: pre-wrap; }
 .help { position: relative; display: inline-flex; vertical-align: middle; margin-left: 4px; }
-.help-btn { border: none; background: none; padding: 2px; color: var(--muted); cursor: pointer; display: inline-flex; }
+.help-btn { border: none; background: none; padding: 6px; margin: -4px; color: var(--muted); cursor: pointer; display: inline-flex; }
 .help-btn:hover, .help-btn[aria-expanded="true"] { color: var(--ink); }
-.help-pop { position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); z-index: 15; width: max-content; max-width: min(280px, 80vw);
+.help-pop { z-index: 30;
   padding: 10px 12px; background: var(--ink); color: var(--canvas); border-radius: var(--radius-sm); font-size: var(--fs-caption); font-weight: 400;
   line-height: 1.5; text-align: left; white-space: normal; box-shadow: var(--shadow-dialog); }
 .empty-state { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 48px 24px; }
+
+.chip-ref { display: block; margin-top: 2px; color: var(--muted); }
+.guess { background: var(--surface); border-left: 3px solid var(--muted); border-radius: var(--radius-sm); padding: 10px 12px; }
+.guess-label { display: inline-flex; align-items: center; gap: 4px; }
+
+/* 선수 관리: 휴대폰은 카드, 그 외는 표 */
+.athlete-cards { display: none; }
+@media (max-width: 767px) {
+  .athlete-cards { display: flex; flex-direction: column; gap: 8px; }
+  .athlete-table { display: none; }
+}
+.athlete-card { display: flex; flex-direction: column; gap: 6px; color: var(--ink); text-decoration: none; padding: 14px 16px; }
+.athlete-card-stats { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: var(--fs-label); color: var(--muted); }
+
+/* 단계 설정: 휴대폰에서는 단계마다 세로 카드(오른쪽 칸이 화면 밖에 있던 문제, 테스터 4) */
+@media (max-width: 767px) {
+  .settings-table thead { display: none; }
+  .settings-table, .settings-table tbody, .settings-table tr, .settings-table td { display: block; width: 100%; }
+  .settings-table tr { padding: 12px 0; border-bottom: 1px solid var(--hairline); }
+  .settings-table td { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 4px 12px; border: none; text-align: left; }
+  .settings-table td[data-label]::before { content: attr(data-label); color: var(--muted); font-size: var(--fs-label); }
+}

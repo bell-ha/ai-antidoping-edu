@@ -258,7 +258,7 @@ class TierSetting(BaseModel):
     """단계 하나(1 = 가장 낮음)."""
     tier: int = Field(ge=1)
     lessons_per_week: int = Field(ge=0, le=50)
-    quiz_probability: float = Field(ge=0, le=1)  # 하루 첫 접속 때 갑자기 퀴즈가 나올 확률
+    quiz_probability: float = Field(ge=0, le=1)  # 하루 첫 접속 때 깜짝 퀴즈가 나올 확률
     quiz_questions: int = Field(ge=1, le=10)  # 한 번에 나오는 문항 수
 
 
@@ -336,6 +336,7 @@ class AthleteRow(BaseModel):
     questions: int
     last_visit: str | None
     onboarding: OnboardingOutcome | None = None  # 첫 안내: 끝까지 봄 | 건너뜀 | 아직
+    active: bool = True  # False = 보관
     week_done: int = 0  # 이번 주 목록 중 완료
     week_total: int = 0  # 이번 주 목록(지난주에 못 들은 것 포함)
     onboarding_at: str | None = None
