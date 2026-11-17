@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { api, type IssuedCode, type Overview } from "../../api";
 import { Dialog } from "../../components/Dialog";
+import { StartChecklist } from "../../components/StartChecklist";
 import { weightClassLabel } from "../../session";
 
 type SortKey = "rank" | "number" | "lessons" | "quiz" | "questions" | "visit";
@@ -61,6 +62,8 @@ export function AdminAthletes() {
           <Plus size={16} /> 선수 등록
         </button>
       </div>
+
+      <StartChecklist reloadKey={data} />
 
       <div className="row wrap" style={{ gap: 8, marginBottom: 16 }}>
         <button className={`chip ${tier === null ? "chip-on" : "chip-plain"}`} onClick={() => setTier(null)}>

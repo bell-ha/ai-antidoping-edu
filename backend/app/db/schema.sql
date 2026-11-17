@@ -117,3 +117,13 @@ CREATE TABLE IF NOT EXISTS lesson_reviews (
     admin_id INTEGER REFERENCES admins(id),
     at TEXT NOT NULL
 );
+
+-- 온보딩: 선수 첫 안내(intro)와 관리자 시작 체크리스트 숨김(checklist). 처음 기록만 남긴다
+CREATE TABLE IF NOT EXISTS onboarding (
+    role TEXT NOT NULL,                -- athlete | admin
+    user_id INTEGER NOT NULL,
+    kind TEXT NOT NULL,                -- intro | checklist
+    outcome TEXT NOT NULL,             -- intro: finished(끝까지 봄) | skipped(건너뜀) · checklist: hidden
+    at TEXT NOT NULL,
+    PRIMARY KEY (role, user_id, kind)
+);

@@ -15,8 +15,8 @@ from app import db
 from app.api.login import admin, admin_id
 from app.model import predict
 from app.program import lessons, quiz, tiers
-from app.schemas import (AthleteCreate, AthleteDetail, AthleteRow, ChatLog, IssuedCode, LessonLog, LessonReview,
-                         Overview, ProgramSettings, QuizLog, RecordInput)
+from app.schemas import (AthleteCreate, AthleteDetail, AthleteRow, ChatLog, ChecklistItem, ChecklistVisibility, IssuedCode, LessonLog,
+                         LessonReview, Overview, ProgramSettings, QuizLog, RecordInput, StartChecklist)
 
 router = APIRouter(prefix="/api/admin", dependencies=[Depends(admin)])
 CODE_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789"  # 헷갈리는 글자(l·1·o·0·i) 뺌
@@ -38,8 +38,10 @@ def _rows(con: sqlite3.Connection, athlete_id: int | None = None) -> list[Athlet
           (SELECT COUNT(*) FROM quiz_attempts q WHERE q.athlete_id = a.id AND q.correct = 1) AS qc,
           (SELECT COUNT(*) FROM quiz_attempts q WHERE q.athlete_id = a.id AND q.correct = 0) AS qw,
           (SELECT COUNT(*) FROM chat_logs c WHERE c.athlete_id = a.id) AS nq,
-          (SELECT MAX(first_at) FROM visits v WHERE v.athlete_id = a.id) AS last_visit
-        FROM athletes a {where} ORDER BY a.id""", args):
+          (SELECT MAX(first_at) FROM visits v WHERE v.athlete_id = a.id) AS last_visit,
+          o.outcome AS onb, o.at AS onb_at
+        FROM athletes a LEFT JOIN onboarding o ON o.role = 'athlete' AND o.user_id = a.id AND o.kind = 'intro'
+        {where} ORDER BY a.id""", args):
         t = tiers.current(con, a["id"])
         latest = tiers.latest_model(con, a["id"])
         out.append(AthleteRow(
@@ -48,7 +50,8 @@ def _rows(con: sqlite3.Connection, athlete_id: int | None = None) -> list[Athlet
             tier=t["tier"] if t else None, rank=t["rank"] if t else None,
             residual=latest[1].residual_observed_minus_predicted if latest else None,
             records=a["n_records"], lessons_completed=a["done"], quiz_correct=a["qc"], quiz_wrong=a["qw"],
-            wrong_open=len(quiz.wrong_open(con, a["id"])), questions=a["nq"], last_visit=a["last_visit"]))
+            wrong_open=len(quiz.wrong_open(con, a["id"])), questions=a["nq"], last_visit=a["last_visit"],
+            onboarding=a["onb"], onboarding_at=a["onb_at"]))
     return out
 
 
@@ -181,9 +184,11 @@ def export(kind: str) -> Response:
     with db.connect() as con:
         if kind == "athletes":
             header = ["번호", "이름", "출생연도", "체급", "단계", "순위", "관측-예측(kg)", "기록 수", "이수", "퀴즈 정답", "퀴즈 오답",
-                      "오답 남음", "질문 수", "마지막 접속일"]
+                      "오답 남음", "질문 수", "마지막 접속일", "첫 안내", "첫 안내 시각"]
+            onb = {"finished": "끝까지 봄", "skipped": "건너뜀"}
             rows = [[a.number, a.name, a.birth_year, a.weight_class, a.tier, a.rank, a.residual, a.records, a.lessons_completed,
-                     a.quiz_correct, a.quiz_wrong, a.wrong_open, a.questions, (a.last_visit or "")[:10]] for a in _rows(con)]
+                     a.quiz_correct, a.quiz_wrong, a.wrong_open, a.questions, (a.last_visit or "")[:10],
+                     onb.get(a.onboarding or "", "아직"), a.onboarding_at or ""] for a in _rows(con)]
         elif kind == "quizzes":
             header = ["번호", "이름", "단계", "교육", "대분류", "종류", "고른 답", "정답 여부", "시각"]
             label = {"lesson": "교육 퀴즈", "surprise": "갑자기 퀴즈", "review": "다시 풀기"}
@@ -246,3 +251,42 @@ def set_review(lesson_id: str, body: LessonReview, request: Request) -> LessonRe
                        admin_id = excluded.admin_id, at = excluded.at""",
                     (lesson_id, body.status, (body.note or "").strip() or None, admin_id(request), at))
     return LessonReview(status=body.status, note=body.note, at=at)
+
+
+@router.get("/checklist", response_model=StartChecklist)
+def checklist(request: Request) -> StartChecklist:
+    """관리자 시작 체크리스트. 각 항목이 끝났는지는 실제 데이터로 정한다(체크를 따로 저장하지 않음)."""
+    with db.connect() as con:
+        n = lambda sql: con.execute(sql).fetchone()[0]  # noqa: E731
+        athletes = n("SELECT COUNT(*) FROM athletes WHERE active = 1")
+        with_records = n("SELECT COUNT(DISTINCT r.athlete_id) FROM records r JOIN athletes a ON a.id = r.athlete_id WHERE a.active = 1")
+        tiered = n("SELECT COUNT(*) FROM tier_assignments WHERE batch = (SELECT MAX(batch) FROM tier_assignments)")
+        settings_saved = n("SELECT COUNT(*) FROM settings WHERE changed_by IS NOT NULL")
+        reviewed = n("SELECT COUNT(*) FROM lesson_reviews")
+        hidden = con.execute("SELECT 1 FROM onboarding WHERE role = 'admin' AND user_id = ? AND kind = 'checklist'",
+                             (admin_id(request) or 0,)).fetchone() is not None
+    total = len(lessons.curriculum())
+    return StartChecklist(hidden=hidden, items=[
+        ChecklistItem(key="athletes", label="선수 등록", done=athletes > 0, detail=f"{athletes}명 · 등록하면 로그인 코드가 나와요",
+                      link="/admin"),
+        ChecklistItem(key="records", label="경기 기록 입력", done=with_records > 0, detail=f"기록이 있는 선수 {with_records}명",
+                      link="/admin"),
+        ChecklistItem(key="tiers", label="단계 계산", done=tiered > 0,
+                      detail=f"{tiered}명 배정 · 기록을 넣으면 모델이 돌고 자동으로 다시 나눠요", link="/admin"),
+        ChecklistItem(key="settings", label="단계 설정 확인", done=settings_saved > 0,
+                      detail="단계 수와 단계별 주당 교육 수·퀴즈 빈도를 확인하고 저장", link="/admin/settings"),
+        ChecklistItem(key="reviews", label="교육 자료 검토", done=reviewed > 0, detail=f"{reviewed} / {total}개 검토",
+                      link="/library"),
+    ])
+
+
+@router.put("/checklist", response_model=ChecklistVisibility)
+def set_checklist(body: ChecklistVisibility, request: Request) -> ChecklistVisibility:
+    who = admin_id(request) or 0
+    with db.connect() as con:
+        if body.hidden:
+            con.execute("INSERT OR IGNORE INTO onboarding (role, user_id, kind, outcome, at) VALUES ('admin', ?, 'checklist', 'hidden', ?)",
+                        (who, db.now_iso()))
+        else:
+            con.execute("DELETE FROM onboarding WHERE role = 'admin' AND user_id = ? AND kind = 'checklist'", (who,))
+    return body

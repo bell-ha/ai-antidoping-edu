@@ -306,6 +306,14 @@ class AthleteHome(BaseModel):
     completed_total: int
     lesson_total: int
     surprise_quiz: list[QuizQuestion]  # 비어 있으면 없음
+    onboarding_done: bool = False  # 첫 안내를 봤거나 건너뛰었으면 True
+
+
+OnboardingOutcome = Literal["finished", "skipped"]
+
+
+class OnboardingDone(BaseModel):
+    outcome: OnboardingOutcome
 
 
 class AthleteRow(BaseModel):
@@ -325,6 +333,8 @@ class AthleteRow(BaseModel):
     wrong_open: int  # 마지막으로 푼 답이 오답인 교육 수(오답 노트에 남은 것)
     questions: int
     last_visit: str | None
+    onboarding: OnboardingOutcome | None = None  # 첫 안내: 끝까지 봄 | 건너뜀 | 아직
+    onboarding_at: str | None = None
 
 
 class QuizLog(BaseModel):
@@ -400,6 +410,24 @@ class Overview(BaseModel):
     athletes: list[AthleteRow]
     settings: ProgramSettings
     model_version: str
+
+
+class ChecklistItem(BaseModel):
+    key: str
+    label: str
+    done: bool
+    detail: str
+    link: str  # 화면 주소
+
+
+class StartChecklist(BaseModel):
+    """관리자 시작 체크리스트. 끝났는지는 실제 데이터로 정한다."""
+    items: list[ChecklistItem]
+    hidden: bool
+
+
+class ChecklistVisibility(BaseModel):
+    hidden: bool
 
 
 class DemoCode(BaseModel):

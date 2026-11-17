@@ -93,6 +93,12 @@ export interface AthleteHome {
   completed_total: number;
   lesson_total: number;
   surprise_quiz: QuizQuestion[];
+  onboarding_done: boolean; // 첫 안내를 봤거나 건너뛰었으면 true
+}
+
+export interface StartChecklist {
+  items: { key: string; label: string; done: boolean; detail: string; link: string }[];
+  hidden: boolean;
 }
 
 export interface AthleteRow {
@@ -111,6 +117,8 @@ export interface AthleteRow {
   wrong_open: number;
   questions: number;
   last_visit: string | null;
+  onboarding: "finished" | "skipped" | null; // 첫 안내
+  onboarding_at: string | null;
 }
 
 export interface AthleteDetail {
@@ -273,6 +281,7 @@ export const api = {
   demoCodes: () => call<DemoCode[]>("GET", "/api/demo/codes"),
   // 선수
   home: () => call<AthleteHome>("GET", "/api/athlete/home"),
+  onboardingDone: (outcome: "finished" | "skipped") => call<void>("POST", "/api/athlete/onboarding", { outcome }),
   lesson: (id: string) => call<LessonView>("GET", `/api/athlete/lessons/${encodeURIComponent(id)}`),
   answerLesson: (id: string, choice: number) =>
     call<QuizResult>("POST", `/api/athlete/lessons/${encodeURIComponent(id)}/answer`, { lesson_id: id, choice }),
@@ -289,6 +298,8 @@ export const api = {
   deleteRecord: (id: number, recordId: number) => call<AthleteDetail>("DELETE", `/api/admin/athletes/${id}/records/${recordId}`),
   saveSettings: (s: ProgramSettings) => call<Overview>("PUT", "/api/admin/settings", s),
   rerank: () => call<Overview>("POST", "/api/admin/rerank"),
+  checklist: () => call<StartChecklist>("GET", "/api/admin/checklist"),
+  setChecklist: (hidden: boolean) => call<{ hidden: boolean }>("PUT", "/api/admin/checklist", { hidden }),
   library: () => call<LibraryDocSummary[]>("GET", "/api/library"),
   libraryDoc: (docId: string) => call<LibraryDoc>("GET", `/api/library/${encodeURIComponent(docId)}`),
   reviews: () => call<Record<string, LessonReview>>("GET", "/api/admin/reviews"),

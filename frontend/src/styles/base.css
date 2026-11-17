@@ -1213,3 +1213,27 @@ button.chip { cursor: pointer; }
 .review-choices li.right { color: #1f7a57; }
 .review-note { height: auto; padding: 10px 12px; resize: vertical; font: inherit; }
 .review-panel { border-color: var(--ink); }
+
+/* ---------- 온보딩: 선수 첫 안내 · 관리자 시작 체크리스트 ---------- */
+.dialog.onboarding { max-width: 480px; gap: 20px; }
+.onboarding-top { display: flex; justify-content: space-between; align-items: center; }
+.onboarding-skip { border: none; background: none; padding: 4px 0; color: var(--muted); font-size: var(--fs-caption); display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.onboarding-skip:hover { color: var(--ink); }
+.onboarding-slide { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 12px 0; min-height: 200px; }
+.onboarding-icon { width: 64px; height: 64px; border-radius: 50%; background: var(--surface); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; }
+.onboarding-dots { display: flex; justify-content: center; gap: 6px; }
+.onboarding-dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--hairline); }
+.onboarding-dots span.on { background: var(--ink); }
+.onboarding-actions { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 767px) {
+  /* 휴대폰: 화면을 꽉 채우고 버튼은 아래에 */
+  .dialog-backdrop:has(.onboarding) { padding: 0; }
+  .dialog.onboarding { max-width: none; height: 100%; border-radius: 0; border: none; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); }
+  .dialog.onboarding .onboarding-slide { flex: 1; justify-content: center; }
+}
+.checklist-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.checklist-items li + li { border-top: 1px solid var(--hairline); }
+.checklist-items a { display: flex; align-items: center; gap: 12px; padding: 10px 0; color: var(--ink); text-decoration: none; }
+.checklist-items li.done a { color: var(--muted); }
+.checklist-items li.done strong { text-decoration: line-through; font-weight: 500; }
+.checklist-text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }

@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from app import config, db
 from app.api.login import athlete
 from app.program import lessons, quiz, weekly
-from app.schemas import (AthleteHistory, AthleteHome, HistoryItem, LessonCard, LessonView, QuizAnswer, QuizResult, SessionInfo,
-                         Survey)
+from app.schemas import (AthleteHistory, AthleteHome, HistoryItem, LessonCard, LessonView, OnboardingDone, QuizAnswer, QuizResult,
+                         SessionInfo, Survey)
 
 router = APIRouter(prefix="/api/athlete")
 
@@ -22,11 +22,21 @@ def home(who: SessionInfo = Depends(athlete)) -> AthleteHome:
         done = con.execute("SELECT COUNT(*) FROM lesson_assignments WHERE athlete_id = ? AND completed_at IS NOT NULL",
                            (who.athlete_id,)).fetchone()[0]
         surprise = quiz.pending(con, who.athlete_id)
+        seen = con.execute("SELECT 1 FROM onboarding WHERE role = 'athlete' AND user_id = ? AND kind = 'intro'",
+                           (who.athlete_id,)).fetchone()
     cards = [LessonCard(lesson_id=r["lesson_id"], title=lessons.title(r["lesson_id"]),
                         category=lessons.meta(r["lesson_id"])["category"], completed=r["completed_at"] is not None)
              for r in rows if lessons.exists(r["lesson_id"])]
     return AthleteHome(name=who.label, week_start=week, lessons=cards, completed_total=done,
-                       lesson_total=len(lessons.curriculum()), surprise_quiz=surprise)
+                       lesson_total=len(lessons.curriculum()), surprise_quiz=surprise, onboarding_done=seen is not None)
+
+
+@router.post("/onboarding", status_code=204)
+def onboarding(body: OnboardingDone, who: SessionInfo = Depends(athlete)) -> None:
+    """첫 안내를 끝까지 봤는지 건너뛰었는지. 처음 기록만 남긴다(사용 설명서에서 다시 보는 것은 기록하지 않음)."""
+    with db.connect() as con:
+        con.execute("INSERT OR IGNORE INTO onboarding (role, user_id, kind, outcome, at) VALUES ('athlete', ?, 'intro', ?, ?)",
+                    (who.athlete_id, body.outcome, db.now_iso()))
 
 
 def _assignment(con, athlete_id: int, lesson_id: str):

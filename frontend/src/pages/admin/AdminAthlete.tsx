@@ -93,6 +93,11 @@ export function AdminAthlete() {
               <dd>{a.wrong_open}개</dd>
               <dt>질문</dt>
               <dd>{a.questions}개</dd>
+              <dt>첫 안내</dt>
+              <dd>
+                {a.onboarding === "finished" ? "끝까지 봄" : a.onboarding === "skipped" ? "건너뜀" : "아직"}
+                {a.onboarding_at && <span className="muted"> · {a.onboarding_at.slice(0, 10)}</span>}
+              </dd>
             </dl>
           </div>
         </section>

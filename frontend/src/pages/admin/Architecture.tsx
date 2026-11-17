@@ -27,7 +27,7 @@ const LANES: Lane[] = [
     id: "tier",
     title: "① 단계 나누기",
     users: "관리자",
-    screen: ["선수 등록 · 로그인 코드 발급", "경기 기록 입력 · 단계 설정 · 진행 현황 · CSV 내보내기"],
+    screen: ["시작 체크리스트 · 선수 등록 · 로그인 코드 발급", "경기 기록 입력 · 단계 설정 · 진행 현황 · CSV 내보내기"],
     steps: [
       { label: "경기력 예측", kind: "ai" },
       { label: "관측 − 예측", kind: "rule" },
@@ -44,7 +44,7 @@ const LANES: Lane[] = [
     id: "lesson",
     title: "② 교육 시작하기",
     users: "선수",
-    screen: ["이번 주 교육 목록", "교육 글 · 객관식 퀴즈 · 갑자기 퀴즈", "내 학습 기록 · 오답 다시 풀기"],
+    screen: ["첫 로그인 안내(카드 4장)", "이번 주 교육 목록", "교육 글 · 객관식 퀴즈 · 갑자기 퀴즈", "내 학습 기록 · 오답 다시 풀기"],
     steps: [
       { label: "주간 배정", kind: "rule" },
       { label: "교육 읽기", kind: "rule" },

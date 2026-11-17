@@ -3,20 +3,24 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { api, type AthleteHome } from "../../api";
 import { Dialog } from "../../components/Dialog";
+import { Onboarding, type OnboardingOutcome } from "../../components/Onboarding";
 import { QuizBox } from "../../components/QuizBox";
+import { introSlides } from "../../content/guide";
 
 export function Home() {
   const [home, setHome] = useState<AthleteHome | null>(null);
   const [error, setError] = useState("");
   const [quizOpen, setQuizOpen] = useState(false);
   const [quizIndex, setQuizIndex] = useState(0);
+  const [introOpen, setIntroOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     api.home().then(
       (h) => {
         setHome(h);
-        setQuizOpen(h.surprise_quiz.length > 0);
+        setIntroOpen(!h.onboarding_done);
+        setQuizOpen(h.onboarding_done && h.surprise_quiz.length > 0); // 첫 안내가 먼저, 끝나면 갑자기 퀴즈
       },
       (e) => setError(e.message),
     );
@@ -29,6 +33,13 @@ export function Home() {
   const done = home.lessons.filter((l) => l.completed);
   const next = todo[0];
   const quiz = home.surprise_quiz[quizIndex];
+
+  const closeIntro = (outcome: OnboardingOutcome, goToLesson = false) => {
+    api.onboardingDone(outcome).catch(() => undefined); // 기록 실패로 화면을 막지 않는다
+    setIntroOpen(false);
+    if (goToLesson && next) navigate(`/lesson/${next.lesson_id}`);
+    else setQuizOpen(home.surprise_quiz.length > 0);
+  };
 
   return (
     <>
@@ -67,6 +78,16 @@ export function Home() {
           ))}
         </div>
       </section>
+
+      {introOpen && (
+        <Onboarding
+          slides={introSlides(home.name, home.lessons.length)}
+          finishLabel={next ? "첫 교육 시작하기" : "시작하기"}
+          onFinish={() => closeIntro("finished", true)}
+          onHome={next ? () => closeIntro("finished") : undefined}
+          onSkip={() => closeIntro("skipped")}
+        />
+      )}
 
       {quizOpen && quiz && (
         <Dialog onClose={() => setQuizOpen(false)}>
