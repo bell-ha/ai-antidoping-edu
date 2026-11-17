@@ -126,7 +126,7 @@ cd ../frontend && npm ci
 - AI 답변: 기본은 키 없이 도는 mock. `.env.example`을 레포 루트 `.env`로 복사해 `ANTHROPIC_API_KEY=…`와 `LLM_MODE=live`를 넣으면 실제 답변. 다른 설정(시범 모드·비밀키·설문 주소 등)도 이 파일에 설명.
 - 시범 운영(더미 없이): 첫 관리자는 `cd backend && .venv/bin/python ../scripts/create_admin.py 이름`(코드는 한 번만 보여 줌). 운영 DB 백업은 `scripts/backup_db.py` → `var/backups/`.
 - 테스트: `cd backend && .venv/bin/python -m pytest -q`
-- Docker: `docker compose up --build` → http://localhost:8100, 더미 선수는 `docker compose exec app python /app/scripts/seed_dummy.py`
+- Docker: `docker compose up --build` → http://localhost:8100 (빈 DB면 더미 선수 100명을 자동으로 넣음, 끄려면 `SEED_DUMMY=0`). 레포 루트 `.env`의 키·LLM_MODE를 그대로 읽는다
 - Cloudtype: 저장소를 Dockerfile 템플릿으로 배포(화면과 서버가 이미지 하나). 포트 `8000`, 헬스체크 `/api/health`, 메모리 0.5GB면 충분(실측 약 160MB).
   환경변수: `LLM_MODE=live` · `ANTHROPIC_API_KEY` · `ANTHROPIC_WORKSPACE_ID`(조직 키 `sk-ant-usr-…`이면 꼭, 빠지면 "지금은 답변을 만들 수 없어요") · `SESSION_SECRET`(32자 이상) · `COOKIE_SECURE=1` · `FORWARDED_ALLOW_IPS=*`(프록시 뒤라 로그인 제한이 선수마다 따로 걸리게) · `APP_DB=/app/var/db/app.sqlite` · 데모면 `DEMO_MODE=1` `SEED_DUMMY=1`(빈 DB에 더미 선수를 넣고 시작).
   무료 요금제는 하루 한 번 멈추고 임시 디스크가 지워진다 — 운영 DB가 남아야 하면 유료 자원과 영구 디스크가 필요하다. 연구진 모델(`private/`)은 저장소에 없어 합성 모델로 뜬다.
