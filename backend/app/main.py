@@ -40,7 +40,7 @@ if not config.DEMO_MODE:
     for note in pilot_notes(date.today()):
         print(f"시범 모드 알림: {note}", file=sys.stderr)
 
-app = FastAPI(title="AI 반도핑 교육")
+app = FastAPI(title="도핑 예방 교육")
 app.add_middleware(
     SessionMiddleware,
     secret_key=config.SESSION_SECRET,

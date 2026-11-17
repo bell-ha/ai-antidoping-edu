@@ -38,7 +38,7 @@ export function Login({ onLogin }: { onLogin: (who: SessionInfo) => void }) {
     <>
       <header className="nav">
         <div className="container nav-inner">
-          <span className="brand">AI 반도핑 교육</span>
+          <span className="brand">도핑 예방 교육</span>
         </div>
       </header>
 
@@ -46,10 +46,10 @@ export function Login({ onLogin }: { onLogin: (who: SessionInfo) => void }) {
         <div className="grid">
           <section className="span-6 stack-lg">
             <div className="stack">
-              <h1 className="display">AI 반도핑 교육</h1>
+              <h1 className="display">도핑 예방 교육</h1>
               <p className="muted">
-                WADA·KADA 자료로 만든 도핑방지 교육 300개와 퀴즈, 약 이름으로 물어볼 수 있는 질문하기를 제공합니다. 일주일에 한 번 들어와
-                이번 주 교육을 들어 주세요.
+                역도 선수를 위한 도핑 예방 교육이에요. WADA·KADA 자료로 만든 짧은 교육과 퀴즈를 일주일에 한 번 듣고, 궁금한 약이나 규정은
+                AI에게 물어볼 수 있어요.
               </p>
             </div>
             <form className="card" onSubmit={submit}>

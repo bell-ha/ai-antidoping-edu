@@ -18,7 +18,7 @@ export function Shell() {
     <>
       <header className="nav">
         <div className="container nav-inner">
-          <span className="brand">AI 반도핑 교육</span>
+          <span className="brand">도핑 예방 교육</span>
           <nav className="nav-links" aria-label="주 메뉴">
             {NAV_BY_ROLE[who.role].map((n) => (
               <NavLink key={n.path} to={n.path} end={n.path === "/admin"} className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>

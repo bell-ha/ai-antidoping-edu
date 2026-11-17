@@ -5,7 +5,7 @@ import { useState } from "react";
  * 이 화면은 바깥 누르기·Esc·뒤로가기로 닫히지 않고(Dialog persistent), 복사·공유하지 않고 닫으면 한 번 묻는다. */
 export function CodeHandoff({ name, code, onClose }: { name: string; code: string; onClose: () => void }) {
   const [copied, setCopied] = useState<"" | "code" | "message" | "shared">("");
-  const message = `${name} 선수님, 도핑방지 교육 사이트 안내예요.\n주소: ${window.location.origin}\n로그인 코드: ${code}\n코드는 본인만 쓰세요. 잃어버리면 관리자에게 새 코드를 받으면 돼요.\n처음 들어가면 사용 안내가 나와요. 일주일에 한 번 들어와서 이번 주 교육을 들어 주세요.`;
+  const message = `${name} 선수님, 도핑 예방 교육 사이트 안내예요.\n주소: ${window.location.origin}\n로그인 코드: ${code}\n코드는 본인만 쓰세요. 잃어버리면 관리자에게 새 코드를 받으면 돼요.\n처음 들어가면 사용 안내가 나와요. 일주일에 한 번 들어와서 이번 주 교육을 들어 주세요.`;
   const copy = (text: string, what: "code" | "message") =>
     navigator.clipboard?.writeText(text).then(
       () => setCopied(what),
