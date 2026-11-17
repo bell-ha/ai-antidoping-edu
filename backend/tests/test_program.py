@@ -68,12 +68,12 @@ def test_settings_change_tier_count_and_reranks(people):
 
 # ---------- 주간 배정 ----------
 
-def test_week_assigns_tier_count_in_curriculum_order(people):
+def test_week_assigns_tier_count_in_teaching_order(people):
     top = people.athlete_ids[0]  # 5단계 = 주 15개
     with db.connect() as con:
         week = weekly.ensure_week(con, top)
         got = [r["lesson_id"] for r in weekly.this_week(con, top, week)]
-    assert got == lessons.curriculum()[:15]
+    assert got == lessons.teaching_order()[:15]  # 대분류를 돌아가며(A1, B1, …) — 모든 단계가 같은 주제 순서
 
 
 def test_unfinished_lessons_carry_over(people):
@@ -113,7 +113,7 @@ def test_surprise_quiz_only_from_learned_lessons_wrong_first(people):
     aid = people.athlete_ids[0]
     with db.connect() as con:
         weekly.ensure_week(con, aid)
-        learned = lessons.curriculum()[:4]
+        learned = lessons.teaching_order()[:4]
         con.execute(f"UPDATE lesson_assignments SET completed_at = 'x' WHERE athlete_id = ? AND lesson_id IN ({','.join('?' * 4)})",
                     (aid, *learned))
         quiz.answer(con, aid, learned[2], 9 - 5 if lessons.meta(learned[2])["quiz"]["answer"] != 4 else 1, "lesson")  # 틀림
@@ -234,3 +234,11 @@ def test_csv_export(people):
         assert admin.get(f"/api/admin/export/{kind}.csv").status_code == 200
     assert admin.get("/api/admin/export/codes.csv").status_code == 404
     assert people.login("athlete").get("/api/admin/export/athletes.csv").status_code == 403
+
+
+
+def test_every_tier_gets_the_same_topic_mix():
+    """테스터 1: A→M 순서면 주 3개 단계는 금지목록(G)까지 40주가 걸려 단계마다 내용이 달라졌다. 돌아가며 주면 13개 안에 모든 대분류."""
+    first = lessons.teaching_order()[:13]
+    assert {i.split("-")[0] for i in first} == set("ABCDEFGHIJKLM")
+    assert sorted(lessons.teaching_order()) == sorted(lessons.curriculum())  # 빠지거나 겹치는 레슨 없음

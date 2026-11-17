@@ -23,8 +23,23 @@ def _all() -> dict[str, tuple[dict, list[LibrarySection]]]:
 
 @cache
 def curriculum() -> list[str]:
-    """배정 순서대로 레슨 id."""
+    """대분류(A→M)와 대분류 안 순서대로 레슨 id. 교육 자료 화면의 묶음 순서."""
     return sorted(_all(), key=lambda i: (i.split("-")[0], _all()[i][0]["order"], i))
+
+
+@cache
+def teaching_order() -> list[str]:
+    """주간 배정 순서: 대분류를 돌아가며 하나씩(A1, B1, …, M1, A2, B2, …). 대분류 안 순서는 그대로.
+    모든 단계가 같은 주제 순서로 배우고 양만 다르게(사용자, 2026-11-17). A→M 순서대로 주면 주 3개 단계는
+    금지목록(G)까지 약 40주, 주 15개 단계는 약 8주라 단계마다 배우는 내용까지 달라지던 문제(테스터 1)."""
+    by_cat: dict[str, list[str]] = {}
+    for lesson_id in curriculum():
+        by_cat.setdefault(lesson_id.split("-")[0], []).append(lesson_id)
+    queues = list(by_cat.values())
+    out: list[str] = []
+    for i in range(max(len(q) for q in queues)):
+        out += [q[i] for q in queues if i < len(q)]
+    return out
 
 
 def exists(lesson_id: str) -> bool:

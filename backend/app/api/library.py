@@ -29,7 +29,7 @@ def _doc(doc_id: str) -> LibraryDoc | None:
 @router.get("/library", response_model=list[LibraryDocSummary])
 def library(who: SessionInfo = Depends(current)) -> list[LibraryDocSummary]:
     out = []
-    for doc_id in lessons.curriculum():  # 선수에게 배정되는 순서(A→M)
+    for doc_id in lessons.curriculum():  # 대분류 묶음 순서(A→M). 선수 배정은 lessons.teaching_order(대분류를 돌아가며)
         d = _doc(doc_id)
         out.append(LibraryDocSummary(**d.model_dump(exclude={"sections", "quiz"}), section_headings=[s.heading for s in d.sections],
                                      length=sum(len(s.text) for s in d.sections)))
