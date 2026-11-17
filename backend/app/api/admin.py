@@ -16,7 +16,7 @@ from app.api.login import admin, admin_id
 from app.model import predict
 from app.program import lessons, quiz, tiers
 from app.schemas import (AthleteCreate, AthleteDetail, AthleteRow, ChatLog, ChecklistItem, ChecklistVisibility, IssuedCode, LessonLog,
-                         LessonReview, Overview, ProgramSettings, QuizLog, RecordInput, StartChecklist)
+                         LessonReview, OnboardingDone, Overview, ProgramSettings, QuizLog, RecordInput, StartChecklist)
 
 router = APIRouter(prefix="/api/admin", dependencies=[Depends(admin)])
 CODE_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789"  # 헷갈리는 글자(l·1·o·0·i) 뺌
@@ -263,10 +263,10 @@ def checklist(request: Request) -> StartChecklist:
         tiered = n("SELECT COUNT(*) FROM tier_assignments WHERE batch = (SELECT MAX(batch) FROM tier_assignments)")
         settings_saved = n("SELECT COUNT(*) FROM settings WHERE changed_by IS NOT NULL")
         reviewed = n("SELECT COUNT(*) FROM lesson_reviews")
-        hidden = con.execute("SELECT 1 FROM onboarding WHERE role = 'admin' AND user_id = ? AND kind = 'checklist'",
-                             (admin_id(request) or 0,)).fetchone() is not None
+        seen = {r["kind"] for r in con.execute("SELECT kind FROM onboarding WHERE role = 'admin' AND user_id = ?",
+                                                (admin_id(request) or 0,))}
     total = len(lessons.curriculum())
-    return StartChecklist(hidden=hidden, items=[
+    return StartChecklist(hidden="checklist" in seen, intro_done="intro" in seen, items=[
         ChecklistItem(key="athletes", label="선수 등록", done=athletes > 0, detail=f"{athletes}명 · 등록하면 로그인 코드가 나와요",
                       link="/admin"),
         ChecklistItem(key="records", label="경기 기록 입력", done=with_records > 0, detail=f"기록이 있는 선수 {with_records}명",
@@ -278,6 +278,14 @@ def checklist(request: Request) -> StartChecklist:
         ChecklistItem(key="reviews", label="교육 자료 검토", done=reviewed > 0, detail=f"{reviewed} / {total}개 검토",
                       link="/library"),
     ])
+
+
+@router.post("/onboarding", status_code=204)
+def onboarding(body: OnboardingDone, request: Request) -> None:
+    """관리자 첫 안내. 처음 기록만 남긴다."""
+    with db.connect() as con:
+        con.execute("INSERT OR IGNORE INTO onboarding (role, user_id, kind, outcome, at) VALUES ('admin', ?, 'intro', ?, ?)",
+                    (admin_id(request) or 0, body.outcome, db.now_iso()))
 
 
 @router.put("/checklist", response_model=ChecklistVisibility)

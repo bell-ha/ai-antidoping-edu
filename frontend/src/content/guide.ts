@@ -1,4 +1,4 @@
-import { CalendarCheck, CircleHelp, MessageCircle, PlayCircle, RotateCcw, Sparkles, Zap } from "lucide-react";
+import { CalendarCheck, ChartColumn, CircleHelp, EyeOff, KeyRound, LayoutList, MessageCircle, PlayCircle, RotateCcw, Scale, Sparkles, Zap } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 // 선수 안내 문구. 사용 설명서(Guide)와 첫 로그인 안내(Onboarding)가 같은 내용을 쓰므로 여기 한 곳에서 고친다.
@@ -45,3 +45,32 @@ export function introSlides(name?: string, lessonsThisWeek?: number): GuideStep[
     },
   ];
 }
+
+/** 관리자 첫 로그인 안내. 가장 먼저 알릴 것: 단계는 교육량이지 도핑 의심이 아니다(연구진 원고의 결론과 같음). */
+export const ADMIN_SLIDES: GuideStep[] = [
+  {
+    icon: LayoutList,
+    title: "관리자 화면이에요",
+    body: "선수를 등록하고, 경기 기록을 넣고, 교육 진행을 보는 곳이에요. 위의 시작 체크리스트를 차례로 하면 돼요.",
+  },
+  {
+    icon: Scale,
+    title: "단계는 교육량이에요",
+    body: "연구진 모델이 지난 기록으로 마지막 대회 합계를 예측해요. 예측보다 많이 오른 선수일수록 높은 단계가 되고, 한 주 교육과 퀴즈가 많아져요. 도핑 여부를 판단하는 점수가 아니에요.",
+  },
+  {
+    icon: EyeOff,
+    title: "선수에게는 단계가 보이지 않아요",
+    body: "선수는 이번 주 교육 개수만 봐요. 단계·순위·관측−예측은 관리자 화면에만 있어요.",
+  },
+  {
+    icon: KeyRound,
+    title: "선수 등록과 코드 전달",
+    body: "선수를 등록하면 로그인 코드가 한 번 나와요. 복사하거나 함께 나오는 안내문을 그대로 보내세요. 잃어버리면 선수 상세에서 다시 발급해요.",
+  },
+  {
+    icon: ChartColumn,
+    title: "진행 보기",
+    body: "선수 표에서 이수·퀴즈·질문 수를 보고, 선수를 누르면 경기 기록·퀴즈 기록·질문 원문이 나와요. 표 위에서 CSV로 내보낼 수 있어요.",
+  },
+];

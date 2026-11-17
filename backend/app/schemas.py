@@ -424,6 +424,7 @@ class StartChecklist(BaseModel):
     """관리자 시작 체크리스트. 끝났는지는 실제 데이터로 정한다."""
     items: list[ChecklistItem]
     hidden: bool
+    intro_done: bool = False  # 관리자 첫 안내를 봤거나 건너뛰었으면 True
 
 
 class ChecklistVisibility(BaseModel):

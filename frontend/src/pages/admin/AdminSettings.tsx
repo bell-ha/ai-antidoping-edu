@@ -1,6 +1,7 @@
 import { Minus, Plus, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api, type Overview, type TierSetting } from "../../api";
+import { Help } from "../../components/Help";
 
 export function AdminSettings() {
   const [data, setData] = useState<Overview | null>(null);
@@ -49,9 +50,18 @@ export function AdminSettings() {
               <tr>
                 <th>단계</th>
                 <th className="num">인원(예상)</th>
-                <th>주당 교육 수</th>
-                <th>갑자기 퀴즈 확률(하루 첫 접속)</th>
-                <th>한 번에 문항 수</th>
+                <th>
+                  주당 교육 수
+                  <Help label="주당 교육 수" text="한 주(월~일)에 새로 정해지는 교육 개수예요. 지난주에 못 들은 교육은 이번 주 목록에 남아요." />
+                </th>
+                <th>
+                  갑자기 퀴즈 확률(하루 첫 접속)
+                  <Help label="갑자기 퀴즈 확률" text="선수가 그날 처음 들어올 때 퀴즈가 나올 확률이에요. 이미 배운 교육에서만 나오고, 전에 틀린 문제가 먼저 나와요." />
+                </th>
+                <th>
+                  한 번에 문항 수
+                  <Help label="한 번에 문항 수" text="갑자기 퀴즈가 나올 때 한 번에 푸는 문제 수예요." />
+                </th>
               </tr>
             </thead>
             <tbody>

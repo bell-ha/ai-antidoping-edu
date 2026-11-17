@@ -2,7 +2,9 @@ import { Download, Plus, Search } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { api, type IssuedCode, type Overview } from "../../api";
+import { CodeHandoff } from "../../components/CodeHandoff";
 import { Dialog } from "../../components/Dialog";
+import { Help } from "../../components/Help";
 import { StartChecklist } from "../../components/StartChecklist";
 import { weightClassLabel } from "../../session";
 
@@ -102,11 +104,17 @@ export function AdminAthletes() {
           <thead>
             <tr>
               {th("rank", "순위", true)}
-              <th>단계</th>
+              <th>
+                단계
+                <Help label="단계" text="모델의 관측−예측이 큰 선수부터 줄 세워 단계 수만큼 고르게 나눠요. 높은 단계일수록 주당 교육과 갑자기 퀴즈가 많아요. 결과가 없는 선수는 가장 낮은 단계예요. 도핑 여부를 판단하는 점수가 아니에요." />
+              </th>
               {th("number", "번호")}
               <th>이름</th>
               <th>체급</th>
-              <th className="num">관측−예측</th>
+              <th className="num">
+                관측−예측
+                <Help label="관측−예측" text="마지막 대회 합계(관측)에서 연구진 모델이 그 전 기록으로 예측한 합계를 뺀 값(kg)이에요. +면 예측보다 더 들었다는 뜻이에요. 기록이 2개 미만이면 결과가 없어요." />
+              </th>
               <th className="num">기록</th>
               {th("lessons", "이수", true)}
               {th("quiz", "퀴즈 정답/오답", true)}
@@ -116,6 +124,19 @@ export function AdminAthletes() {
             </tr>
           </thead>
           <tbody>
+            {data.athletes.length === 0 && (
+              <tr>
+                <td colSpan={12}>
+                  <div className="empty-state">
+                    <strong>아직 등록된 선수가 없어요</strong>
+                    <span className="muted">선수를 등록하면 로그인 코드가 나오고, 경기 기록을 넣으면 단계가 정해져요.</span>
+                    <button className="btn" onClick={() => setAdding(true)}>
+                      <Plus size={16} /> 첫 선수 등록하기
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            )}
             {rows.map((a) => (
               <tr key={a.id}>
                 <td className="num">{a.rank ?? "—"}</td>
@@ -168,9 +189,11 @@ function AddAthlete({ onClose, onDone }: { onClose: () => void; onDone: () => vo
     <Dialog onClose={onClose}>
       {issued ? (
         <>
-          <h2 className="heading">{issued.number} 등록 완료</h2>
-          <p className="muted">아래 로그인 코드를 선수에게 전해 주세요. 서버에는 코드 원문이 남지 않아 지금만 볼 수 있어요.</p>
-          <code className="issued-code">{issued.code}</code>
+          <h2 className="heading">
+            {name.trim()} ({issued.number}) 등록 완료
+          </h2>
+          <p className="muted">로그인 코드는 지금만 볼 수 있어요(서버에 원문이 남지 않음). 복사하거나 안내문을 그대로 보내 주세요. 잃어버리면 선수 상세에서 다시 발급해요.</p>
+          <CodeHandoff name={name.trim()} code={issued.code} />
           <button className="btn" onClick={onClose}>
             닫기
           </button>

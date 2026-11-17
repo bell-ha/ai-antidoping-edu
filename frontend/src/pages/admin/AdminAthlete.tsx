@@ -2,6 +2,7 @@ import { ArrowLeft, KeyRound, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router";
 import { api, type AthleteDetail, type CompetitionCategory, type IssuedCode, type RecordInput } from "../../api";
+import { CodeHandoff } from "../../components/CodeHandoff";
 import { Dialog } from "../../components/Dialog";
 import { Select } from "../../components/Select";
 import { CATEGORY_LABEL, weightClassLabel } from "../../session";
@@ -166,8 +167,8 @@ export function AdminAthlete() {
       {issued && (
         <Dialog onClose={() => setIssued(null)}>
           <h2 className="heading">새 로그인 코드</h2>
-          <p className="muted">이전 코드는 이제 쓸 수 없어요. 지금만 볼 수 있으니 선수에게 전해 주세요.</p>
-          <code className="issued-code">{issued.code}</code>
+          <p className="muted">이전 코드는 이제 쓸 수 없어요. 새 코드는 지금만 볼 수 있으니 복사하거나 안내문을 그대로 보내 주세요.</p>
+          <CodeHandoff name={a.name} code={issued.code} />
           <button className="btn" onClick={() => setIssued(null)}>
             닫기
           </button>

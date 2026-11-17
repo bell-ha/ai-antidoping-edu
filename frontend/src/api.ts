@@ -99,6 +99,7 @@ export interface AthleteHome {
 export interface StartChecklist {
   items: { key: string; label: string; done: boolean; detail: string; link: string }[];
   hidden: boolean;
+  intro_done: boolean; // 관리자 첫 안내
 }
 
 export interface AthleteRow {
@@ -299,6 +300,7 @@ export const api = {
   saveSettings: (s: ProgramSettings) => call<Overview>("PUT", "/api/admin/settings", s),
   rerank: () => call<Overview>("POST", "/api/admin/rerank"),
   checklist: () => call<StartChecklist>("GET", "/api/admin/checklist"),
+  adminOnboardingDone: (outcome: "finished" | "skipped") => call<void>("POST", "/api/admin/onboarding", { outcome }),
   setChecklist: (hidden: boolean) => call<{ hidden: boolean }>("PUT", "/api/admin/checklist", { hidden }),
   library: () => call<LibraryDocSummary[]>("GET", "/api/library"),
   libraryDoc: (docId: string) => call<LibraryDoc>("GET", `/api/library/${encodeURIComponent(docId)}`),

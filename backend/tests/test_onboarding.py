@@ -35,6 +35,9 @@ def test_checklist_follows_data_and_can_be_hidden(people):
     assert items["settings"]["done"] and items["reviews"]["done"] and items["reviews"]["detail"].startswith("1 /")
 
     assert admin.get("/api/admin/checklist").json()["hidden"] is False
+    assert admin.get("/api/admin/checklist").json()["intro_done"] is False
+    assert admin.post("/api/admin/onboarding", json={"outcome": "finished"}).status_code == 204
+    assert admin.get("/api/admin/checklist").json()["intro_done"] is True
     admin.put("/api/admin/checklist", json={"hidden": True})
     assert admin.get("/api/admin/checklist").json()["hidden"] is True
     admin.put("/api/admin/checklist", json={"hidden": False})
