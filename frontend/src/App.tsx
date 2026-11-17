@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Navigate, Route, Routes } from "react-router";
+import { Navigate, Route, Routes, useNavigate } from "react-router";
 import { api, setUnauthorizedHandler, type SessionInfo } from "./api";
 import { Shell } from "./components/Shell";
 import { HOME_BY_ROLE, SessionContext } from "./session";
@@ -7,7 +7,7 @@ import { AdminAthlete } from "./pages/admin/AdminAthlete";
 import { AdminAthletes } from "./pages/admin/AdminAthletes";
 import { AdminSettings } from "./pages/admin/AdminSettings";
 import { Architecture } from "./pages/admin/Architecture";
-import { Ask } from "./pages/Ask";
+import { Ask, clearAskHistory } from "./pages/Ask";
 import { Guide } from "./pages/athlete/Guide";
 import { History } from "./pages/athlete/History";
 import { Home } from "./pages/athlete/Home";
@@ -18,6 +18,7 @@ import { Login } from "./pages/Login";
 export default function App() {
   const [who, setWho] = useState<SessionInfo | null | undefined>(undefined);
   const [demo, setDemo] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setUnauthorizedHandler(() => setWho(null));
@@ -26,8 +27,13 @@ export default function App() {
   }, []);
 
   const logout = useCallback(() => {
-    api.logout().finally(() => setWho(null));
-  }, []);
+    // 로그아웃: 질문 대화 보관을 지우고 주소를 첫 화면으로 바꿔 끼움(뒤로가기로 앞사람 화면 주소가 남지 않게)
+    api.logout().finally(() => {
+      clearAskHistory();
+      navigate("/", { replace: true });
+      setWho(null);
+    });
+  }, [navigate]);
 
   if (who === undefined) return null;
   if (who === null) return <Login onLogin={setWho} />;

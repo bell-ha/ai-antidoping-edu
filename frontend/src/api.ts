@@ -126,7 +126,7 @@ export interface AthleteDetail {
   records: RecordRow[];
   model_result: ModelResult | null;
   lessons: { lesson_id: string; title: string; week_start: string; completed_at: string | null }[];
-  quizzes: { lesson_id: string; title: string; context: "lesson" | "surprise" | "review"; choice: number; correct: boolean; at: string }[];
+  quizzes: { lesson_id: string; title: string; context: "lesson" | "surprise" | "review" | "retry"; choice: number; correct: boolean; at: string }[];
   chats: { question: string; answer: string; at: string }[];
 }
 

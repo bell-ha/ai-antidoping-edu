@@ -191,7 +191,7 @@ def export(kind: str) -> Response:
                      onb.get(a.onboarding or "", "아직"), a.onboarding_at or ""] for a in _rows(con)]
         elif kind == "quizzes":
             header = ["번호", "이름", "단계", "교육", "대분류", "종류", "고른 답", "정답 여부", "시각"]
-            label = {"lesson": "교육 퀴즈", "surprise": "갑자기 퀴즈", "review": "다시 풀기"}
+            label = {"lesson": "교육 퀴즈", "surprise": "갑자기 퀴즈", "review": "오답 다시 풀기", "retry": "이수 후 다시 풀기"}
             rows = [[r["number"], r["name"], _tier(con, r["athlete_id"]), r["lesson_id"], _category(r["lesson_id"]), label.get(r["context"], r["context"]),
                      r["choice"], int(r["correct"]), r["at"]]
                     for r in con.execute("""SELECT a.number, a.name, q.* FROM quiz_attempts q JOIN athletes a ON a.id = q.athlete_id

@@ -137,7 +137,7 @@ export function AdminAthlete() {
                   {d.quizzes.map((q, i) => (
                     <tr key={i}>
                       <td>{q.at.slice(0, 16).replace("T", " ")}</td>
-                      <td>{{ lesson: "교육 퀴즈", surprise: "갑자기 퀴즈", review: "다시 풀기" }[q.context]}</td>
+                      <td>{{ lesson: "교육 퀴즈", surprise: "갑자기 퀴즈", review: "오답 다시 풀기", retry: "이수 후 다시 풀기" }[q.context]}</td>
                       <td>{q.title}</td>
                       <td>{q.correct ? "정답" : `오답(${q.choice}번)`}</td>
                     </tr>

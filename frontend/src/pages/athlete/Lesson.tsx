@@ -54,7 +54,7 @@ export function Lesson() {
       {answered && (
         <div className="row" style={{ justifyContent: "flex-end" }}>
           {next ? (
-            <button className="btn" onClick={() => navigate(`/lesson/${next}`)}>
+            <button className="btn" onClick={() => navigate(`/lesson/${next}`, { replace: true })} /* 이어 듣기는 바꿔 끼움 → 뒤로가기 한 번이면 목록 */>
               다음 교육 <ArrowRight size={18} />
             </button>
           ) : (

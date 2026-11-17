@@ -37,7 +37,7 @@ export function Home() {
   const closeIntro = (outcome: OnboardingOutcome, goToLesson = false) => {
     api.onboardingDone(outcome).catch(() => undefined); // 기록 실패로 화면을 막지 않는다
     setIntroOpen(false);
-    if (goToLesson && next) navigate(`/lesson/${next.lesson_id}`);
+    if (goToLesson && next) navigate(`/lesson/${next.lesson_id}`, { replace: true }); // 안내 칸을 레슨으로 바꿔 끼움 → 뒤로가기는 홈
     else setQuizOpen(home.surprise_quiz.length > 0);
   };
 

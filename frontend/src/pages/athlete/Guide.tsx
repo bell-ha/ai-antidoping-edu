@@ -28,7 +28,7 @@ export function Guide() {
         ))}
       </div>
       {/* 다시 보기는 서버에 기록하지 않는다(처음 기록만 연구 자료로 남김) */}
-      {intro && <Onboarding slides={introSlides()} finishLabel="교육으로 가기" onFinish={() => navigate("/home")} onSkip={() => setIntro(false)} />}
+      {intro && <Onboarding slides={introSlides()} finishLabel="교육으로 가기" onFinish={() => navigate("/home", { replace: true })} onSkip={() => setIntro(false)} />}
     </>
   );
 }

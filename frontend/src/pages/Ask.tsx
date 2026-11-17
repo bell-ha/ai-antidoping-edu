@@ -24,10 +24,27 @@ interface Turn {
 
 type AskState = { question?: string } | null;
 
+// 관련 교육을 보고 뒤로가기로 돌아와도 대화가 남게 그 탭 안에만 보관한다(탭을 닫거나 로그아웃하면 지움 — 공용 기기 대비)
+const STORE = "ask:turns";
+export const clearAskHistory = () => {
+  try {
+    sessionStorage.removeItem(STORE);
+  } catch {
+    /* 저장소를 못 쓰는 브라우저: 보관 없이 동작 */
+  }
+};
+const loadTurns = (): Turn[] => {
+  try {
+    return (JSON.parse(sessionStorage.getItem(STORE) ?? "[]") as Turn[]).filter((t) => t.response || t.error);
+  } catch {
+    return [];
+  }
+};
+
 export function Ask() {
   const location = useLocation();
   const initial = location.state as AskState;
-  const [turns, setTurns] = useState<Turn[]>([]);
+  const [turns, setTurns] = useState<Turn[]>(loadTurns);
   const [draft, setDraft] = useState(initial?.question ?? "");
   const [pending, setPending] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
@@ -36,6 +53,11 @@ export function Ask() {
 
   useEffect(() => {
     if (turns.length) endRef.current?.scrollIntoView({ block: "nearest" });
+    try {
+      sessionStorage.setItem(STORE, JSON.stringify(turns));
+    } catch {
+      /* 보관 실패는 무시 */
+    }
   }, [turns]);
 
   const send = (question: string) => {

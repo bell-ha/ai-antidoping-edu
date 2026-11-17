@@ -340,7 +340,7 @@ class AthleteRow(BaseModel):
 class QuizLog(BaseModel):
     lesson_id: str
     title: str
-    context: Literal["lesson", "surprise", "review"]
+    context: Literal["lesson", "surprise", "review", "retry"]  # retry = 이수한 레슨을 다시 푼 것
     choice: int
     correct: bool
     at: str

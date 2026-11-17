@@ -5,7 +5,7 @@ import { Dialog } from "./Dialog";
 
 export type OnboardingOutcome = "finished" | "skipped";
 
-/** 카드 몇 장을 차례로 보여 주는 첫 안내. ←/→로 넘기고 Esc·바깥 누르기·건너뛰기는 "skipped". */
+/** 카드 몇 장을 차례로 보여 주는 첫 안내. ←/→로 넘기고, 뒤로가기는 앞 카드(첫 카드면 건너뛰기). Esc·바깥 누르기·건너뛰기는 onSkip. */
 export function Onboarding({
   slides,
   finishLabel,
@@ -33,7 +33,16 @@ export function Onboarding({
   }, [slides.length]);
 
   return (
-    <Dialog onClose={onSkip} className="onboarding" label="처음 안내">
+    <Dialog
+      onClose={onSkip}
+      onBack={() => {
+        if (i === 0) return false;
+        setI(i - 1);
+        return true;
+      }}
+      className="onboarding"
+      label="처음 안내"
+    >
       <div className="onboarding-top">
         <span className="caption">
           {i + 1} / {slides.length}

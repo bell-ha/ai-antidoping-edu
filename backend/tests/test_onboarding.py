@@ -40,3 +40,13 @@ def test_checklist_follows_data_and_can_be_hidden(people):
     admin.put("/api/admin/checklist", json={"hidden": False})
     assert admin.get("/api/admin/checklist").json()["hidden"] is False
     assert people.login("athlete").get("/api/admin/checklist").status_code == 403
+
+
+def test_reanswering_completed_lesson_is_recorded_as_retry(people):
+    """뒤로가기로 이수한 레슨에 돌아가 다시 풀면 첫 시도와 섞이지 않게 'retry'로 남는다."""
+    c = people.login("athlete")
+    lid = c.get("/api/athlete/home").json()["lessons"][0]["lesson_id"]
+    for choice in (1, 2):
+        assert c.post(f"/api/athlete/lessons/{lid}/answer", json={"lesson_id": lid, "choice": choice}).status_code == 200
+    quizzes = people.login("admin").get(f"/api/admin/athletes/{people.athlete_ids[0]}").json()["quizzes"]
+    assert sorted(q["context"] for q in quizzes if q["lesson_id"] == lid) == ["lesson", "retry"]

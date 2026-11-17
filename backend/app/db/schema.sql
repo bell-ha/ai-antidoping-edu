@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS quiz_attempts (
     id INTEGER PRIMARY KEY,
     athlete_id INTEGER NOT NULL REFERENCES athletes(id),
     lesson_id TEXT NOT NULL,
-    context TEXT NOT NULL,             -- lesson | surprise | review(오답 다시 풀기)
+    context TEXT NOT NULL,             -- lesson | surprise | review(오답 다시 풀기) | retry(이수한 교육을 다시 풂)
     choice INTEGER NOT NULL,
     correct INTEGER NOT NULL,
     at TEXT NOT NULL

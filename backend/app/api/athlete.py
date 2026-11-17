@@ -59,13 +59,14 @@ def lesson(lesson_id: str, who: SessionInfo = Depends(athlete)) -> LessonView:
 @router.post("/lessons/{lesson_id}/answer", response_model=QuizResult)
 def lesson_answer(lesson_id: str, body: QuizAnswer, who: SessionInfo = Depends(athlete)) -> QuizResult:
     """레슨 끝 퀴즈. 답하면(맞든 틀리든) 그 레슨은 이수. 목록 밖 레슨이면 이번 주 배정을 먼저 만든 뒤 이 레슨을 더한다
-    (이수한 레슨은 나중에 다시 배정되지 않는다)."""
+    (이수한 레슨은 나중에 다시 배정되지 않는다). 이미 이수한 레슨을 다시 풀면 'retry'로 따로 기록한다(첫 시도와 섞이지 않게)."""
     with db.connect() as con:
-        if _assignment(con, who.athlete_id, lesson_id) is None:
+        row = _assignment(con, who.athlete_id, lesson_id)
+        if row is None:
             week = weekly.ensure_week(con, who.athlete_id)
             con.execute("INSERT OR IGNORE INTO lesson_assignments (athlete_id, lesson_id, week_start) VALUES (?, ?, ?)",
                         (who.athlete_id, lesson_id, week))
-        result = quiz.answer(con, who.athlete_id, lesson_id, body.choice, "lesson")
+        result = quiz.answer(con, who.athlete_id, lesson_id, body.choice, "retry" if row and row["completed_at"] else "lesson")
         con.execute("UPDATE lesson_assignments SET completed_at = COALESCE(completed_at, ?) WHERE athlete_id = ? AND lesson_id = ?",
                     (db.now_iso(), who.athlete_id, lesson_id))
     return result
