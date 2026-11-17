@@ -1,13 +1,17 @@
-import { ArrowRight, CircleCheck, RotateCcw } from "lucide-react";
+import { ArrowRight, CircleCheck, MessageCircle, RotateCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { api, type AthleteHistory } from "../../api";
+import { api, type AthleteHistory, type MyQuestion } from "../../api";
 import { QuizBox } from "../../components/QuizBox";
 
 /** 내 학습 기록: 들은 교육과 퀴즈 결과, 오답 다시 풀기(맞히면 목록에서 빠진다). */
 export function History() {
   const [h, setH] = useState<AthleteHistory | null>(null);
   const [error, setError] = useState("");
+  const [questions, setQuestions] = useState<MyQuestion[]>([]);
+  useEffect(() => {
+    api.myQuestions().then(setQuestions, () => setQuestions([]));
+  }, []);
   const [round, setRound] = useState(0); // 다시 풀기를 마치고 새로 불러올 때마다 퀴즈 상자를 새로 그린다
   const [answered, setAnswered] = useState(0); // 이번에 다시 푼 문제 수(정리 버튼은 하나라도 푼 뒤에만)
 
@@ -25,7 +29,7 @@ export function History() {
     <>
       <div className="page-head">
         <h1 className="title">내 학습 기록</h1>
-        <p className="muted">들은 교육과 퀴즈 결과예요. 틀린 문제는 아래에서 다시 풀 수 있어요.</p>
+        <p className="muted">들은 교육과 퀴즈 결과, 지난 질문이에요. 틀린 문제는 아래에서 다시 풀 수 있어요.</p>
       </div>
 
       <div className="stat-row">
@@ -89,6 +93,26 @@ export function History() {
                 <span className="caption">{i.completed_at.slice(0, 10)}</span>
                 <ArrowRight size={16} />
               </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="stack" style={{ marginTop: 32 }}>
+        <h2 className="heading">
+          <MessageCircle size={18} style={{ verticalAlign: -3 }} /> 지난 질문
+        </h2>
+        {questions.length === 0 ? (
+          <p className="muted">아직 질문하기를 쓴 적이 없어요.</p>
+        ) : (
+          <div className="stack" style={{ gap: 8 }}>
+            {questions.map((q) => (
+              <details key={q.at + q.question} className="card past-question">
+                <summary>
+                  <span className="caption">{q.at.slice(5, 10).replace("-", "/")}</span> {q.question}
+                </summary>
+                <p className="answer">{q.answer.replace("\n\n[AI 추측] ", "\n\n(자료에 없는 AI 설명) ")}</p>
+              </details>
             ))}
           </div>
         )}

@@ -54,3 +54,16 @@ def test_reanswering_completed_lesson_is_recorded_as_retry(people):
         assert c.post(f"/api/athlete/lessons/{lid}/answer", json={"lesson_id": lid, "choice": choice}).status_code == 200
     quizzes = people.login("admin").get(f"/api/admin/athletes/{people.athlete_ids[0]}").json()["quizzes"]
     assert sorted(q["context"] for q in quizzes if q["lesson_id"] == lid) == ["lesson", "retry"]
+
+
+
+def test_my_questions_are_only_mine(people, monkeypatch):
+    """내 학습 기록의 '지난 질문': 본인 질문만, 최근 것부터."""
+    from app import db
+    with db.connect() as con:
+        for aid, q in ((people.athlete_ids[0], "내 질문"), (people.athlete_ids[1], "남의 질문")):
+            con.execute("INSERT INTO chat_logs (athlete_id, day, at, question, answer, kind) VALUES (?, ?, ?, ?, ?, 'chat_llm')",
+                        (aid, db.today(), db.now_iso(), q, "답"))
+    got = people.login("athlete").get("/api/athlete/questions").json()
+    assert [g["question"] for g in got] == ["내 질문"]
+    assert people.login("admin").get("/api/athlete/questions").status_code == 403

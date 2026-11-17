@@ -51,7 +51,7 @@ export function Lesson() {
       {lesson.sections.map((s) => (
         <section key={s.id} className="lesson-section">
           <h2 className="heading">{s.heading}</h2>
-          <RichText text={s.text} />
+          <RichText text={s.text} glossary />
         </section>
       ))}
 

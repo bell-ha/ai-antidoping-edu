@@ -86,6 +86,12 @@ export interface LessonView {
   completed: boolean;
 }
 
+export interface MyQuestion {
+  question: string;
+  answer: string;
+  at: string;
+}
+
 export interface AthleteHome {
   name: string;
   week_start: string;
@@ -318,6 +324,7 @@ export const api = {
   // 선수
   home: () => call<AthleteHome>("GET", "/api/athlete/home"),
   onboardingDone: (outcome: "finished" | "skipped") => call<void>("POST", "/api/athlete/onboarding", { outcome }),
+  myQuestions: () => call<MyQuestion[]>("GET", "/api/athlete/questions"),
   lesson: (id: string) => call<LessonView>("GET", `/api/athlete/lessons/${encodeURIComponent(id)}`),
   answerLesson: (id: string, choice: number) =>
     call<QuizResult>("POST", `/api/athlete/lessons/${encodeURIComponent(id)}/answer`, { lesson_id: id, choice }),

@@ -374,6 +374,13 @@ class HistoryItem(BaseModel):
     last_correct: bool | None
 
 
+class MyQuestion(BaseModel):
+    """선수 본인의 지난 질문과 답(내 학습 기록에서 다시 보기)."""
+    question: str
+    answer: str
+    at: str
+
+
 class AthleteHistory(BaseModel):
     completed: int
     lesson_total: int

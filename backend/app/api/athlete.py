@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from app import config, db
 from app.api.login import athlete
 from app.program import lessons, quiz, tiers, weekly
-from app.schemas import (AthleteHistory, AthleteHome, HistoryItem, LessonCard, LessonView, OnboardingDone, QuizAnswer, QuizResult,
-                         SessionInfo, Survey)
+from app.schemas import (AthleteHistory, AthleteHome, HistoryItem, LessonCard, LessonView, MyQuestion, OnboardingDone, QuizAnswer,
+                         QuizResult, SessionInfo, Survey)
 
 router = APIRouter(prefix="/api/athlete")
 
@@ -110,6 +110,15 @@ def history(who: SessionInfo = Depends(athlete)) -> AthleteHistory:
              for r in rows if lessons.exists(r["lesson_id"])]
     return AthleteHistory(completed=len(items), lesson_total=len(lessons.curriculum()), quiz_correct=counts[0] or 0,
                           quiz_wrong=counts[1] or 0, items=items, wrong=[lessons.question(l) for l in wrong if lessons.exists(l)])
+
+
+@router.get("/questions", response_model=list[MyQuestion])
+def my_questions(who: SessionInfo = Depends(athlete)) -> list[MyQuestion]:
+    """내 지난 질문과 답, 최근 50개(탭을 닫으면 대화가 사라져 다시 볼 곳이 없던 문제, 테스터 8·10). 본인 것만."""
+    with db.connect() as con:
+        rows = con.execute("SELECT question, answer, at FROM chat_logs WHERE athlete_id = ? ORDER BY at DESC LIMIT 50",
+                           (who.athlete_id,)).fetchall()
+    return [MyQuestion(question=r["question"], answer=r["answer"], at=r["at"]) for r in rows]
 
 
 @router.post("/review/answer", response_model=QuizResult)
