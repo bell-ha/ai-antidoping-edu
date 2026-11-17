@@ -15,7 +15,8 @@ from app import db
 from app.api.login import admin, admin_id
 from app.model import predict
 from app.program import lessons, quiz, tiers
-from app.schemas import (AthleteCreate, AthleteDetail, AthleteRow, ChatLog, ChecklistItem, ChecklistVisibility, IssuedCode, LessonLog,
+from app.model.adapter import MODEL_LABEL, SOURCE
+from app.schemas import (AthleteCreate, AthleteDetail, AthleteRow, AthleteUpdate, ChatLog, ChecklistItem, ChecklistVisibility, IssuedCode, LessonLog,
                          LessonReview, OnboardingDone, Overview, ProgramSettings, QuizLog, RecordInput, StartChecklist)
 
 router = APIRouter(prefix="/api/admin", dependencies=[Depends(admin)])
@@ -27,8 +28,8 @@ def new_code(number: str) -> str:
 
 
 def _rows(con: sqlite3.Connection, athlete_id: int | None = None) -> list[AthleteRow]:
-    where = "WHERE a.id = ?" if athlete_id else "WHERE a.active = 1"
-    args = (athlete_id,) if athlete_id else ()
+    where = "WHERE a.id = :id" if athlete_id else "WHERE a.active = 1"
+    args = {"id": athlete_id, "week": db.week_start()}
     out = []
     for a in con.execute(f"""
         SELECT a.id, a.number, a.name, a.sex, a.birth_year,
@@ -39,7 +40,9 @@ def _rows(con: sqlite3.Connection, athlete_id: int | None = None) -> list[Athlet
           (SELECT COUNT(*) FROM quiz_attempts q WHERE q.athlete_id = a.id AND q.correct = 0) AS qw,
           (SELECT COUNT(*) FROM chat_logs c WHERE c.athlete_id = a.id) AS nq,
           (SELECT MAX(first_at) FROM visits v WHERE v.athlete_id = a.id) AS last_visit,
-          o.outcome AS onb, o.at AS onb_at
+          o.outcome AS onb, o.at AS onb_at,
+          (SELECT COUNT(*) FROM lesson_assignments l WHERE l.athlete_id = a.id AND (l.completed_at IS NULL OR l.completed_at >= :week)) AS wk_total,
+          (SELECT COUNT(*) FROM lesson_assignments l WHERE l.athlete_id = a.id AND l.completed_at >= :week) AS wk_done
         FROM athletes a LEFT JOIN onboarding o ON o.role = 'athlete' AND o.user_id = a.id AND o.kind = 'intro'
         {where} ORDER BY a.id""", args):
         t = tiers.current(con, a["id"])
@@ -51,7 +54,7 @@ def _rows(con: sqlite3.Connection, athlete_id: int | None = None) -> list[Athlet
             residual=latest[1].residual_observed_minus_predicted if latest else None,
             records=a["n_records"], lessons_completed=a["done"], quiz_correct=a["qc"], quiz_wrong=a["qw"],
             wrong_open=len(quiz.wrong_open(con, a["id"])), questions=a["nq"], last_visit=a["last_visit"],
-            onboarding=a["onb"], onboarding_at=a["onb_at"]))
+            onboarding=a["onb"], onboarding_at=a["onb_at"], week_done=a["wk_done"], week_total=a["wk_total"]))
     return out
 
 
@@ -61,7 +64,9 @@ def overview() -> Overview:
         rows = _rows(con)
         settings = tiers.load_settings(con)
     p = predict.params()
-    return Overview(athletes=rows, settings=settings, model_version=f"{p.get('model', 'synthetic_trend')} ({p['source']})")
+    model = p.get("model", "synthetic_trend")
+    return Overview(athletes=rows, settings=settings, model_version=f"{model} ({p['source']})",
+                    model_label=MODEL_LABEL[SOURCE.get(model, "synthetic")])
 
 
 def _exists(con: sqlite3.Connection, athlete_id: int) -> None:
@@ -102,6 +107,19 @@ def create(body: AthleteCreate) -> IssuedCode:
     return IssuedCode(athlete_id=cur.lastrowid, number=number, code=code)
 
 
+@router.patch("/athletes/{athlete_id}", response_model=AthleteDetail)
+def update(athlete_id: int, body: AthleteUpdate) -> AthleteDetail:
+    """이름 고치기, 보관(목록·줄 세우기에서 빼고 로그인을 막음)과 되돌리기. 기록은 지우지 않는다."""
+    with db.connect() as con:
+        _exists(con, athlete_id)
+        if body.name is not None:
+            con.execute("UPDATE athletes SET name = ? WHERE id = ?", (body.name.strip(), athlete_id))
+        if body.active is not None:
+            con.execute("UPDATE athletes SET active = ? WHERE id = ?", (int(body.active), athlete_id))
+            tiers.rank_all(con)
+    return detail(athlete_id)
+
+
 @router.post("/athletes/{athlete_id}/code", response_model=IssuedCode)
 def reissue(athlete_id: int) -> IssuedCode:
     """코드를 잃어버렸을 때. 이전 코드는 바로 못 쓴다."""
@@ -117,6 +135,9 @@ def reissue(athlete_id: int) -> IssuedCode:
 def add_record(athlete_id: int, body: RecordInput, request: Request) -> AthleteDetail:
     with db.connect() as con:
         _exists(con, athlete_id)
+        birth = con.execute("SELECT birth_year FROM athletes WHERE id = ?", (athlete_id,)).fetchone()["birth_year"]
+        if int(body.date[:4]) < birth + 8:  # 1900-01 같은 오타가 '이전 대회'로 모델에 들어가던 문제(테스터 2)
+            raise HTTPException(422, f"대회 연월이 출생연도({birth}년)와 맞지 않아요. 연도를 확인해 주세요.")
         con.execute("""INSERT INTO records (athlete_id, date, competition_category, body_weight, snatch, clean_jerk, entered_by, entered_at)
                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                     (athlete_id, body.date, body.competition_category, body.body_weight, body.snatch, body.clean_jerk,
@@ -162,7 +183,7 @@ def rerank() -> Overview:
 # 엑셀에서 한글이 깨지지 않게 UTF-8 BOM을 붙인다. 로그인 코드(해시 포함)는 내보내지 않는다.
 EXPORTS = {
     "athletes": "선수별 요약(단계·관측−예측·이수·퀴즈·오답 남음·질문·마지막 접속일)",
-    "quizzes": "퀴즈 풀이 전부(교육 퀴즈·갑자기 퀴즈·다시 풀기)",
+    "quizzes": "퀴즈 풀이 전부(교육 퀴즈·깜짝 퀴즈·다시 풀기)",
     "lessons": "교육 배정과 이수",
     "chats": "질문과 답",
     "records": "경기 기록과 체급",
@@ -183,22 +204,33 @@ def export(kind: str) -> Response:
         raise HTTPException(404, "내보낼 수 없는 종류예요.")
     with db.connect() as con:
         if kind == "athletes":
-            header = ["번호", "이름", "출생연도", "체급", "단계", "순위", "관측-예측(kg)", "기록 수", "이수", "퀴즈 정답", "퀴즈 오답",
-                      "오답 남음", "질문 수", "마지막 접속일", "첫 안내", "첫 안내 시각"]
+            header = ["번호", "이름", "출생연도", "체급", "단계", "순위", "실제 합계(kg)", "예측 합계(kg)", "관측-예측(kg)", "예측에 쓴 대회 수",
+                      "모델", "계산 시각", "대회 기록 수", "이수", "이번 주 완료", "이번 주 목록", "퀴즈 정답", "퀴즈 오답", "오답 남음",
+                      "질문 수", "마지막 접속일", "첫 안내", "첫 안내 시각"]
             onb = {"finished": "끝까지 봄", "skipped": "건너뜀"}
-            rows = [[a.number, a.name, a.birth_year, a.weight_class, a.tier, a.rank, a.residual, a.records, a.lessons_completed,
-                     a.quiz_correct, a.quiz_wrong, a.wrong_open, a.questions, (a.last_visit or "")[:10],
-                     onb.get(a.onboarding or "", "아직"), a.onboarding_at or ""] for a in _rows(con)]
+            rows = []
+            for a in _rows(con):
+                m = tiers.latest_model(con, a.id)
+                r = m[1] if m else None
+                at = con.execute("SELECT computed_at FROM model_results WHERE id = ?", (m[0],)).fetchone()[0] if m else ""
+                rows.append([a.number, a.name, a.birth_year, _wc(a.weight_class), a.tier, a.rank,
+                             r.observed.value if r else "", r.prediction.value if r else "",
+                             r.residual_observed_minus_predicted if r else "", r.history_count if r else "",
+                             r.model_version if r else "", at, a.records, a.lessons_completed, a.week_done, a.week_total,
+                             a.quiz_correct, a.quiz_wrong, a.wrong_open, a.questions, (a.last_visit or "")[:10],
+                             onb.get(a.onboarding or "", "아직"), a.onboarding_at or ""])
         elif kind == "quizzes":
-            header = ["번호", "이름", "단계", "교육", "대분류", "종류", "고른 답", "정답 여부", "시각"]
-            label = {"lesson": "교육 퀴즈", "surprise": "갑자기 퀴즈", "review": "오답 다시 풀기", "retry": "이수 후 다시 풀기"}
-            rows = [[r["number"], r["name"], _tier(con, r["athlete_id"]), r["lesson_id"], _category(r["lesson_id"]), label.get(r["context"], r["context"]),
+            header = ["번호", "이름", "풀 때 단계", "지금 단계", "교육", "대분류", "종류", "고른 답", "정답 여부", "시각"]
+            label = {"lesson": "교육 퀴즈", "surprise": "깜짝 퀴즈", "review": "오답 다시 풀기", "retry": "이수 후 다시 풀기"}
+            rows = [[r["number"], r["name"], r["tier"] if r["tier"] is not None else "", _tier(con, r["athlete_id"]), r["lesson_id"],
+                     _category(r["lesson_id"]), label.get(r["context"], r["context"]),
                      r["choice"], int(r["correct"]), r["at"]]
                     for r in con.execute("""SELECT a.number, a.name, q.* FROM quiz_attempts q JOIN athletes a ON a.id = q.athlete_id
                                             ORDER BY q.id""")]
         elif kind == "lessons":
-            header = ["번호", "이름", "단계", "교육", "대분류", "배정 주", "이수 시각"]
-            rows = [[r["number"], r["name"], _tier(con, r["athlete_id"]), r["lesson_id"], _category(r["lesson_id"]), r["week_start"],
+            header = ["번호", "이름", "배정 때 단계", "지금 단계", "교육", "대분류", "배정 주", "이수 시각"]
+            rows = [[r["number"], r["name"], r["tier"] if r["tier"] is not None else "", _tier(con, r["athlete_id"]), r["lesson_id"],
+                     _category(r["lesson_id"]), r["week_start"],
                      r["completed_at"] or ""]
                     for r in con.execute("""SELECT a.number, a.name, l.* FROM lesson_assignments l JOIN athletes a ON a.id = l.athlete_id
                                             ORDER BY l.athlete_id, l.id""")]
@@ -208,14 +240,22 @@ def export(kind: str) -> Response:
                     for r in con.execute("""SELECT a.number, a.name, c.* FROM chat_logs c LEFT JOIN athletes a ON a.id = c.athlete_id
                                             ORDER BY c.id""")]
         else:
-            header = ["번호", "이름", "대회 날짜", "대회", "계체", "체급", "인상", "용상", "합계"]
+            header = ["기록 id", "번호", "이름", "대회 연월", "대회", "계체", "체급", "인상", "용상", "합계"]
             rows = []
             for a in con.execute("SELECT id, number, name FROM athletes ORDER BY id").fetchall():
-                rows += [[a["number"], a["name"], r.date, r.competition_category, r.body_weight, r.weight_class, r.snatch, r.clean_jerk,
-                          r.total] for r in tiers.records(con, a["id"])]
+                rows += [[r.id, a["number"], a["name"], r.date, CATEGORY_KO.get(r.competition_category, r.competition_category), r.body_weight,
+                          _wc(r.weight_class), r.snatch, r.clean_jerk, r.total] for r in tiers.records(con, a["id"])]
     stamp = db.today()
     return Response(_csv(header, rows), media_type="text/csv; charset=utf-8",
                     headers={"Content-Disposition": f'attachment; filename="{kind}-{stamp}.csv"'})
+
+
+CATEGORY_KO = {"world": "세계대회", "continent": "대륙대회", "other_international": "기타 국제대회", "domestic": "국내대회"}
+
+
+def _wc(weight_class: int | None) -> str:
+    """체급 상한 없음(999)을 숫자 999로 내보내면 분석에서 999kg으로 읽힌다(테스터 2·3) → "+109"."""
+    return "" if weight_class is None else ("+109" if weight_class >= 999 else str(weight_class))
 
 
 def _tier(con: sqlite3.Connection, athlete_id: int) -> int | None:
@@ -269,13 +309,13 @@ def checklist(request: Request) -> StartChecklist:
     return StartChecklist(hidden="checklist" in seen, intro_done="intro" in seen, items=[
         ChecklistItem(key="athletes", label="선수 등록", done=athletes > 0, detail=f"{athletes}명 · 등록하면 로그인 코드가 나와요",
                       link="/admin"),
-        ChecklistItem(key="records", label="경기 기록 입력", done=with_records > 0, detail=f"기록이 있는 선수 {with_records}명",
-                      link="/admin"),
-        ChecklistItem(key="tiers", label="단계 계산", done=tiered > 0,
-                      detail=f"{tiered}명 배정 · 기록을 넣으면 모델이 돌고 자동으로 다시 나눠요", link="/admin"),
+        ChecklistItem(key="records", label="경기 기록 입력", done=athletes > 0 and with_records == athletes,
+                      detail=f"기록이 있는 선수 {with_records} / {athletes}명 · 선수를 눌러 상세에서 넣어요", link=""),
+        ChecklistItem(key="tiers", label="단계 계산(자동)", done=tiered > 0,
+                      detail=f"{tiered}명 배정 · 기록을 넣거나 지우면 모델이 돌고 자동으로 다시 나눠요", link=""),
         ChecklistItem(key="settings", label="단계 설정 확인", done=settings_saved > 0,
                       detail="단계 수와 단계별 주당 교육 수·퀴즈 빈도를 확인하고 저장", link="/admin/settings"),
-        ChecklistItem(key="reviews", label="교육 자료 검토", done=reviewed > 0, detail=f"{reviewed} / {total}개 검토",
+        ChecklistItem(key="reviews", label="교육 자료 검토", done=reviewed >= total, detail=f"{reviewed} / {total}개 검토(모두 검토하면 완료)",
                       link="/library"),
     ])
 

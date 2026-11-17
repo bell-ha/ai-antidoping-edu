@@ -363,9 +363,9 @@
       "name_ko": "프로프라놀롤",
       "name_en": "propranolol",
       "aliases": [],
-      "status": "NOT_LISTED_VERIFY",
-      "wada_class": null,
-      "note": "베타차단제(P1)는 양궁·사격 등 지정 종목에서만 금지이며 역도는 해당하지 않음.",
+      "status": "SPORT_SPECIFIC",
+      "wada_class": "P1",
+      "note": "베타차단제(P1)는 양궁·사격 등 지정 종목에서 금지(양궁·사격·일부 수중 종목은 평소에도). 역도는 지정 종목이 아님.",
       "source_url": "https://www.wada-ama.org/sites/default/files/2025-09/2026list_en_final_clean_september_2025.pdf",
       "reviewed": false
     },

@@ -29,9 +29,9 @@ from app.config import DRUGS
 from app.schemas import (CheckResult, CheckStatus, CountryRoute, DataSource, Ingredient, OfficialLink, ProductCandidate,
                          Timing)
 
-STRICTNESS: list[CheckStatus] = ["PROHIBITED", "IN_COMPETITION_ONLY", "THRESHOLD", "CONDITIONAL", "NOT_LISTED_VERIFY",
-                                  "UNKNOWN"]
-FLAGGED: tuple[CheckStatus, ...] = ("PROHIBITED", "IN_COMPETITION_ONLY", "THRESHOLD", "CONDITIONAL")
+STRICTNESS: list[CheckStatus] = ["PROHIBITED", "IN_COMPETITION_ONLY", "THRESHOLD", "CONDITIONAL", "SPORT_SPECIFIC",
+                                  "NOT_LISTED_VERIFY", "UNKNOWN"]
+FLAGGED: tuple[CheckStatus, ...] = ("PROHIBITED", "IN_COMPETITION_ONLY", "THRESHOLD", "CONDITIONAL", "SPORT_SPECIFIC")
 
 
 @cache
@@ -70,7 +70,10 @@ def name_variants(name: str) -> list[str]:
 
 
 EXCEPTION_NOTE = "조건(용량·투여 경로·용도)에 따라 금지되지 않을 수 있어요."
-P1_NOTE = "베타차단제는 지정 종목에서만 금지되며 역도는 해당하지 않아요(다른 종목은 확인 필요)."
+P1_NOTE = "베타차단제(P1)는 양궁·사격 등 지정 종목에서 금지예요(양궁·사격·일부 수중 종목은 평소에도). 역도는 지정 종목이 아니에요."
+# 조건 없이 예외인 성분(S5 원문 "Drospirenone; pamabrom; and topical ophthalmic … carbonic anhydrase inhibitors"):
+# 앞의 둘은 조건이 없고, 탄산탈수효소 억제제만 점안(눈에 넣는 것)일 때 예외다(테스터 11, 2026-11-17)
+UNCONDITIONAL_EXCEPTIONS = {"drospirenone", "pamabrom"}
 
 
 @cache
@@ -103,6 +106,8 @@ def _wada_ingredient(items: list[dict]) -> Ingredient:
         if all(i["prohibited"] == "no" for i in items):
             status: CheckStatus = "NOT_LISTED_VERIFY"
             note = "금지목록에 '금지 아님'으로 명시된 성분이에요(모니터링 대상 등)."
+        elif normalize(first["name"]) in UNCONDITIONAL_EXCEPTIONS:
+            status, note = "NOT_LISTED_VERIFY", f"금지목록 {section}에 예외(금지 아님)로 적힌 성분이에요."
         else:
             status, note = "CONDITIONAL", EXCEPTION_NOTE
     elif "threshold" in kinds:
@@ -111,8 +116,10 @@ def _wada_ingredient(items: list[dict]) -> Ingredient:
         status = "PROHIBITED"
     elif first["prohibited"] == "in_competition":
         status = "IN_COMPETITION_ONLY"
-    else:  # particular_sports(P1) 또는 no
-        status, note = "NOT_LISTED_VERIFY", P1_NOTE if section == "P1" else None
+    elif section == "P1":
+        status, note = "SPORT_SPECIFIC", P1_NOTE
+    else:  # no
+        status = "NOT_LISTED_VERIFY"
     extra = wada["section_conditions"].get(section) if section in ("S3", "S9") else None
     parts = [x for x in [note, extra, *(f"원문: {c}" for c in conditions[:2])] if x]
     return Ingredient(name_ko=first["name"], name_en=first["name"], status=status,
@@ -403,6 +410,8 @@ def _steps(status: CheckStatus, kind: str, route: CountryRoute, timing: Timing, 
         steps.append("정해진 용량이나 소변 농도 기준을 넘으면 위반이에요. 복용량과 시점에 따라 달라져요.")
     elif status == "CONDITIONAL":
         steps.append("조건(용량·투여 경로·용도)을 지키면 금지되지 않는 성분이에요.")
+    elif status == "SPORT_SPECIFIC":
+        steps.append("지정 종목에서만 금지된 성분이에요. 내 종목이 지정 종목인지 확인해야 해요.")
     elif status == "NOT_LISTED_VERIFY":
         steps.append("금지목록에서 확인되지 않았어요.")
     if status in ("IN_COMPETITION_ONLY", "THRESHOLD") and timing == "out_of_competition":

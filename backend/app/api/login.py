@@ -81,7 +81,7 @@ def login(body: LoginRequest, request: Request) -> SessionInfo:
     found = _by_code(body.code)
     if found is None:
         _failures[ip].append(time.monotonic())
-        raise HTTPException(401, "코드를 확인하세요.")
+        raise HTTPException(401, "코드가 맞지 않아요. 관리자에게 받은 코드를 확인해 주세요.")
     request.session.clear()
     request.session["code_hash"] = found[1]
     return found[0]

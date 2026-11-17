@@ -14,6 +14,15 @@ from app.schemas import ChatResponse, CheckResult, Chunk, Citation, LlmAnswer
 
 NO_EVIDENCE = "교육 자료에서 이 질문에 대한 내용을 찾지 못했어요."
 OUT_OF_SCOPE = "교육 자료에는 이 질문에 대한 내용이 없어요. 도핑 규정, 약·보충제, 검사 절차를 물어보면 자료로 답해 드려요."
+# 약을 물었는데 이름을 못 찾았을 때(가짜 약·외국 약·조회표에 없는 제품). "약을 물어보라"는 말이 나가지 않게(테스터 11·12·13)
+DRUG_NOT_FOUND = ("이 이름은 국내 의약품 목록과 금지목록 조회표에서 찾지 못했어요. "
+                  "상자나 설명서에 적힌 성분명(영어도 돼요)으로 다시 물어봐 주세요.")
+DRUG_INTENT = r"먹어도|먹으면|먹는|복용|약|주사|맞아도|발라도|뿌려도|넣어도"
+# 내 단계·교육 개수를 묻는 질문(테스터 1·6·13). 질문하기는 선수 정보를 모르므로 추측하지 않고 고정 문구로
+TIER = ("교육 개수와 깜짝 퀴즈 횟수는 선수마다 달라요. 도핑과 관계있다는 뜻도, 실력을 평가했다는 뜻도 아니에요.\n\n"
+        "질문하기는 내 단계나 경기 기록을 볼 수 없어요(AI에 보내지 않아요). 이번 주 교육을 들으면 돼요.")
+TIER_PATTERNS = [r"(내|제|나의|저의|우리)\s*단계", r"\d\s*단계", r"단계.*(의심|도핑|왜|뭐|무슨)", r"(나만|저만).*(교육|퀴즈)",  # 금지어 검사 예외: 질문 속 낱말 찾기
+                 r"(교육|퀴즈).*(왜|이렇게)\s*(많|적)", r"의심\s*받"]  # 금지어 검사 예외: 질문 속 낱말 찾기
 EVASION = (
     "검사를 피하거나 결과를 바꾸는 방법은 알려드릴 수 없어요.\n\n"
     "금지물질은 끊은 뒤에도 오랫동안 검출될 수 있고, 검사를 피하거나 방해하는 행위 자체도 도핑방지규정 위반이에요. "
@@ -41,6 +50,7 @@ DAILY_LIMIT = "오늘 AI 질문 횟수를 모두 썼어요. 내일 다시 질문
 # 검사 회피·은폐
 EVASION_PATTERNS = [
     r"(검사|도핑|소변|혈액).*안\s*걸",
+    r"(끊으면|끊고|끊어야).*(안\s*나와|안\s*나오|안\s*나올)",
     r"검출\s*(안|이\s*안|되지|않)",
     r"들키",
     r"반감기.*(끊|안\s*걸)",
@@ -79,7 +89,7 @@ DISTRESS_PATTERNS = [r"(너무|요즘|많이|진짜|정말)\s*힘들", r"아무�
                      r"다\s*포기하고\s*싶", r"지쳤"]
 DRUG_OR_RULE = r"약|먹어도|먹으면|복용|처방|주사|보충제|금지|TUE|도핑|검사"
 
-Kind = Literal["evasion", "coercion", "distress"]
+Kind = Literal["evasion", "coercion", "distress", "tier"]
 
 
 def classify(question: str) -> Kind | None:
@@ -91,13 +101,15 @@ def classify(question: str) -> Kind | None:
         return "evasion"
     if any(re.search(p, question) for p in DISTRESS_PATTERNS) and not re.search(DRUG_OR_RULE, question):
         return "distress"
+    if any(re.search(p, question) for p in TIER_PATTERNS):
+        return "tier"
     return None
 
 
 def fixed(kind: Kind) -> ChatResponse:
     """LLM을 부르지 않는 고정 응답."""
-    answer = {"evasion": EVASION, "coercion": COERCION, "distress": DISTRESS}[kind]
-    return ChatResponse(kind="fixed", answer=answer, citations=[], refer_to_expert=kind != "distress", out_of_scope=False)
+    answer = {"evasion": EVASION, "coercion": COERCION, "distress": DISTRESS, "tier": TIER}[kind]
+    return ChatResponse(kind="fixed", answer=answer, citations=[], refer_to_expert=kind in ("evasion", "coercion"), out_of_scope=False)
 
 
 def server_message(text: str) -> ChatResponse:
@@ -111,15 +123,25 @@ def needs_expert(question: str, check: CheckResult | None) -> bool:
     return check is not None and check.status in ("PROHIBITED", "IN_COMPETITION_ONLY", "THRESHOLD", "CONDITIONAL", "UNKNOWN")
 
 
+def _ref(text: str) -> str:
+    """교육 소단원 끝의 '출처:' 줄(문서명·조항·쪽). 칩에 교육 제목만 있고 실제 근거 문서가 안 보이던 문제(테스터 5·13)."""
+    lines = [ln for ln in text.splitlines() if ln.startswith("출처:")]
+    return lines[-1].removeprefix("출처:").strip() if lines else ""
+
+
 def apply(answer: LlmAnswer, chunks: list[Chunk], question: str, check: CheckResult | None) -> ChatResponse:
     by_id = {c.id: c for c in chunks}
     cited = [by_id[i] for i in dict.fromkeys(answer.citations) if i in by_id]
     refer = answer.refer_to_expert or needs_expert(question, check)
-    if not cited and (check is None or answer.out_of_scope):  # 약물 판정만 근거인 답(레슨 인용 없음)은 둔다
+    # AI가 범위 밖이라고 하면 자료로 쓴 문장도 내보내지 않는다(범위 밖 띠 아래 엉뚱한 답이 붙던 문제, 테스터 13).
+    # 약물 판정만 근거인 답(레슨 인용 없음)은 둔다
+    if answer.out_of_scope or (not cited and check is None):
         text = OUT_OF_SCOPE if answer.out_of_scope else NO_EVIDENCE
+        if check is None and re.search(DRUG_INTENT, question):
+            text = DRUG_NOT_FOUND
         # 자료로 답한 문장은 버려도 AI 추측은 'AI 추측' 표시와 함께 보여 준다(사용자, 2026-10-23)
         return ChatResponse(kind="server", answer=text, citations=[], refer_to_expert=refer, out_of_scope=True,
                             guess=answer.guess.strip())
-    citations = [Citation(chunk_id=c.id, source=c.source, title=f"{c.title} — {c.section}", url=c.url) for c in cited]
+    citations = [Citation(chunk_id=c.id, source=c.source, title=f"{c.title} — {c.section}", url=c.url, ref=_ref(c.text)) for c in cited]
     return ChatResponse(answer=answer.answer, citations=citations, refer_to_expert=refer, out_of_scope=answer.out_of_scope,
                         guess=answer.guess.strip())

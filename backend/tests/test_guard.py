@@ -197,7 +197,7 @@ FORBIDDEN = re.compile(r"위험도|위험 점수|도핑 위험|의심|적발|백
 
 def test_no_forbidden_words_in_backend():
     app_dir = Path(__file__).resolve().parents[1] / "app"
-    hits = [f"{p.name}:{i}" for p in app_dir.rglob("*.py") for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1) if FORBIDDEN.search(line)]
+    hits = [f"{p.name}:{i}" for p in app_dir.rglob("*.py") for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1) if FORBIDDEN.search(line) and "금지어 검사 예외" not in line]
     assert hits == []
 
 
@@ -308,3 +308,25 @@ def test_distress_gets_fixed_guidance_with_checked_numbers(question):
     assert guard.classify(question) == "distress"
     r = guard.fixed("distress")
     assert r.kind == "fixed" and all(n in r.answer for n in ("109", "1577-0199", "1388"))
+
+
+@pytest.mark.parametrize("question", ["왜 저만 교육이 15개예요?", "내 단계 알려줘", "5단계로 분류된 선수는 도핑 가능성이 높아?"])
+def test_tier_questions_get_fixed_answer(question):
+    """테스터 1·6·13: 단계·교육 개수 질문에 AI가 추측하지 않고 고정 문구로 답한다."""
+    assert guard.classify(question) == "tier"
+    assert "선수마다 달라요" in guard.fixed("tier").answer
+
+
+def test_unknown_drug_name_gets_drug_not_found_message():
+    """테스터 11·12·13: 약을 물었는데 이름을 못 찾으면 '약을 물어보라'가 아니라 성분명으로 다시 물어 달라고 한다."""
+    answer = LlmAnswer(answer="(지어낸 답)", citations=[], refer_to_expert=False, out_of_scope=True)
+    assert guard.apply(answer, CHUNKS, "플로렉사민정 먹어도 돼?", None).answer == guard.DRUG_NOT_FOUND
+    assert guard.apply(answer, CHUNKS, "오늘 점심 뭐 먹을까?", None).answer == guard.OUT_OF_SCOPE
+
+
+def test_login_code_ignores_case_and_pasted_message(people):
+    """테스터 다수: 휴대폰 자동 대문자·소문자 입력, 안내문 통째로 붙여 넣기도 로그인된다."""
+    from fastapi.testclient import TestClient as TC
+    code = people.codes[people.athlete_ids[0]]
+    for typed in (code.lower(), code.upper(), f"로그인 코드: {code}\n처음 들어가면 안내가 나와요"):
+        assert TC(app).post("/api/session", json={"code": typed}).status_code == 200

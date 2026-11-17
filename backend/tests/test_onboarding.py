@@ -32,7 +32,8 @@ def test_checklist_follows_data_and_can_be_hidden(people):
     admin.put("/api/admin/settings", json=settings)
     admin.put("/api/admin/reviews/A-001", json={"status": "reviewed", "note": None})
     items = {i["key"]: i for i in admin.get("/api/admin/checklist").json()["items"]}
-    assert items["settings"]["done"] and items["reviews"]["done"] and items["reviews"]["detail"].startswith("1 /")
+    assert items["settings"]["done"] and items["reviews"]["detail"].startswith("1 /")
+    assert not items["reviews"]["done"]  # 300개를 다 검토해야 완료(1개만 하고 '모두 끝났어요'가 뜨던 문제)
 
     assert admin.get("/api/admin/checklist").json()["hidden"] is False
     assert admin.get("/api/admin/checklist").json()["intro_done"] is False

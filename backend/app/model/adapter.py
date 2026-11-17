@@ -11,6 +11,13 @@ from app.model import predict
 from app.schemas import ModelResult, ModelValue, ObservedValue
 
 SOURCE = {"synthetic_trend": "synthetic", "rnn": "platform_temporary", "none": "none"}
+# 화면에 보이는 모델 이름. 화면마다 이름이 달라 연구진 가중치인지 알 수 없다는 지적(테스터 1·2·13)에 따라 하나로
+MODEL_LABEL = {
+    "researchers": "연구진 RNN(LSTM)",
+    "platform_temporary": "연구진 RNN(LSTM) · 인계 코드로 재현한 임시 가중치(남자)",
+    "synthetic": "공개용 합성 모델(연구진 모델 아님)",
+    "none": "모델 없음",
+}
 
 
 def result(sex: str, birth_year: int, rows: list) -> ModelResult:

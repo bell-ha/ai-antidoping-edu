@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app import config, db
 from app.api.login import athlete
-from app.program import lessons, quiz, weekly
+from app.program import lessons, quiz, tiers, weekly
 from app.schemas import (AthleteHistory, AthleteHome, HistoryItem, LessonCard, LessonView, OnboardingDone, QuizAnswer, QuizResult,
                          SessionInfo, Survey)
 
@@ -64,8 +64,9 @@ def lesson_answer(lesson_id: str, body: QuizAnswer, who: SessionInfo = Depends(a
         row = _assignment(con, who.athlete_id, lesson_id)
         if row is None:
             week = weekly.ensure_week(con, who.athlete_id)
-            con.execute("INSERT OR IGNORE INTO lesson_assignments (athlete_id, lesson_id, week_start) VALUES (?, ?, ?)",
-                        (who.athlete_id, lesson_id, week))
+            current = tiers.current(con, who.athlete_id)
+            con.execute("INSERT OR IGNORE INTO lesson_assignments (athlete_id, lesson_id, week_start, tier) VALUES (?, ?, ?, ?)",
+                        (who.athlete_id, lesson_id, week, current["tier"] if current else None))
         result = quiz.answer(con, who.athlete_id, lesson_id, body.choice, "retry" if row and row["completed_at"] else "lesson")
         con.execute("UPDATE lesson_assignments SET completed_at = COALESCE(completed_at, ?) WHERE athlete_id = ? AND lesson_id = ?",
                     (db.now_iso(), who.athlete_id, lesson_id))

@@ -16,7 +16,7 @@ HERBS = json.loads((DRUGS / "kada" / "processed" / "herbal_medicine_2025.json").
 def test_no_allowed_status_exists():
     """'허용' 상태는 없다. 목록에 없는 성분도 '확인 필요'다."""
     statuses = {s["status"] for s in TABLES["substances.json"]["substances"].values()}
-    assert statuses <= {"PROHIBITED", "IN_COMPETITION_ONLY", "THRESHOLD", "NOT_LISTED_VERIFY"}
+    assert statuses <= {"PROHIBITED", "IN_COMPETITION_ONLY", "THRESHOLD", "SPORT_SPECIFIC", "NOT_LISTED_VERIFY"}
 
 
 def test_every_entry_has_source_and_review_flag():
@@ -96,10 +96,17 @@ def test_herbal_medicine_in_general_is_not_judged():
     assert any("한약" in link.label for link in r.links)
 
 
-def test_weightlifting_is_not_a_beta_blocker_sport():
+def test_beta_blockers_are_sport_specific_not_unlisted():
+    """테스터 10(사격): 베타차단제를 "금지목록에 없음"으로 보이면 지정 종목 선수가 오해한다. 역도가 아니라는 말은 남긴다."""
     r = check("프로프라놀롤", "KR", "in_competition")
-    assert r.status == "NOT_LISTED_VERIFY"
-    assert "역도" in (r.ingredients[0].note or "")
+    assert r.status == "SPORT_SPECIFIC"
+    assert "역도" in (r.ingredients[0].note or "") and "사격" in (r.ingredients[0].note or "")
+
+
+def test_drospirenone_is_an_unconditional_s5_exception():
+    """테스터 11: S5 원문은 드로스피레논·파마브롬을 조건 없이 예외로 둔다(점안 탄산탈수효소 억제제만 조건부)."""
+    assert check("drospirenone", "KR", "unknown").status == "NOT_LISTED_VERIFY"
+    assert check("dorzolamide", "KR", "unknown").status == "CONDITIONAL"
 
 
 def test_reviewed_is_false_until_research_team_reviews():
@@ -145,7 +152,7 @@ def test_list_expires_matches_list_version():
     ("Vilanterol", "CONDITIONAL", "S3"),           # 흡입 용량 예외 → 조건 충족 여부를 모름
     ("Dorzolamide", "CONDITIONAL", "S5"),          # 점안 예외
     ("nicotine", "NOT_LISTED_VERIFY", "S6"),       # 조건 없이 "금지 아님"(모니터링)
-    ("bisoprolol", "NOT_LISTED_VERIFY", "P1"),     # 역도는 P1 종목이 아님
+    ("bisoprolol", "SPORT_SPECIFIC", "P1"),       # 지정 종목에서만 금지(역도는 아님) — "목록에 없음"이 아니다
 ])
 def test_wada_extract_status_rules(query, status, wada_class):
     r = check(query, "KR", "in_competition")

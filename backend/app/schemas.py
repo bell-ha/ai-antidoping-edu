@@ -79,7 +79,8 @@ class RecordRow(RecordInput):
 # ---------- 약물 확인 ----------
 
 Timing = Literal["in_competition", "out_of_competition", "unknown"]
-CheckStatus = Literal["PROHIBITED", "IN_COMPETITION_ONLY", "THRESHOLD", "CONDITIONAL", "NOT_LISTED_VERIFY", "UNKNOWN"]
+# SPORT_SPECIFIC = P1(베타차단제): 지정 종목에서만 금지(종목에 따라 평소에도). 역도는 지정 종목이 아니다
+CheckStatus = Literal["PROHIBITED", "IN_COMPETITION_ONLY", "THRESHOLD", "CONDITIONAL", "SPORT_SPECIFIC", "NOT_LISTED_VERIFY", "UNKNOWN"]
 CountryRoute = Literal["kada", "local_unverified"]
 
 
@@ -176,8 +177,9 @@ class LlmAnswer(BaseModel):
 class Citation(BaseModel):
     chunk_id: str
     source: Source
-    title: str
+    title: str  # 교육 제목 — 소단원
     url: str
+    ref: str = ""  # 소단원의 출처 줄(문서명·조항·쪽)
 
 
 class ChatResponse(BaseModel):
@@ -334,6 +336,8 @@ class AthleteRow(BaseModel):
     questions: int
     last_visit: str | None
     onboarding: OnboardingOutcome | None = None  # 첫 안내: 끝까지 봄 | 건너뜀 | 아직
+    week_done: int = 0  # 이번 주 목록 중 완료
+    week_total: int = 0  # 이번 주 목록(지난주에 못 들은 것 포함)
     onboarding_at: str | None = None
 
 
@@ -387,6 +391,12 @@ class AthleteDetail(BaseModel):
     chats: list[ChatLog]
 
 
+class AthleteUpdate(BaseModel):
+    """이름 고치기 · 보관(목록과 줄 세우기에서 빼기, 로그인도 막힘)."""
+    name: str | None = Field(default=None, min_length=1, max_length=30)
+    active: bool | None = None
+
+
 class AthleteCreate(BaseModel):
     name: str = Field(min_length=1, max_length=30)
     birth_year: int = Field(ge=1940, le=date.today().year - 8)
@@ -410,6 +420,7 @@ class Overview(BaseModel):
     athletes: list[AthleteRow]
     settings: ProgramSettings
     model_version: str
+    model_label: str = ""  # 화면에 보이는 모델 이름(모든 화면 같은 이름, adapter.MODEL_LABEL)
 
 
 class ChecklistItem(BaseModel):

@@ -13,8 +13,9 @@ from app.schemas import QuizQuestion, QuizResult
 
 def answer(con: sqlite3.Connection, athlete_id: int, lesson_id: str, choice: int, context: str) -> QuizResult:
     result = lessons.grade(lesson_id, choice)
-    con.execute("INSERT INTO quiz_attempts (athlete_id, lesson_id, context, choice, correct, at) VALUES (?, ?, ?, ?, ?, ?)",
-                (athlete_id, lesson_id, context, choice, int(result.correct), db.now_iso()))
+    row = tiers.current(con, athlete_id)  # 풀 때의 단계를 남긴다(나중에 단계가 바뀌어도 그대로)
+    con.execute("INSERT INTO quiz_attempts (athlete_id, lesson_id, context, choice, correct, at, tier) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (athlete_id, lesson_id, context, choice, int(result.correct), db.now_iso(), row["tier"] if row else None))
     return result
 
 
